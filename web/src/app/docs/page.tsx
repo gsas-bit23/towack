@@ -125,9 +125,16 @@ export default function DocsPage() {
             <li>★ Token approvals are exact amounts, never unlimited.</li>
             <li>★ No server holds keys or funds. The site only reads public chain data.</li>
           </ul>
-          <p className="mt-4 font-semibold text-navy/70">
-            Ready? <Link href="/mint" className="underline decoration-2 underline-offset-2 hover:text-candy">Go to Mint</Link> or{" "}
-            <Link href="/draw" className="underline decoration-2 underline-offset-2 hover:text-candy">see the draw</Link>.
+          <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-navy/70">
+            <span>Ready?</span>
+            <Link href="/mint" className="inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-candy">
+              Go to Mint
+            </Link>
+            <span>or</span>
+            <Link href="/draw" className="inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-candy">
+              see the draw
+            </Link>
+            <span className="-ml-2">.</span>
           </p>
         </Panel>
       </section>

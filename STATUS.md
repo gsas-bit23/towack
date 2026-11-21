@@ -13,7 +13,27 @@ Second BSC testnet deploy of the rewritten `TowackLaunch`. Frontend + docs lande
 - **Tests (forge 1.10.0):** `forge test`: **68 passed, 0 failed, 1 skipped** (fork test, gated). `FOUNDRY_FUZZ_RUNS=2000 forge test --match-test testFuzz`: **6/6 passed**, including the new `testFuzz_DeckInvariants` (K ≤ 5000 draws: assigned + remaining = initial per tier, sum = remainingTotal, ids in 0..10, ≤175 BNB / ≤35.2M) and `testFuzz_SolvencyFlow` (mint → VRF → early claims → close → finalize → claims; contract ends empty). `BSC_FORK=1` fork test against real Pancake v2 testnet: **passed**.
 - **Frontend:** `motion` added. New carnival `SpinWheel` (odds-sized slices with a 13° minimum, legend shows true odds, deterministic landing from the on-chain prizeId), confetti (bigger for full refund / 5× / 3×), claim + Share on X, VRF retry button, and a live `PrizeAssigned` feed. `/draw` is now the prize booth (wheel, feed, status, deck legend with live remaining counts). Site-wide motion covers the hero entrance, scroll reveals, the animated mint counter and progress bar, growing tokenomics stacks and bonus bars, and hover micro-interactions. `prefers-reduced-motion` stops the loops, snaps the wheel to the prize, and turns off confetti. `npm run build` **green**, `npm run lint` clean. ABIs re-exported.
 
-## Next steps
+## STOPPED: responsive layout fix (2026-11-22, 04:36 AM PKT)
+Claude Code hit the **5-hour usage limit** (resets **5:00 AM PKT**) while verifying element-level overflow after the layout edits. Per Mateen's rule, coding stopped here — this is a clean checkpoint of what was already on disk. Foundry was not touched. No new Vercel preview was deployed.
+
+**Before audit** (`web/scripts/responsive-audit.py`, production `next start` on :3126): 11 viewports × all routes. 1,257 flags, mostly tap targets and false-positive scroller overflow. Real bugs:
+- Every phone page was too wide, mainly `grid-cols-12` with `gap-8` (11×32px gaps already exceed ~360px).
+- iPad landscape home `scrollWidth 1031 > 1024`; hero decorations (`lg:block`) overlapped body copy and the mint / prize-booth CTAs.
+- Small-phone hero `text-[60px]`; the 3-column stats bar clipped **“80K TWAK”**.
+- No hamburger: a second-row nav pill strip cut off “Tokenomics” and hid Lottery/Docs off-screen; pills were 33px tall.
+- Tokenomics `min-w-[720px]` 9-column chart left a blank card on phones with only the first three labels visible; `CoinColumn` started at `scale: 0` until `whileInView`.
+- Prize-wheel `Panel overflow-hidden` clipped the needle; footer / network / demo links were under 40px tall; docs “Go to Mint” / “see the draw” flagged as overlapping on 360px.
+
+**Already applied on disk (not fully re-audited):** hamburger + drawer (open/close, Esc, ≥40px links, compact Connect, network toggle in the menu on xs); inline nav from `lg` (1024+); hero art only from `xl`; smaller h1; stacked stats on xs; tokenomics stacked bars below `lg` (coins visible without an observer); `overflow-x: clip` backstop; `min-w-0` on 12-col grids; wheel rotation / needle room / confetti containment; larger footer and toggle targets; docs CTA flex row. Claude measured **document width clean** on 360/390/768/1024 for `/`, `/mint`, `/docs`, `/tokenomics`, `/draw`, `/trade`, `/lottery`, `/rebates` before the limit hit. It was inspecting `PrizeTables.tsx` next.
+
+**Resume at 5:00 AM PKT:**
+1. Re-run `python3 web/scripts/responsive-audit.py --base http://127.0.0.1:3126 --out web/shots/responsive/after --label after` against a production build with `NEXT_PUBLIC_DEMO_WHEEL=1`.
+2. Fix any remaining **real** issues (start with PrizeTables / bonus bars if they still overflow; ignore scroller/confetti/SVG false positives). Confirm hamburger open/closed, 40px targets, no `scrollWidth > innerWidth`, wheel + result/claim don't overlap on 360px.
+3. `npm run lint` + `npm run build` green (already passed once in this session; re-check after any further edits).
+4. Deploy a **new Vercel preview** only (abcd-532d/towack, no `--prod`, leave SSO on).
+5. Keep 4–6 best before/after shots under `web/shots/responsive/before-best/` and `after-best/`.
+
+## Next steps (product)
 1. Send more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` to run a real 0.1 tBNB mint (balance after the second deploy + MockAgentId registration is ~0.0776 tBNB). The deployer already holds a Mock Agent ID on the **new** mock (`0xfF5f224349e6aDB7754249d5e4352dB0910717B7`).
 2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
 3. End-to-end testnet rehearsal once funded: mint, owner-fulfil MockVRF, watch the wheel land, claim, then later close / finalize / router / rebates.

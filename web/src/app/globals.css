@@ -23,6 +23,11 @@
 html {
   scroll-behavior: smooth;
 }
+/* Backstop only: root causes are fixed in layout. `clip` (not `hidden`) keeps sticky headers working. */
+html,
+body {
+  overflow-x: clip;
+}
 body {
   background: #eef8ff;
   color: #13204a;

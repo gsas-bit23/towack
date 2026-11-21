@@ -64,7 +64,7 @@ export function Panel({
     ice: "bg-ice",
   }[tone];
   return (
-    <div className={`rounded-[36px] border-4 border-navy p-7 ${bg} ${shadow ? "shadow-[0_10px_0_#13204A]" : ""} ${className}`}>
+    <div className={`min-w-0 rounded-[30px] border-4 border-navy p-5 sm:rounded-[36px] sm:p-7 ${bg} ${shadow ? "shadow-[0_10px_0_#13204A]" : ""} ${className}`}>
       {children}
     </div>
   );
@@ -154,8 +154,8 @@ export function PageHeader({
   const bg = { sky: "bg-sky", candy: "bg-candy", sun: "bg-sun" }[tone];
   const text = tone === "sun" ? "text-navy" : "text-white";
   return (
-    <section className="px-6 pt-4 pb-6">
-      <div className={`relative mx-auto max-w-[1220px] overflow-hidden rounded-[48px] border-[6px] border-navy ${bg} px-8 py-12 shadow-[0_12px_0_#13204A] md:px-12`}>
+    <section className="px-4 pt-4 pb-6 sm:px-6">
+      <div className={`relative mx-auto max-w-[1220px] overflow-hidden rounded-[36px] border-[6px] border-navy ${bg} px-5 py-10 shadow-[0_12px_0_#13204A] sm:rounded-[48px] sm:px-8 sm:py-12 md:px-12`}>
         {art}
         <div className="relative">
           <div className="drop inline-flex items-center gap-2 rounded-full bg-navy px-5 py-2 text-sm font-extrabold text-white">
@@ -163,12 +163,12 @@ export function PageHeader({
             {kicker}
           </div>
           <h1
-            className={`drop dl1 mt-5 font-display text-[44px] font-extrabold leading-[.95] md:text-[64px] ${text}`}
+            className={`drop dl1 mt-5 break-words font-display text-[38px] font-extrabold leading-[.95] sm:text-[44px] md:text-[64px] ${text}`}
             style={{ textShadow: tone === "sun" ? undefined : "0 5px 0 #13204A" }}
           >
             {title}
           </h1>
-          {children ? <div className="drop dl2 mt-5 max-w-[760px] text-[18px] font-bold leading-snug text-navy">{children}</div> : null}
+          {children ? <div className="drop dl2 mt-5 max-w-[760px] text-[17px] font-bold sm:text-[18px] leading-snug text-navy">{children}</div> : null}
         </div>
       </div>
     </section>

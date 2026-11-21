@@ -1,9 +1,9 @@
 // Arcade Sky illustration pieces (pure SVG, decorative, aria-hidden).
 import type { CSSProperties } from "react";
 
-export function CoinMark({ size = 46 }: { size?: number }) {
+export function CoinMark({ size = 46, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 48 48" className={className} aria-hidden="true">
       <circle cx="24" cy="26" r="20" fill="#E6AE00" />
       <circle cx="24" cy="22" r="20" fill="#FFCD2E" />
       <circle cx="24" cy="22" r="14.5" fill="none" stroke="#13204A" strokeWidth="2.5" strokeDasharray="3 3" />

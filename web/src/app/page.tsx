@@ -5,65 +5,72 @@ import { BonusBars, BnbTierStubs } from "@/components/PrizeTables";
 import { TokenomicsChart } from "@/components/TokenomicsChart";
 import { ButtonLink, Pill } from "@/components/ui";
 
+const HERO_CTA = "max-sm:px-7 max-sm:py-3.5 max-sm:text-[17px]";
+
+const HERO_STATS = [
+  { value: "5,000", label: "Agent ID slots", color: "text-sun" },
+  { value: "0.1 BNB", label: "each, one per holder", color: "text-sky-pale" },
+  { value: "80K TWAK", label: "instantly on mint", color: "text-candy-pale" },
+] as const;
+
 export default function Home() {
   return (
     <>
       {/* HERO: big rounded stage */}
-      <section className="px-6 pb-10 pt-4">
+      <section className="px-4 pb-10 pt-4 sm:px-6">
         <StageIn className="relative mx-auto max-w-[1220px]">
-          <div className="relative overflow-hidden rounded-[56px] border-[6px] border-navy bg-sky px-6 pb-14 pt-16 shadow-[0_16px_0_#13204A] md:px-10">
+          <div className="relative overflow-hidden rounded-[40px] border-[6px] border-navy bg-sky px-4 pb-12 pt-12 shadow-[0_16px_0_#13204A] sm:rounded-[56px] sm:px-6 sm:pb-14 sm:pt-16 md:px-10">
             <div className="stage-glow pointer-events-none absolute inset-0" aria-hidden="true" />
             <Bulbs />
             <Sunburst />
-            <CoinStack className="bounce absolute bottom-[40px] left-[30px] hidden w-[190px] lg:block" />
-            <StarCoin className="bounce bounce-2 absolute left-[190px] top-[70px] hidden w-[90px] lg:block" style={{ ["--r" as string]: "-10deg" }} />
-            <AdmitTicket className="bounce bounce-3 absolute right-[40px] top-[90px] hidden w-[230px] lg:block" style={{ ["--r" as string]: "14deg" }} />
-            <LabelTicket label="80,000" className="bounce absolute bottom-[50px] right-[70px] hidden w-[170px] lg:block" style={{ ["--r" as string]: "-12deg" }} />
+            <CoinStack className="bounce absolute bottom-[40px] left-[30px] hidden w-[150px] xl:block 2xl:w-[190px]" />
+            <StarCoin className="bounce bounce-2 absolute left-[190px] top-[70px] hidden w-[80px] xl:block 2xl:w-[90px]" style={{ ["--r" as string]: "-10deg" }} />
+            <AdmitTicket className="bounce bounce-3 absolute right-[30px] top-[90px] hidden w-[180px] xl:block 2xl:w-[230px]" style={{ ["--r" as string]: "14deg" }} />
+            <LabelTicket label="80,000" className="bounce absolute bottom-[50px] right-[40px] hidden w-[140px] xl:block 2xl:w-[170px]" style={{ ["--r" as string]: "-12deg" }} />
 
-            <div className="relative mx-auto max-w-[780px] text-center">
+            <div className="relative mx-auto max-w-[780px] text-center xl:max-w-[720px] 2xl:max-w-[780px]">
               <div className="drop inline-flex items-center gap-2 rounded-full bg-navy px-5 py-2.5 text-sm font-extrabold text-white">
                 <span className="h-2 w-2 rounded-full bg-sun" />
                 Agent ID holders only · BSC
               </div>
-              <h1 className="drop dl1 mt-7 font-display text-[60px] font-extrabold leading-[.92] text-white lg:text-[96px]" style={{ textShadow: "0 6px 0 #13204A" }}>
+              <h1 className="drop dl1 mt-6 font-display text-[40px] font-extrabold leading-[.92] text-white min-[400px]:text-[46px] sm:mt-7 sm:text-[56px] md:text-[72px] lg:text-[96px]" style={{ textShadow: "0 6px 0 #13204A" }}>
                 Step right up.
                 <br />
                 Grab your slot.
               </h1>
-              <p className="drop dl2 mx-auto mt-7 max-w-[640px] text-[19px] font-bold leading-snug text-navy lg:text-[21px]">
+              <p className="drop dl2 mx-auto mt-6 max-w-[640px] text-[17px] font-bold leading-snug text-navy sm:mt-7 sm:text-[19px] lg:text-[21px]">
                 0.1 BNB mints one Towack slot per Agent ID, drops <span className="rounded-lg bg-sun px-2">80,000 TWAK</span> in your wallet on the
                 spot, and spins the prize wheel. Only 5,000 exist.
               </p>
-              <div className="drop dl3 mt-9 flex flex-wrap justify-center gap-4">
-                <ButtonLink href="/mint" size="lg">
+              <div className="drop dl3 mt-8 flex flex-wrap justify-center gap-4 sm:mt-9">
+                <ButtonLink href="/mint" size="lg" className={HERO_CTA}>
                   Mint for 0.1 BNB
                 </ButtonLink>
-                <ButtonLink href="/draw" tone="white" size="lg">
+                <ButtonLink href="/draw" tone="white" size="lg" className={HERO_CTA}>
                   Visit the prize booth
                 </ButtonLink>
               </div>
             </div>
           </div>
-          <div className="relative mx-auto -mt-2 grid w-[86%] grid-cols-3 overflow-hidden rounded-b-[36px] bg-navy text-white">
-            <div className="border-r border-white/10 px-4 py-6 text-center md:px-8">
-              <div className="font-display text-[28px] font-extrabold leading-none text-sun md:text-[38px]">5,000</div>
-              <div className="mt-1 font-bold text-white/75">Agent ID slots</div>
-            </div>
-            <div className="border-r border-white/10 px-4 py-6 text-center md:px-8">
-              <div className="font-display text-[28px] font-extrabold leading-none text-sky-pale md:text-[38px]">0.1 BNB</div>
-              <div className="mt-1 font-bold text-white/75">each, one per holder</div>
-            </div>
-            <div className="px-4 py-6 text-center md:px-8">
-              <div className="font-display text-[28px] font-extrabold leading-none text-candy-pale md:text-[38px]">80K TWAK</div>
-              <div className="mt-1 font-bold text-white/75">instantly on mint</div>
-            </div>
+          <div className="relative mx-auto -mt-2 grid w-[92%] grid-cols-1 overflow-hidden rounded-b-[28px] bg-navy text-white sm:w-[86%] sm:grid-cols-3 sm:rounded-b-[36px]">
+            {HERO_STATS.map((st, i) => (
+              <div
+                key={st.value}
+                className={`flex min-w-0 items-baseline justify-between gap-3 px-5 py-3.5 sm:block sm:px-3 sm:py-6 sm:text-center md:px-4 lg:px-8 ${
+                  i < HERO_STATS.length - 1 ? "border-b border-white/10 sm:border-b-0 sm:border-r" : ""
+                }`}
+              >
+                <div className={`shrink-0 font-display text-[24px] font-extrabold leading-none md:text-[30px] lg:text-[38px] ${st.color}`}>{st.value}</div>
+                <div className="mt-1 text-right font-bold text-white/75 sm:text-center">{st.label}</div>
+              </div>
+            ))}
           </div>
         </StageIn>
       </section>
 
       {/* DRAW: prize booth */}
       <section id="draw" className="mx-auto max-w-[1220px] px-6 pb-[110px] pt-[90px]">
-        <Reveal className="mb-12 grid grid-cols-12 items-center gap-10">
+        <Reveal className="mb-12 grid grid-cols-12 items-center gap-x-0 gap-y-10 lg:gap-x-10 [&>*]:min-w-0">
           <div className="col-span-12 lg:col-span-7">
             <div className="font-display text-[15px] font-extrabold uppercase tracking-[.25em] text-candy">The prize booth</div>
             <h2 className="mt-3 font-display text-[48px] font-extrabold leading-[.95] lg:text-[72px]">Every mint spins the wheel.</h2>
@@ -83,16 +90,16 @@ export default function Home() {
           </div>
         </Reveal>
 
-        <Reveal className="rounded-[48px] border-4 border-navy bg-white p-8 shadow-[0_12px_0_#13204A]">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="font-display text-[28px] font-extrabold">BNB refund slots in the 5,000-slot deck</div>
-            <div className="checker h-6 w-[120px] rounded-md opacity-90" aria-hidden="true" />
+        <Reveal className="rounded-[36px] border-4 border-navy bg-white p-5 shadow-[0_12px_0_#13204A] sm:rounded-[48px] sm:p-8">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div className="min-w-0 font-display text-[24px] font-extrabold sm:text-[28px]">BNB refund slots in the 5,000-slot deck</div>
+            <div className="checker hidden h-6 w-[120px] shrink-0 rounded-md opacity-90 sm:block" aria-hidden="true" />
           </div>
           <BnbTierStubs />
         </Reveal>
 
-        <div className="mt-8 grid grid-cols-12 gap-8">
-          <Reveal className="col-span-12 rounded-[40px] bg-candy-pale p-8 lg:col-span-8">
+        <div className="mt-8 grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
+          <Reveal className="col-span-12 rounded-[40px] bg-candy-pale p-6 sm:p-8 lg:col-span-8">
             <div className="font-display text-[28px] font-extrabold">Bonus slots: extra TWAK</div>
             <p className="mt-1 font-semibold text-navy/70">
               Paid from the 50M Draw V1 bonus reserve. A bonus slot replaces a refund — the wheel has one needle, so each mint wins exactly one
@@ -100,14 +107,14 @@ export default function Home() {
             </p>
             <BonusBars />
           </Reveal>
-          <Reveal className="col-span-12 flex flex-col rounded-[40px] bg-navy p-8 text-white lg:col-span-4" delay={0.1}>
+          <Reveal className="col-span-12 flex flex-col rounded-[40px] bg-navy p-6 text-white sm:p-8 lg:col-span-4" delay={0.1}>
             <svg className="w-[70px]" viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r="44" fill="#FFCD2E" stroke="#fff" strokeWidth="5" />
               <text x="50" y="62" textAnchor="middle" fontFamily="var(--font-sora)" fontWeight="800" fontSize="34" fill="#13204A">
                 ?
               </text>
             </svg>
-            <div className="mt-5 font-display text-[64px] font-extrabold leading-none text-sun">175 BNB</div>
+            <div className="mt-5 font-display text-[52px] font-extrabold leading-none text-sun sm:text-[64px]">175 BNB</div>
             <div className="mt-1 font-bold text-white/80">+ 35.2M TWAK in bonuses: the whole prize pool at a 5,000 sellout</div>
             <p className="mt-auto pt-5 text-[15px] font-semibold text-white/80">
               That&apos;s a refund-style prize deck, not a profit promise. The draw is a game of chance, and most spins get back less than they paid.
@@ -135,7 +142,7 @@ export default function Home() {
               <span className="rounded-full bg-navy px-4 py-2 text-white">Unsold mint tokens burned</span>
             </div>
           </div>
-          <Reveal className="mt-12 rounded-[44px] border-4 border-navy bg-white p-8 pb-6">
+          <Reveal className="mt-12 min-w-0 rounded-[36px] border-4 border-navy bg-white p-5 sm:rounded-[44px] sm:p-8 sm:pb-6">
             <TokenomicsChart />
           </Reveal>
           <div className="mt-8 flex flex-wrap items-center gap-4 rounded-[32px] bg-navy px-8 py-5 text-[17px] font-bold text-white md:rounded-full">
@@ -186,7 +193,7 @@ export default function Home() {
               Keeps the contracts, router, and site moving.
             </FeeCard>
           </Reveal>
-          <div className="mt-10 flex justify-center gap-4">
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
             <ButtonLink href="/trade" tone="white">
               Open the router
             </ButtonLink>

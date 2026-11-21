@@ -16,7 +16,7 @@ export default function TokenomicsPage() {
           <TokenomicsChart />
         </Panel>
 
-        <div className="grid grid-cols-12 gap-8">
+        <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
           <Panel className="col-span-12 lg:col-span-7" shadow={false}>
             <h2 className="font-display text-[28px] font-extrabold">The full split</h2>
             <table className="mt-4 w-full text-left font-bold">

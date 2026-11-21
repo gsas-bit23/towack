@@ -6,16 +6,16 @@ import { RiskNote } from "./RiskNote";
 export function Footer() {
   return (
     <footer className="mt-auto bg-ice">
-      <div className="mx-auto max-w-[1220px] px-6 pb-10 pt-20">
-        <div className="grid grid-cols-12 items-start gap-10">
+      <div className="mx-auto max-w-[1220px] px-4 pb-10 pt-16 sm:px-6 sm:pt-20">
+        <div className="grid grid-cols-12 items-start gap-x-0 gap-y-10 md:gap-x-10 [&>*]:min-w-0">
           <div className="col-span-12 md:col-span-4">
             <div className="flex items-center gap-3">
               <CoinMark size={60} />
-              <span className="font-display text-[38px] font-extrabold">TOWACK</span>
+              <span className="font-display text-[32px] font-extrabold sm:text-[38px]">TOWACK</span>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-2 font-extrabold">
+            <div className="mt-6 grid grid-cols-2 gap-x-2 font-extrabold">
               {NAV_LINKS.map((l) => (
-                <Link key={l.href} href={l.href} className="hover:text-candy">
+                <Link key={l.href} href={l.href} className="flex min-h-10 items-center hover:text-candy">
                   {l.label}
                 </Link>
               ))}

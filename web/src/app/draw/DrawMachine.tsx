@@ -36,7 +36,7 @@ export function DrawMachine() {
           <StepRail active={-1} />
           {demo.allowed ? (
             <p className="mt-4 text-sm font-bold text-navy/60">
-              Preview only: <a className="underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
+              Preview only: <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
             </p>
           ) : null}
         </DeployingSoon>
@@ -64,9 +64,9 @@ export function DrawMachine() {
     tx.run(label, () => writeContractAsync({ address: s.launch!, abi: towackLaunchAbi, functionName: fn, chainId }));
 
   return (
-    <div className="grid grid-cols-12 gap-8">
+    <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
       {/* Wheel */}
-      <Panel className="relative col-span-12 overflow-hidden lg:col-span-7">
+      <Panel className="relative col-span-12 lg:col-span-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-[28px] font-extrabold">{isMinter ? "Your spin" : "The wheel"}</h2>
           <ChainNote />
@@ -103,7 +103,7 @@ export function DrawMachine() {
         </div>
         {demo.allowed && !demo.active ? (
           <p className="mt-2 text-center text-xs font-bold text-navy/50">
-            Preview only: <a className="underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
+            Preview only: <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
           </p>
         ) : null}
       </Panel>

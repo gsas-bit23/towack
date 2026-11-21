@@ -126,9 +126,9 @@ export function MintPanel() {
   );
 
   return (
-    <div className="grid grid-cols-12 gap-8">
+    <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
       <div className="col-span-12 space-y-8 lg:col-span-7">
-        <Panel className="relative overflow-hidden">
+        <Panel className="relative">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-[28px] font-extrabold">The prize wheel</h2>
             <ChainNote />
@@ -137,7 +137,10 @@ export function MintPanel() {
           <div className="mt-6">{wheel}</div>
           {demo.allowed && !demo.active ? (
             <p className="mt-2 text-center text-xs font-bold text-navy/50">
-              Preview only: <a className="underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
+              Preview only:{" "}
+              <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=wheel">
+                play a demo spin
+              </a> (no transaction, not a real prize).
             </p>
           ) : null}
         </Panel>

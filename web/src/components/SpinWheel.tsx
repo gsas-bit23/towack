@@ -108,12 +108,14 @@ export function SpinWheel({
   const winSlice = won !== undefined ? sliceOf(won) : undefined;
 
   return (
-    <div className={`relative mx-auto select-none ${className}`} style={{ width: "100%", maxWidth: size }} aria-hidden="true">
+    // pt-[6%]: room for the needle, which pokes above the wheel square.
+    <div className={`relative mx-auto select-none pt-[6%] ${className}`} style={{ width: "100%", maxWidth: size }} aria-hidden="true">
       {/* stage glow */}
       <div className="wheel-glow pointer-events-none absolute inset-[6%] rounded-full" />
       <div className="relative aspect-square">
-        <motion.div className="absolute inset-0" style={{ rotate: rot }}>
-          <svg viewBox="0 0 400 400" className="h-full w-full drop-shadow-[0_10px_0_#13204A]">
+        {/* Rotation lives inside the SVG so the spinning square's corners never widen the page. */}
+        <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full drop-shadow-[0_10px_0_#13204A]">
+          <motion.g style={{ rotate: rot, transformBox: "view-box", transformOrigin: "50% 50%" }}>
             <circle cx={C} cy={C} r={196} fill="#13204A" />
             <circle cx={C} cy={C} r={186} fill="#FF4FA3" stroke="#13204A" strokeWidth="4" />
             {SLICES.map((s) => {
@@ -156,8 +158,8 @@ export function SpinWheel({
               const [x, y] = polar(178, i * 15);
               return <circle key={i} cx={x} cy={y} r={4.5} fill={i % 2 ? "#FFFFFF" : "#FFCD2E"} stroke="#13204A" strokeWidth="2" className="bulb" />;
             })}
-          </svg>
-        </motion.div>
+          </motion.g>
+        </svg>
 
         {/* hub (does not rotate): lit TW coin */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 w-[22%] -translate-x-1/2 -translate-y-1/2">

@@ -81,7 +81,10 @@ export function WheelStage({
           </Pill>
         </div>
       ) : null}
-      <Confetti fire={burst} big={Boolean(prize?.jackpot)} />
+      {/* Confetti gets its own clipped layer (just inside the panel) so the wheel stage itself never clips the needle or result card. */}
+      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-[28px]" aria-hidden="true">
+        <Confetti fire={burst} big={Boolean(prize?.jackpot)} />
+      </div>
       <SpinWheel mode={mode} prizeId={prizeId} salt={salt} onLanded={onLanded} size={size} />
 
       <div className="mt-6 min-h-[120px]" aria-live="polite">

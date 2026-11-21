@@ -14,7 +14,7 @@ const MAX_EPOCHS_SHOWN = 120;
 
 export function RebateBooth() {
   return (
-    <div className="grid grid-cols-12 gap-8">
+    <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
       <div className="col-span-12 lg:col-span-8">
         <NeedsContracts keys={["rebateDistributor"]}>
           <EpochTable />

@@ -8,13 +8,13 @@ const OPTIONS: { id: SupportedChainId; label: string }[] = [
   { id: 56, label: "Mainnet" },
 ];
 
-export function NetworkToggle() {
+export function NetworkToggle({ className = "hidden sm:flex" }: { className?: string }) {
   const { chainId, selectChain, isSwitching, wrongNetwork } = useTowack();
   return (
     <div
       role="radiogroup"
       aria-label="Network"
-      className="hidden items-center rounded-full border-[3px] border-navy bg-white p-1 text-[13px] font-black sm:flex"
+      className={`items-center rounded-full border-[3px] border-navy bg-white p-0.5 text-[13px] font-black ${className}`}
     >
       {OPTIONS.map((o) => {
         const active = !wrongNetwork && chainId === o.id;
@@ -26,7 +26,7 @@ export function NetworkToggle() {
             aria-checked={active}
             disabled={isSwitching}
             onClick={() => selectChain(o.id)}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
+            className={`flex min-h-10 items-center gap-1.5 rounded-full px-3 transition ${
               active ? (o.id === 97 ? "bg-sky text-navy" : "bg-sun text-navy") : "text-navy/60 hover:text-navy"
             }`}
           >

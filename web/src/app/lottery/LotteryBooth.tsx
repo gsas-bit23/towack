@@ -33,7 +33,7 @@ export function LotteryBooth() {
   const { has } = useTowack();
   if (!has("drawV2")) {
     return (
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
         <div className="col-span-12 lg:col-span-7">
           <DeployingSoon keys={["drawV2"]}>
             <p className="font-bold text-navy/70">No rounds yet. There is no live jackpot until the contract is deployed and a round has tickets.</p>
@@ -172,7 +172,7 @@ function LiveBooth() {
   const canSettle = past && past[4] && !past[5];
 
   return (
-    <div className="grid grid-cols-12 gap-8">
+    <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
       <div className="col-span-12 space-y-8 lg:col-span-7">
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">

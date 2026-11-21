@@ -79,10 +79,13 @@ export function ProgressFill({ pct, className = "" }: { pct: number; className?:
   );
 }
 
-/** Coin-stack column that grows in, coin by coin, once visible (tokenomics chart). */
+/**
+ * Coin-stack column that drops its coins into place once visible (tokenomics chart).
+ * Transform-only, never scale 0 / opacity 0: coins and labels are readable even if the observer never fires.
+ */
 export function CoinColumn({ count, color, label, index }: { count: number; color: string; label: string; index: number }) {
   const reduce = useReducedMotion();
-  const coin = { hidden: { scale: 0, y: -40 }, shown: { scale: 1, y: 0 } };
+  const coin = { hidden: { scale: 0.85, y: -14 }, shown: { scale: 1, y: 0 } };
   return (
     <motion.div
       className="flex h-full flex-col-reverse items-center"
@@ -100,7 +103,7 @@ export function CoinColumn({ count, color, label, index }: { count: number; colo
           transition={{ type: "spring", stiffness: 380, damping: 22 }}
         />
       ))}
-      <motion.div variants={{ hidden: { scale: 0 }, shown: { scale: 1 } }} className="mb-2 font-display text-[28px] font-extrabold">
+      <motion.div variants={{ hidden: { scale: 0.85 }, shown: { scale: 1 } }} className="mb-2 font-display text-[28px] font-extrabold">
         {label}
       </motion.div>
     </motion.div>
