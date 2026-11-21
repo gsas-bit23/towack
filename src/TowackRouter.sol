@@ -164,9 +164,7 @@ contract TowackRouter is ReentrancyGuard {
         path[0] = wbnb;
         path[1] = address(token);
         uint256 before = token.balanceOf(msg.sender);
-        pancake.swapExactETHForTokensSupportingFeeOnTransferTokens{value: net}(
-            minTokensOut, path, msg.sender, deadline
-        );
+        pancake.swapExactETHForTokensSupportingFeeOnTransferTokens{value: net}(minTokensOut, path, msg.sender, deadline);
         out = token.balanceOf(msg.sender) - before;
         if (out < minTokensOut) revert InsufficientOutput(out, minTokensOut);
 

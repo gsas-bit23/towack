@@ -11,6 +11,8 @@ remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "forge-std/=lib/forge-std/src/",
 ]
+# Sellout tests mint and claim 5000 times in one test; lift the 1B default.
+gas_limit = "18446744073709551615"
 fs_permissions = [{ access = "read", path = "./" }]
 
 [profile.default.fuzz]

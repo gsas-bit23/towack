@@ -11,15 +11,27 @@ pragma solidity 0.8.24;
 library SwapOrNot {
     uint256 internal constant ROUNDS = 90;
 
-    function permute(uint256 index, uint256 n, bytes32 seed) internal pure returns (uint256) {
+    function permute(uint256 index, uint256 n, bytes32 seed) internal pure returns (uint256 result) {
         require(index < n, "SwapOrNot: index");
-        for (uint256 r; r < ROUNDS; ++r) {
-            uint256 pivot = uint256(keccak256(abi.encodePacked(seed, uint8(r)))) % n;
-            uint256 flip = (pivot + n - index) % n;
-            uint256 pos = index > flip ? index : flip;
-            bytes32 h = keccak256(abi.encodePacked(seed, uint8(r), uint32(pos >> 8)));
-            if ((uint256(h) >> (pos & 0xff)) & 1 == 1) index = flip;
+        // Equivalent to:
+        //   pivot = uint256(keccak256(abi.encodePacked(seed, uint8(r)))) % n;
+        //   flip  = (pivot + n - index) % n;  pos = max(index, flip);
+        //   bit   = keccak256(abi.encodePacked(seed, uint8(r), uint32(pos >> 8))) bit (pos & 0xff)
+        //   if (bit) index = flip;
+        // Uses only scratch space [0x00, 0x40).
+        assembly ("memory-safe") {
+            mstore(0x00, seed)
+            for { let r := 0 } lt(r, ROUNDS) { r := add(r, 1) } {
+                mstore(0x20, shl(248, r))
+                let pivot := mod(keccak256(0x00, 0x21), n)
+                let flip := mod(sub(add(pivot, n), index), n)
+                let pos := index
+                if gt(flip, index) { pos := flip }
+                mstore(0x20, or(shl(248, r), shl(216, and(shr(8, pos), 0xffffffff))))
+                let h := keccak256(0x00, 0x25)
+                if and(shr(and(pos, 0xff), h), 1) { index := flip }
+            }
+            result := index
         }
-        return index;
     }
 }
