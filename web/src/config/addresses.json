@@ -1,13 +1,13 @@
 {
   "97": {
-    "agentId": "",
-    "token": "",
-    "launch": "",
-    "router": "",
-    "rebateDistributor": "",
-    "teamVesting": "",
-    "drawV2": "",
-    "timelock": "",
+    "agentId": "0xdf4499f5690474F502a774eCF6B93E73f57944C8",
+    "token": "0x13F3DC766Ea5cAB8A0727d697E6EBea9DA8Ecb28",
+    "launch": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+    "router": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+    "rebateDistributor": "0x5771aE8dfD0E0B3Df86dDCB98190C9a2510926d3",
+    "teamVesting": "0xdB96E5518FA3D33DCB0b388299d5d1CeE12a2bB7",
+    "drawV2": "0x9d2a285d244689221cB49a60ed8C738A4219cEF3",
+    "timelock": "0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf",
     "wbnb": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
     "pancakeRouter": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
     "pancakeFactory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17"

@@ -1,15 +1,26 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
+const EMPTY = "./src/stubs/empty-module.js";
+
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
+    root: path.resolve(__dirname),
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
       },
+    },
+    resolveAlias: {
+      // Optional x402 deps of @coinbase/cdp-sdk (transitive via wagmi connectors); never used here.
+      "@x402/core/client": EMPTY,
+      "@x402/evm": "./src/stubs/x402-evm.js",
+      "@x402/evm/exact/client": EMPTY,
+      "@x402/evm/upto/client": EMPTY,
+      "@x402/svm/exact/client": EMPTY,
     },
   },
 };

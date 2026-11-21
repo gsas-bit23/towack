@@ -18,6 +18,15 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 
+## Frontend (web/)
+Next.js App Router + wagmi/viem/RainbowKit, "Arcade Sky" design. Default chain BSC testnet (97), mainnet (56) via the network toggle.
+```sh
+cd web && npm i && npm run dev        # http://localhost:3000
+npm run build                         # production build
+npm run abi                           # forge build + re-export ABIs to web/src/abi/
+```
+Contract addresses live in `web/src/config/addresses.json` (overridable via `NEXT_PUBLIC_TOWACK_<chain>_<KEY>`, see `web/.env.example`). Until they are filled, interactive pages show a "Contracts deploying soon" state. All writes are signed in the user's own wallet; the site holds no keys.
+
 ## Build & test
 ```sh
 forge build

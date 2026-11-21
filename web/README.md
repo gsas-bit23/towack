@@ -1,36 +1,20 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Towack web (Arcade Sky)
 
-## Getting Started
+Next.js App Router frontend for Towack. wagmi + viem + RainbowKit, Tailwind v4.
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```sh
+npm i
+cp .env.example .env.local   # optional; fill NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+npm run dev                  # http://localhost:3000
+npm run build && npm start
+npm run lint
+npm run abi                  # forge build + re-export ABIs into src/abi/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Addresses: `src/config/addresses.json` (by chain id), overridable via `NEXT_PUBLIC_TOWACK_<chain>_<KEY>`.
+  Empty Towack addresses show a "Contracts deploying soon" state and skip reads/writes.
+- Wallets: injected always. Binance Wallet + WalletConnect when a WalletConnect project id is set.
+  Without it, Binance Wallet still works as an injected wallet (extension or Binance app browser).
+- Every write goes through the user's wallet. No server wallet, no keys, no auto-sign.
+- `src/stubs/` aliases unused optional `@x402/*` deps pulled in transitively by wagmi's Coinbase
+  connector (see `next.config.ts`) so Turbopack builds cleanly.

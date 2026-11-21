@@ -22,7 +22,7 @@ export function BnbTierStubs({ counts }: { counts?: number[] }) {
   const noPrize = counts ? counts[4] : NO_PRIZE_SLOTS;
   return (
     <>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         {BNB_TIERS.map((t, i) => (
           <div key={t.tier} className={`press stub rounded-3xl p-6 text-center ${t.cls}`}>
             <div className="font-display text-[44px] font-extrabold leading-none lg:text-[54px]">{(counts ? counts[i] : t.slots).toLocaleString("en-US")}</div>

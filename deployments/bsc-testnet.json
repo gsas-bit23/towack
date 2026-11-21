@@ -1,0 +1,269 @@
+{
+  "chainId": 97,
+  "network": "bsc-testnet",
+  "explorer": "https://testnet.bscscan.com",
+  "deployer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+  "deployedAtPkt": "2026-11-22 03:11:07 PKT",
+  "contracts": {
+    "agentId": "0xdf4499f5690474F502a774eCF6B93E73f57944C8",
+    "vrfCoordinator": "0xc102c1d5F308722d24850bb5ebF7214831D63E51",
+    "timelock": "0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf",
+    "drawV2": "0x9d2a285d244689221cB49a60ed8C738A4219cEF3",
+    "launch": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+    "rebateDistributor": "0x5771aE8dfD0E0B3Df86dDCB98190C9a2510926d3",
+    "teamVesting": "0xdB96E5518FA3D33DCB0b388299d5d1CeE12a2bB7",
+    "token": "0x13F3DC766Ea5cAB8A0727d697E6EBea9DA8Ecb28",
+    "pair": "0xD8488539FAD6eb04C9EbBa0c07995E89701943F4",
+    "router": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+    "wbnb": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+    "pancakeRouter": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+    "pancakeFactory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17"
+  },
+  "notes": [
+    "MockAgentId and MockVRFCoordinator are testnet-only (VRF is owner-fulfilled, not Chainlink).",
+    "Team/seasons/ecosystem/POL/dev wallets defaulted to the deployer.",
+    "Mint window started at deploy; default duration is 3 days."
+  ],
+  "transactions": [
+    {
+      "hash": "0xdbec1060de82dd507c7bdab6041794a6e5b2620e361f7ee66c3c0c352080d467",
+      "url": "https://testnet.bscscan.com/tx/0xdbec1060de82dd507c7bdab6041794a6e5b2620e361f7ee66c3c0c352080d467",
+      "contractName": "MockAgentId",
+      "contractAddress": "0xdf4499f5690474f502a774ecf6b93e73f57944c8",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x1",
+      "blockNumber": "0x896c7d3",
+      "status": "0x1",
+      "gasUsed": "0x2d4dc"
+    },
+    {
+      "hash": "0x15c0629f81f446cb9509b0bb9a6d90b41ca1f6a1a4f2a08ef46a6389d1a04045",
+      "url": "https://testnet.bscscan.com/tx/0x15c0629f81f446cb9509b0bb9a6d90b41ca1f6a1a4f2a08ef46a6389d1a04045",
+      "contractName": "MockVRFCoordinator",
+      "contractAddress": "0xc102c1d5f308722d24850bb5ebf7214831d63e51",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x2",
+      "blockNumber": "0x896c7d8",
+      "status": "0x1",
+      "gasUsed": "0x77c78"
+    },
+    {
+      "hash": "0x779726f1548fc58de6d848621e656126299cbc2186f39cdce1e377b5d3c22436",
+      "url": "https://testnet.bscscan.com/tx/0x779726f1548fc58de6d848621e656126299cbc2186f39cdce1e377b5d3c22436",
+      "contractName": "TimelockController",
+      "contractAddress": "0x886e955a7b1f5027d029d2a47dcd43ad6a1b73cf",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x3",
+      "blockNumber": "0x896c7dd",
+      "status": "0x1",
+      "gasUsed": "0x146d58"
+    },
+    {
+      "hash": "0x9eadd10dcbf6238eb994c64954504b1ead7b4540b91b4b9830f2e7ade04d7064",
+      "url": "https://testnet.bscscan.com/tx/0x9eadd10dcbf6238eb994c64954504b1ead7b4540b91b4b9830f2e7ade04d7064",
+      "contractName": "DrawV2",
+      "contractAddress": "0x9d2a285d244689221cb49a60ed8c738a4219cef3",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x4",
+      "blockNumber": "0x896c7e1",
+      "status": "0x1",
+      "gasUsed": "0x15a703"
+    },
+    {
+      "hash": "0x6bd3411662c42c1325fd254b002055d97f03a5a618079ef6806d509892a44987",
+      "url": "https://testnet.bscscan.com/tx/0x6bd3411662c42c1325fd254b002055d97f03a5a618079ef6806d509892a44987",
+      "contractName": "TowackLaunch",
+      "contractAddress": "0xec5942c5b8952c007e4dcb6c6ff04183e3abe494",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x5",
+      "blockNumber": "0x896c7e5",
+      "status": "0x1",
+      "gasUsed": "0x211e19"
+    },
+    {
+      "hash": "0x0645efb239aefb73f63f6da2f6d28ad5c75533401d752c1367cbe9b9dd24673c",
+      "url": "https://testnet.bscscan.com/tx/0x0645efb239aefb73f63f6da2f6d28ad5c75533401d752c1367cbe9b9dd24673c",
+      "contractName": "RebateDistributor",
+      "contractAddress": "0x5771ae8dfd0e0b3df86ddcb98190c9a2510926d3",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x6",
+      "blockNumber": "0x896c7e8",
+      "status": "0x1",
+      "gasUsed": "0xb20ae"
+    },
+    {
+      "hash": "0xdf20ad509469e66dbd1b491da209ac074b9f53dcbabb709aff8075a498b0b4d3",
+      "url": "https://testnet.bscscan.com/tx/0xdf20ad509469e66dbd1b491da209ac074b9f53dcbabb709aff8075a498b0b4d3",
+      "contractName": "TeamVesting",
+      "contractAddress": "0xdb96e5518fa3d33dcb0b388299d5d1cee12a2bb7",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x7",
+      "blockNumber": "0x896c7ec",
+      "status": "0x1",
+      "gasUsed": "0x631ce"
+    },
+    {
+      "hash": "0xb9864c3f561e785e6e607bbc6d0f7f69d7b593f8c017330a8d64b90a1dda524c",
+      "url": "https://testnet.bscscan.com/tx/0xb9864c3f561e785e6e607bbc6d0f7f69d7b593f8c017330a8d64b90a1dda524c",
+      "contractName": "TowackToken",
+      "contractAddress": "0x13f3dc766ea5cab8a0727d697e6ebea9da8ecb28",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0x8",
+      "blockNumber": "0x896c7f1",
+      "status": "0x1",
+      "gasUsed": "0x2c36f0"
+    },
+    {
+      "hash": "0xca7a718af7e5a621f5927029ec0fcab7ace40abac4de322b5959ecae7dab9341",
+      "url": "https://testnet.bscscan.com/tx/0xca7a718af7e5a621f5927029ec0fcab7ace40abac4de322b5959ecae7dab9341",
+      "contractName": "TowackLaunch",
+      "contractAddress": "0xec5942c5b8952c007e4dcb6c6ff04183e3abe494",
+      "function": "bindToken(address)",
+      "txType": "CALL",
+      "nonce": "0x9",
+      "blockNumber": "0x896c7f5",
+      "status": "0x1",
+      "gasUsed": "0x1239b"
+    },
+    {
+      "hash": "0x41a780ff55e98e9aed18b21e19bbdeb396b63d8fd52769978cd7f96a7f7759b4",
+      "url": "https://testnet.bscscan.com/tx/0x41a780ff55e98e9aed18b21e19bbdeb396b63d8fd52769978cd7f96a7f7759b4",
+      "contractName": "TeamVesting",
+      "contractAddress": "0xdb96e5518fa3d33dcb0b388299d5d1cee12a2bb7",
+      "function": "bindToken(address)",
+      "txType": "CALL",
+      "nonce": "0xa",
+      "blockNumber": "0x896c7f9",
+      "status": "0x1",
+      "gasUsed": "0xc570"
+    },
+    {
+      "hash": "0x88bb9ec959ed137b4ca89151f0609078352c7b38663088679f418106df4c8b7e",
+      "url": "https://testnet.bscscan.com/tx/0x88bb9ec959ed137b4ca89151f0609078352c7b38663088679f418106df4c8b7e",
+      "contractName": "DrawV2",
+      "contractAddress": "0x9d2a285d244689221cb49a60ed8c738a4219cef3",
+      "function": "bindToken(address)",
+      "txType": "CALL",
+      "nonce": "0xb",
+      "blockNumber": "0x896c7fd",
+      "status": "0x1",
+      "gasUsed": "0xc653"
+    },
+    {
+      "hash": "0xd42ef1231e7dfb8cf1b3bd79026d7e8dd9ab8b1619cf40b4998c213102b346d3",
+      "url": "https://testnet.bscscan.com/tx/0xd42ef1231e7dfb8cf1b3bd79026d7e8dd9ab8b1619cf40b4998c213102b346d3",
+      "contractName": "TowackRouter",
+      "contractAddress": "0xd093745a1bb0dc11d5dc2ded64905a9d27f08038",
+      "function": null,
+      "txType": "CREATE",
+      "nonce": "0xc",
+      "blockNumber": "0x896c801",
+      "status": "0x1",
+      "gasUsed": "0x151132"
+    },
+    {
+      "hash": "0xd1d22d4f585b9b8b6296d511bb87a2c77dd88d2af909a903e957cbad527e7d64",
+      "url": "https://testnet.bscscan.com/tx/0xd1d22d4f585b9b8b6296d511bb87a2c77dd88d2af909a903e957cbad527e7d64",
+      "contractName": "RebateDistributor",
+      "contractAddress": "0x5771ae8dfd0e0b3df86ddcb98190c9a2510926d3",
+      "function": "bind(address,address)",
+      "txType": "CALL",
+      "nonce": "0xd",
+      "blockNumber": "0x896c805",
+      "status": "0x1",
+      "gasUsed": "0x11f3e"
+    }
+  ],
+  "smokeTests": {
+    "notes": "MockAgentId.registerFor succeeded for a throwaway test wallet and the deployer. A TowackLaunch.mint() was NOT sent: mint is fixed at 0.1 tBNB and the deployer has only ~0.089 tBNB left after deploy.",
+    "transactions": [
+      {
+        "function": "registerFor(test wallet 0x16879006122E93936Abb17801f619F8dBEca7f37)",
+        "hash": "0x6fbfd15dca87192453f06eaeb43267c04134abbe353df468473f09f6b8182640",
+        "url": "https://testnet.bscscan.com/tx/0x6fbfd15dca87192453f06eaeb43267c04134abbe353df468473f09f6b8182640",
+        "status": "success"
+      },
+      {
+        "function": "registerFor(deployer)",
+        "hash": "0x3463c784f247d36d6803f6c5e06b2b7dca1e6ef99ae2ae13ee40aa904719079f",
+        "url": "https://testnet.bscscan.com/tx/0x3463c784f247d36d6803f6c5e06b2b7dca1e6ef99ae2ae13ee40aa904719079f",
+        "status": "success"
+      }
+    ],
+    "onchainReads": {
+      "tokenName": "Towack",
+      "tokenSymbol": "TWAK",
+      "totalSupply": "1000000000000000000000000000",
+      "launchMintCount": "0",
+      "launchTokenBalance": "650000000000000000000000000",
+      "mockAgentIdTotalSupply": "2"
+    }
+  },
+  "verification": {
+    "bscscan": "Failed. The Etherscan API key is on the free plan, which does not cover BSC testnet (chain 97). BscScan's V1 API is deprecated.",
+    "sourcify": {
+      "MockAgentId": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:19Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0xdf4499f5690474F502a774eCF6B93E73f57944C8/"
+      },
+      "MockVRFCoordinator": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:23Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0xc102c1d5F308722d24850bb5ebF7214831D63E51/"
+      },
+      "TimelockController": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:29Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf/"
+      },
+      "DrawV2": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:32Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0x9d2a285d244689221cB49a60ed8C738A4219cEF3/"
+      },
+      "TowackLaunch": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:37Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494/"
+      },
+      "RebateDistributor": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:38Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0x5771aE8dfD0E0B3Df86dDCB98190C9a2510926d3/"
+      },
+      "TeamVesting": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:42Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0xdB96E5518FA3D33DCB0b388299d5d1CeE12a2bB7/"
+      },
+      "TowackToken": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:48Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0x13F3DC766Ea5cAB8A0727d697E6EBea9DA8Ecb28/"
+      },
+      "TowackRouter": {
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "verifiedAt": "2026-11-21T22:14:50Z",
+        "url": "https://repo.sourcify.dev/contracts/full_match/97/0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038/"
+      }
+    }
+  }
+}
