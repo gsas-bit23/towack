@@ -1,10 +1,10 @@
 # Towack status
 
 **Repo:** https://github.com/gsas-bit23/towack
-**Milestone:** 1 — contracts deployed on BSC testnet (97); Arcade Sky frontend wired to those addresses.
+**Milestone:** 1 — instant per-mint prize-wheel contracts redeployed on BSC testnet (97); Arcade Sky frontend wired to the new addresses.
 
-## Draw V1 rewrite: per-mint prize wheel (2026-11-22, frontend committed, not yet redeployed)
-**The testnet addresses below are the OLD single-seed TowackLaunch.** The new contract must still be redeployed to BSC testnet (97) with `--legacy --with-gas-price 1gwei --start-fresh`. Until `web/src/config/addresses.json` is updated, the site detects the old ABI, shows a "previous version" note, pauses minting in the UI, and allows the `?demo=wheel` preview. No mainnet deploy. Frontend + docs are in this commit; contracts/tests/ABI already landed in `6c54553`.
+## Draw V1 rewrite: per-mint prize wheel (redeployed 2026-11-22, 04:01:27 PKT)
+Second BSC testnet deploy of the rewritten `TowackLaunch`. Frontend + docs landed in `21ea5b0`. This commit wires `web/src/config/addresses.json` and `deployments/bsc-testnet.json` to the new addresses. No mainnet deploy. The first single-seed deploy (03:11 AM PKT, launch `0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494`) is superseded and should not be minted into.
 
 - **New model.** Every `mint()` requests its own Chainlink VRF v2.5 word. The callback pops one slot uniformly from a fixed, immutable 5,000-slot deck (`word % remainingTotal`, walk 11 packed counts, O(11)) and emits `PrizeAssigned(address indexed minter, uint256 indexed mintIndex, uint8 prizeId, uint256 bnbWei, uint256 bonusTokens)`. Prizes are mutually exclusive: 500/600/800/1,600 refunds (100/75/50/25%), 20/40/80/160/320/400 bonuses (5×…1.1×), and 480 no-win.
 - **New / changed functions:** `mint()` (now also requests VRF), `retryPrize(address)` (replaces `retryDraw`, per-minter, 1h delay), `claim()` (available as soon as the prize is assigned), `closeMint()` (no VRF request any more), `finalizeListing()` (replaces `finalizeDraw`; requires no pending VRF), `sweepUnclaimed()`. Views: `prizeOf(address) → (minted, assigned, prizeId, bnb, bonus, claimed)`, `tickets`, `requestMinter`, `remaining(id)`, `remainingCounts()`, `remainingTotal`, `pendingCount()`, `assignedCount`, `bnbAssigned/bonusAssigned/bnbOutstanding/bonusOutstanding`, `bonusBurned`, `prizeSlots/prizeBnb/prizeBonus(id)`. Removed: `seed`, `vrfRequestId`, `vrfRequestedAt`, `bnbTier*`/`bonusTier*` helpers, the SwapOrNot-based `prizeOf(index)`. Events: `PrizeRequested`, `PrizeAssigned`, `ListingFinalized` (replaces `DrawFinalized`). Phases: `Minting, Closed, Finalized`.
@@ -14,14 +14,39 @@
 - **Frontend:** `motion` added. New carnival `SpinWheel` (odds-sized slices with a 13° minimum, legend shows true odds, deterministic landing from the on-chain prizeId), confetti (bigger for full refund / 5× / 3×), claim + Share on X, VRF retry button, and a live `PrizeAssigned` feed. `/draw` is now the prize booth (wheel, feed, status, deck legend with live remaining counts). Site-wide motion covers the hero entrance, scroll reveals, the animated mint counter and progress bar, growing tokenomics stacks and bonus bars, and hover micro-interactions. `prefers-reduced-motion` stops the loops, snaps the wheel to the prize, and turns off confetti. `npm run build` **green**, `npm run lint` clean. ABIs re-exported.
 
 ## Next steps
-1. Redeploy `script/DeployTestnet.s.sol` to BSC testnet 97 (`--legacy --with-gas-price 1gwei --slow --start-fresh`), write new `deployments/bsc-testnet.json`, wire `web/src/config/addresses.json`, Sourcify-verify the new addresses, and redeploy the Vercel preview (not production). A new MockAgentId will need a cheap `registerFor` for the deployer.
-2. Send a bit more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` if you want a real 0.1 tBNB mint after the second deploy (current remainder ~0.089 tBNB, below the mint price plus deploy gas). The current Mock Agent ID is on the old mock and will not carry over.
-3. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. The first deploy is already an **exact match on Sourcify**; the new deploy needs the same.
-4. Current Vercel preview (old frontend, old addresses): https://towack-788t1xqg4-abcd-532d.vercel.app — project `abcd-532d/towack`. Standard Vercel Authentication is on. Inspector: https://vercel.com/abcd-532d/towack/fM6UAYSZBm1KUtuuvD46Ym2Wjyt1
-5. Screenshot the wheel mid-spin, landed, and the home page (use `?demo=wheel` or a local anvil mint; do not spend 0.1 tBNB until the balance allows).
+1. Send more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` to run a real 0.1 tBNB mint (balance after the second deploy + MockAgentId registration is ~0.0776 tBNB). The deployer already holds a Mock Agent ID on the **new** mock (`0xfF5f224349e6aDB7754249d5e4352dB0910717B7`).
+2. Redeploy the Vercel preview (not production) from this commit so the preview points at the new addresses. Previous preview (old addresses): https://towack-788t1xqg4-abcd-532d.vercel.app — project `abcd-532d/towack`. Standard Vercel Authentication stays on.
+3. Screenshot the wheel mid-spin, landed, and the home page. Because a live per-mint launch is now configured, local screenshots should use `NEXT_PUBLIC_DEMO_WHEEL=1` and `?demo=wheel` (or an anvil mint). Do not spend 0.1 tBNB until the balance allows.
+4. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
 
-## BSC testnet deploy (22 Nov 2026, ~3:11 AM PKT)
-Broadcast of `script/DeployTestnet.s.sol` on chain 97, then MockAgentId smoke tests. Full record: `deployments/bsc-testnet.json`. Explorer: https://testnet.bscscan.com
+## BSC testnet deploy #2 (22 Nov 2026, 04:01:27 PKT) — current
+Broadcast of `script/DeployTestnet.s.sol` on chain 97 with `--legacy --with-gas-price 1gwei --slow --start-fresh` (nonce 16). Estimated 0.014852261 tBNB; deployer started at 0.089094202 tBNB. Full record: `deployments/bsc-testnet.json`. Explorer: https://testnet.bscscan.com
+
+Default MockAgentId + MockVRFCoordinator (testnet only; VRF is owner-fulfilled, not Chainlink). `callbackGasLimit` 300,000. Mint window: **22 Nov 2026, 04:00:56 PKT** to **25 Nov 2026, 04:00:56 PKT** (3 days). Team/dev/seasons/POL wallets defaulted to the deployer.
+
+| Contract | Address | Create tx |
+|---|---|---|
+| MockAgentId | [`0xfF5f224349e6aDB7754249d5e4352dB0910717B7`](https://testnet.bscscan.com/address/0xfF5f224349e6aDB7754249d5e4352dB0910717B7) | [tx](https://testnet.bscscan.com/tx/0xb29d2413636d06489b757cb2cf1567b161f7548d7d3bcec774e719fc511aedb0) |
+| MockVRFCoordinator | [`0x09d282Fc69840BcF4047b89F884738f041f53F61`](https://testnet.bscscan.com/address/0x09d282Fc69840BcF4047b89F884738f041f53F61) | [tx](https://testnet.bscscan.com/tx/0xf19ead76de9fdc984064f113d26fdb54e393cd1e0e9f00231609432128193794) |
+| TimelockController | [`0x66F42673E3d31Dd90eE3fDEdb75012F0d02A1d0e`](https://testnet.bscscan.com/address/0x66F42673E3d31Dd90eE3fDEdb75012F0d02A1d0e) | [tx](https://testnet.bscscan.com/tx/0x33980cd8f89a911c9f2e941c8b8da1cb88f4e752bca1687ceea7913733904624) |
+| DrawV2 | [`0x5B3028454a628F73A5fe9198DE4fddefCC43c73A`](https://testnet.bscscan.com/address/0x5B3028454a628F73A5fe9198DE4fddefCC43c73A) | [tx](https://testnet.bscscan.com/tx/0xaf91930acd92bf3cb04a1d7bf3e03151e449c5034267ae4ec5fba986011b1aac) |
+| TowackLaunch | [`0x37720d1a42E483fB36d09bc93596a2feF535FF8b`](https://testnet.bscscan.com/address/0x37720d1a42E483fB36d09bc93596a2feF535FF8b) | [tx](https://testnet.bscscan.com/tx/0x76ab504c40448a6f80d837a6246279225015b12c9a9415630df1b917b14f1383) |
+| RebateDistributor | [`0x26a71aEFD06290212d86130a4775dD1e98A84BA0`](https://testnet.bscscan.com/address/0x26a71aEFD06290212d86130a4775dD1e98A84BA0) | [tx](https://testnet.bscscan.com/tx/0xfbc2f6b143be505a3f7c52a213c47e97afaba82d1485a712242e895df85d5852) |
+| TeamVesting | [`0x1680f43c8d44A4357D874d85F80F4EA582ea255a`](https://testnet.bscscan.com/address/0x1680f43c8d44A4357D874d85F80F4EA582ea255a) | [tx](https://testnet.bscscan.com/tx/0x000d4bb117c0727f184dac020dc87e914d42bef929ef5d90d9b4df62cf5252c2) |
+| TowackToken (TWAK) | [`0xD2A3eDD943d442af41e61c699F77e7E63ACff7dD`](https://testnet.bscscan.com/address/0xD2A3eDD943d442af41e61c699F77e7E63ACff7dD) | [tx](https://testnet.bscscan.com/tx/0xcfe531d28c4e6361f2860985396d536c1a614569f49c02c950803bc2726da30f) |
+| TWAK/WBNB pair | [`0x0c3F0F2373cEB20f813EBf7B30931177c6F5F6b9`](https://testnet.bscscan.com/address/0x0c3F0F2373cEB20f813EBf7B30931177c6F5F6b9) | created with the token |
+| TowackRouter | [`0x46dafE460EEdb1FedEE844A56BF364c20252AA7d`](https://testnet.bscscan.com/address/0x46dafE460EEdb1FedEE844A56BF364c20252AA7d) | [tx](https://testnet.bscscan.com/tx/0xf6a2d5b6dacd48d9ab9977f8ea205429c6ceacd3eb6f75d40cecad8db17d95cb) |
+
+On-chain checks after deploy: token name/symbol Towack/TWAK, supply 1B, launch holds 650M, `mintCount = 0`, `phase = 0` (Minting), `remainingTotal = 5000`, prize id 0 has 500 slots and id 10 has 480. Bind txs all succeeded.
+
+Smoke tests (MockAgentId):
+- `registerFor` deployer — [tx](https://testnet.bscscan.com/tx/0x9ed2db7da61dc3c22edf10742e7b5b3cc1fc28c194c2102f792d707da1c83715)
+- `balanceOf(deployer) = 1`, `totalSupply = 1`. A 0.1 tBNB mint was **not** sent (remaining deployer balance ~0.077620871 tBNB).
+
+Verification: all nine contracts are a Sourcify **exact_match** (creation + runtime), verified around 04:03–04:05 AM PKT. BscScan/Etherscan verification was not submitted — free Etherscan API does not cover BSC testnet.
+
+## Previous BSC testnet deploy (22 Nov 2026, ~3:11 AM PKT) — superseded
+The first broadcast of `script/DeployTestnet.s.sol` (single-seed TowackLaunch). Addresses below are historical only. Explorer: https://testnet.bscscan.com
 
 First broadcast attempt used a 1-wei EIP-1559 fee and stalled; it was replaced by a 1 gwei self-send (`0x4a483ef646131e4c7f7bba876469cf770a18c16fee0441b41e952936a7d741c7`) and the script was re-broadcast `--legacy --with-gas-price 1gwei --start-fresh`. Default MockAgentId + MockVRFCoordinator (testnet only; VRF is owner-fulfilled, not Chainlink). Mint window: 3 days from deploy.
 
@@ -52,7 +77,7 @@ Design: Arcade Sky (mockup variant C). Next.js 16 App Router, TypeScript strict,
 - Routes: `/` home, `/mint`, `/draw`, `/trade`, `/rebates`, `/tokenomics` (incl. TeamVesting), `/lottery` (Draw V2 MVP), `/docs` (FAQ + risk).
 - `npm run build`: **green** (all 9 routes static). `npm run lint`: clean. Smoke-tested in headless Chrome at 1280 and 768 px, no console errors.
 - Wallets: injected always; Binance Wallet + WalletConnect when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set. Without it, Binance Wallet still works as an injected provider (extension / Binance app browser).
-- Addresses: `web/src/config/addresses.json`. Chain 97 Towack addresses are filled with the testnet deploy above. Mainnet Towack addresses remain empty (official mainnet Agent ID is prefilled).
+- Addresses: `web/src/config/addresses.json`. Chain 97 Towack addresses are filled with the **second** testnet deploy (prize-wheel Launch). Mainnet Towack addresses remain empty (official mainnet Agent ID is prefilled). After the address update, `?demo=wheel` is off unless `NEXT_PUBLIC_DEMO_WHEEL=1`.
 - ABIs: `web/src/abi/` exported from `out/` by `web/scripts/export-abi.mjs` (`npm run abi`).
 - Safety: every write goes through the user's wallet (wagmi `writeContract`); there's no server wallet, no keys, and no auto-sign. Approvals are exact amounts only (sell / lottery enter). `maxUint256` is used only as the router's UNLIMITED *daily-limit* value, never as an approval.
 - Build note: wagmi's Coinbase connector pulls optional `@x402/*` deps; they are aliased to stubs in `web/next.config.ts`.
@@ -95,7 +120,7 @@ Design details: `docs/ARCHITECTURE.md`.
 - `incorrect-equality` (`== 0` checks), `uninitialized-local` (zero-initialised accumulators), `unused-return` (`pair.mint`): benign.
 
 ## Deploy status
-**Deployed on BSC testnet (chain 97)** at ~3:11 AM PKT on 22 Nov 2026. Addresses, txs, Sourcify links, and smoke-test hashes are in the section at the top of this file and in `deployments/bsc-testnet.json`. The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is ~0.089 tBNB — not enough for a 0.1 mint. Default deploy used MockVRFCoordinator (testnet only). Official VRF v2.5 was not wired.
+**Redeployed on BSC testnet (chain 97)** at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch). Addresses, txs, Sourcify links, and smoke-test hashes are in the section at the top of this file and in `deployments/bsc-testnet.json`. The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is ~0.0776 tBNB — not enough for a 0.1 mint. Default deploy used MockVRFCoordinator (testnet only). Official VRF v2.5 was not wired.
 
 
 ## Known gaps / decisions to confirm
@@ -111,7 +136,7 @@ Design details: `docs/ARCHITECTURE.md`.
 - The section "Test results (2026-11-22, forge 1.10.0)" below describes the old single-seed model; see the Draw V1 rewrite section above for current results.
 - The mainnet deploy script is intentionally not written.
 
-## Later (after the testnet redeploy)
+## Later
 1. End-to-end testnet rehearsal on the new contracts: mint (needs more tBNB), VRF fulfil, claim, close, finalize, router trades, rebate claim.
 2. Implement or choose a TWAP price source for DrawV2. Review the rebate anti-wash parameters.
 3. No mainnet deploy and no hackathon form submit until Mateen asks.
