@@ -1,0 +1,17 @@
+# Compiler / cache
+cache/
+out/
+broadcast/
+
+# Env and secrets — never commit
+.env
+.env.*
+!.env.example
+/secrets/
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
