@@ -6,7 +6,7 @@
 ## Next steps
 1. Send a bit more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` if you want to run a real 0.1 tBNB mint (balance after deploy + smoke tests is ~0.089 tBNB, below the fixed mint price). The deployer already holds a Mock Agent ID.
 2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. Source is already an **exact match on Sourcify**.
-3. Vercel preview of `web/` (not production).
+3. Vercel preview is up (not production): https://towack-788t1xqg4-abcd-532d.vercel.app — project `abcd-532d/towack`. Standard Vercel Authentication is on, so open it while logged into that Vercel team. Inspector: https://vercel.com/abcd-532d/towack/fM6UAYSZBm1KUtuuvD46Ym2Wjyt1
 
 ## BSC testnet deploy (22 Nov 2026, ~3:11 AM PKT)
 Broadcast of `script/DeployTestnet.s.sol` on chain 97, then MockAgentId smoke tests. Full record: `deployments/bsc-testnet.json`. Explorer: https://testnet.bscscan.com
