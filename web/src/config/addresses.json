@@ -1,0 +1,28 @@
+{
+  "97": {
+    "agentId": "",
+    "token": "",
+    "launch": "",
+    "router": "",
+    "rebateDistributor": "",
+    "teamVesting": "",
+    "drawV2": "",
+    "timelock": "",
+    "wbnb": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+    "pancakeRouter": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+    "pancakeFactory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17"
+  },
+  "56": {
+    "agentId": "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
+    "token": "",
+    "launch": "",
+    "router": "",
+    "rebateDistributor": "",
+    "teamVesting": "",
+    "drawV2": "",
+    "timelock": "",
+    "wbnb": "",
+    "pancakeRouter": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+    "pancakeFactory": ""
+  }
+}
