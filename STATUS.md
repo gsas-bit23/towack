@@ -15,9 +15,22 @@ Second BSC testnet deploy of the rewritten `TowackLaunch`. Frontend + docs lande
 
 ## Next steps
 1. Send more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` to run a real 0.1 tBNB mint (balance after the second deploy + MockAgentId registration is ~0.0776 tBNB). The deployer already holds a Mock Agent ID on the **new** mock (`0xfF5f224349e6aDB7754249d5e4352dB0910717B7`).
-2. Redeploy the Vercel preview (not production) from this commit so the preview points at the new addresses. Previous preview (old addresses): https://towack-788t1xqg4-abcd-532d.vercel.app — project `abcd-532d/towack`. Standard Vercel Authentication stays on.
-3. Screenshot the wheel mid-spin, landed, and the home page. Because a live per-mint launch is now configured, local screenshots should use `NEXT_PUBLIC_DEMO_WHEEL=1` and `?demo=wheel` (or an anvil mint). Do not spend 0.1 tBNB until the balance allows.
-4. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
+2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
+3. End-to-end testnet rehearsal once funded: mint, owner-fulfil MockVRF, watch the wheel land, claim, then later close / finalize / router / rebates.
+
+## Vercel preview (2026-11-22, 04:08:02 PKT)
+Preview only (not production), project `abcd-532d/towack`, Node 24.x, framework Next.js. Deployment protection remains `vercel_authentication`.
+- Preview: https://towack-bmrfdbzop-abcd-532d.vercel.app
+- Inspector: https://vercel.com/abcd-532d/towack/9kL3SkNtL9ES8sKMbS2jJWadDFHy
+- Deployment id: `dpl_9kL3SkNtL9ES8sKMbS2jJWadDFHy`, target `None`.
+- Previous preview (old addresses): https://towack-788t1xqg4-abcd-532d.vercel.app
+- `?demo=wheel` is off on this preview because a live per-mint launch is configured. Local demo screenshots used `NEXT_PUBLIC_DEMO_WHEEL=1`.
+
+## Wheel screenshots (1280×800, 2026-11-22, ~04:09 AM PKT)
+Taken against a local `next dev` with `NEXT_PUBLIC_DEMO_WHEEL=1` and `?demo=wheel` (first demo prize is 3× TWAK). Not committed.
+- Mid-spin: `/tmp/towack-wheel-shots/wheel-midspin.png` (also `web/shots/wheel-midspin.png`)
+- Landed (needle on 3×, result card in the full-page shot): `/tmp/towack-wheel-shots/wheel-landed.png` and `wheel-landed-full.png`
+- Home hero: `/tmp/towack-wheel-shots/home.png` (also `web/shots/home-wheel.png`)
 
 ## BSC testnet deploy #2 (22 Nov 2026, 04:01:27 PKT) — current
 Broadcast of `script/DeployTestnet.s.sol` on chain 97 with `--legacy --with-gas-price 1gwei --slow --start-fresh` (nonce 16). Estimated 0.014852261 tBNB; deployer started at 0.089094202 tBNB. Full record: `deployments/bsc-testnet.json`. Explorer: https://testnet.bscscan.com
