@@ -84,6 +84,26 @@ body {
   background-size: 24px 24px;
 }
 
+/* Hover micro-interactions (transform-only, cheap to composite) */
+.lift { transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.18s ease; }
+.lift:hover { transform: translateY(-4px) rotate(-0.4deg); box-shadow: 0 8px 0 #13204A; }
+.nav-pill { transition: transform 0.15s cubic-bezier(0.3, 1.6, 0.5, 1), color 0.15s ease; display: inline-block; }
+.nav-pill:hover { transform: translateY(-2px) scale(1.06); }
+
+/* Wheel + stage lighting */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.04); }
+}
+@keyframes win-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.wheel-glow { background: radial-gradient(circle, rgba(255, 205, 46, 0.55) 0%, rgba(255, 79, 163, 0.25) 45%, transparent 70%); filter: blur(18px); animation: glow-pulse 3.2s ease-in-out infinite; }
+.hub-glow { background: radial-gradient(circle, rgba(255, 240, 184, 0.95) 0%, rgba(255, 205, 46, 0.4) 40%, transparent 70%); animation: glow-pulse 2.2s ease-in-out infinite; }
+.win-flash { animation: win-flash 0.5s ease-in-out 5; }
+.stage-glow { background: radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.5) 0%, transparent 60%); animation: glow-pulse 5s ease-in-out infinite; }
+
 /* Number inputs: no spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

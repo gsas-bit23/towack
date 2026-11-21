@@ -1,4 +1,6 @@
 import { AdmitTicket, Arrow, Bulbs, CoinStack, LabelTicket, StarCoin, Sunburst, TwCoin } from "@/components/art";
+import { HomeWheel } from "@/components/HomeWheel";
+import { Reveal, StageIn } from "@/components/motion";
 import { BonusBars, BnbTierStubs } from "@/components/PrizeTables";
 import { TokenomicsChart } from "@/components/TokenomicsChart";
 import { ButtonLink, Pill } from "@/components/ui";
@@ -8,8 +10,9 @@ export default function Home() {
     <>
       {/* HERO: big rounded stage */}
       <section className="px-6 pb-10 pt-4">
-        <div className="relative mx-auto max-w-[1220px]">
+        <StageIn className="relative mx-auto max-w-[1220px]">
           <div className="relative overflow-hidden rounded-[56px] border-[6px] border-navy bg-sky px-6 pb-14 pt-16 shadow-[0_16px_0_#13204A] md:px-10">
+            <div className="stage-glow pointer-events-none absolute inset-0" aria-hidden="true" />
             <Bulbs />
             <Sunburst />
             <CoinStack className="bounce absolute bottom-[40px] left-[30px] hidden w-[190px] lg:block" />
@@ -28,15 +31,15 @@ export default function Home() {
                 Grab your slot.
               </h1>
               <p className="drop dl2 mx-auto mt-7 max-w-[640px] text-[19px] font-bold leading-snug text-navy lg:text-[21px]">
-                0.1 BNB mints one Towack slot per Agent ID — and drops <span className="rounded-lg bg-sun px-2">80,000 TWAK</span> in your wallet on
-                the spot. Only 5,000 exist.
+                0.1 BNB mints one Towack slot per Agent ID, drops <span className="rounded-lg bg-sun px-2">80,000 TWAK</span> in your wallet on the
+                spot, and spins the prize wheel. Only 5,000 exist.
               </p>
               <div className="drop dl3 mt-9 flex flex-wrap justify-center gap-4">
                 <ButtonLink href="/mint" size="lg">
                   Mint for 0.1 BNB
                 </ButtonLink>
                 <ButtonLink href="/draw" tone="white" size="lg">
-                  See the prize draw
+                  Visit the prize booth
                 </ButtonLink>
               </div>
             </div>
@@ -55,39 +58,49 @@ export default function Home() {
               <div className="mt-1 font-bold text-white/75">instantly on mint</div>
             </div>
           </div>
-        </div>
+        </StageIn>
       </section>
 
       {/* DRAW: prize booth */}
       <section id="draw" className="mx-auto max-w-[1220px] px-6 pb-[110px] pt-[90px]">
-        <div className="mb-12 grid grid-cols-12 items-end gap-10">
+        <Reveal className="mb-12 grid grid-cols-12 items-center gap-10">
           <div className="col-span-12 lg:col-span-7">
             <div className="font-display text-[15px] font-extrabold uppercase tracking-[.25em] text-candy">The prize booth</div>
-            <h2 className="mt-3 font-display text-[48px] font-extrabold leading-[.95] lg:text-[72px]">One spin of the wheel. Every slot at once.</h2>
+            <h2 className="mt-3 font-display text-[48px] font-extrabold leading-[.95] lg:text-[72px]">Every mint spins the wheel.</h2>
+            <p className="mt-6 text-[18px] font-semibold leading-relaxed text-navy/75">
+              Each mint requests its own <b className="text-navy">Chainlink VRF v2.5</b> random word. The contract pops one slot from a fixed
+              5,000-slot deck and the wheel stops on it — a BNB refund, a TWAK bonus, or better luck next time. <b className="text-navy">One outcome
+              per spin</b>, and the odds shift as the deck empties.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 font-black">
+              <span className="rounded-full border-[3px] border-navy bg-sun px-4 py-2">3,500 BNB refunds</span>
+              <span className="rounded-full border-[3px] border-navy bg-candy-pale px-4 py-2">1,020 TWAK bonuses</span>
+              <span className="rounded-full border-[3px] border-navy bg-white px-4 py-2">480 no prize</span>
+            </div>
           </div>
-          <p className="col-span-12 text-[18px] font-semibold leading-relaxed text-navy/75 lg:col-span-5">
-            After the mint closes, a single <b className="text-navy">Chainlink VRF v2.5</b> seed runs a fair, fixed-slot draw across all minters — not a
-            per-person dice roll. When it&apos;s done, you pull your own claim.
-          </p>
-        </div>
+          <div className="col-span-12 lg:col-span-5">
+            <HomeWheel />
+          </div>
+        </Reveal>
 
-        <div className="rounded-[48px] border-4 border-navy bg-white p-8 shadow-[0_12px_0_#13204A]">
+        <Reveal className="rounded-[48px] border-4 border-navy bg-white p-8 shadow-[0_12px_0_#13204A]">
           <div className="mb-6 flex items-center justify-between">
-            <div className="font-display text-[28px] font-extrabold">BNB prize tickets at sellout</div>
+            <div className="font-display text-[28px] font-extrabold">BNB refund slots in the 5,000-slot deck</div>
             <div className="checker h-6 w-[120px] rounded-md opacity-90" aria-hidden="true" />
           </div>
           <BnbTierStubs />
-        </div>
+        </Reveal>
 
         <div className="mt-8 grid grid-cols-12 gap-8">
-          <div className="col-span-12 rounded-[40px] bg-candy-pale p-8 lg:col-span-8">
-            <div className="font-display text-[28px] font-extrabold">Bonus round: extra TWAK</div>
+          <Reveal className="col-span-12 rounded-[40px] bg-candy-pale p-8 lg:col-span-8">
+            <div className="font-display text-[28px] font-extrabold">Bonus slots: extra TWAK</div>
             <p className="mt-1 font-semibold text-navy/70">
-              From the Draw V1 bonus reserve — drawn separately. You can win a BNB refund, a token bonus, both, or neither.
+              Paid from the 50M Draw V1 bonus reserve. A bonus slot replaces a refund — the wheel has one needle, so each mint wins exactly one
+              outcome. A 5× slot means 80,000 + 320,000 TWAK.
             </p>
             <BonusBars />
-          </div>
-          <div className="col-span-12 flex flex-col rounded-[40px] bg-navy p-8 text-white lg:col-span-4">
+          </Reveal>
+          <Reveal className="col-span-12 flex flex-col rounded-[40px] bg-navy p-8 text-white lg:col-span-4" delay={0.1}>
             <svg className="w-[70px]" viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r="44" fill="#FFCD2E" stroke="#fff" strokeWidth="5" />
               <text x="50" y="62" textAnchor="middle" fontFamily="var(--font-sora)" fontWeight="800" fontSize="34" fill="#13204A">
@@ -95,15 +108,15 @@ export default function Home() {
               </text>
             </svg>
             <div className="mt-5 font-display text-[64px] font-extrabold leading-none text-sun">175 BNB</div>
-            <div className="mt-1 font-bold text-white/80">total BNB prizes at 5,000 sellout</div>
+            <div className="mt-1 font-bold text-white/80">+ 35.2M TWAK in bonuses: the whole prize pool at a 5,000 sellout</div>
             <p className="mt-auto pt-5 text-[15px] font-semibold text-white/80">
-              That&apos;s a refund-style prize table, not a profit promise. The draw is a game of chance, and most slots get back less than they paid.
+              That&apos;s a refund-style prize deck, not a profit promise. The draw is a game of chance, and most spins get back less than they paid.
             </p>
-          </div>
+          </Reveal>
         </div>
         <div className="mt-10 flex justify-center">
           <ButtonLink href="/draw" tone="sun">
-            Check the draw machine →
+            Step into the prize booth →
           </ButtonLink>
         </div>
       </section>
@@ -122,12 +135,12 @@ export default function Home() {
               <span className="rounded-full bg-navy px-4 py-2 text-white">Unsold mint tokens burned</span>
             </div>
           </div>
-          <div className="mt-12 rounded-[44px] border-4 border-navy bg-white p-8 pb-6">
+          <Reveal className="mt-12 rounded-[44px] border-4 border-navy bg-white p-8 pb-6">
             <TokenomicsChart />
-          </div>
+          </Reveal>
           <div className="mt-8 flex flex-wrap items-center gap-4 rounded-[32px] bg-navy px-8 py-5 text-[17px] font-bold text-white md:rounded-full">
             <span className="rounded-full bg-sky px-3 py-1 text-sm font-black text-navy">LISTING</span>
-            Planned on PancakeSwap v2 at the mint price, after the draw is assigned. LP tokens are burned.
+            Planned on PancakeSwap v2 at the mint price, once the mint closes and every spin has landed. LP tokens are burned.
           </div>
         </div>
       </section>
@@ -162,7 +175,7 @@ export default function Home() {
               <div className="text-sm font-bold text-navy/60">swap executes</div>
             </div>
           </div>
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
+          <Reveal className="mt-14 grid gap-6 md:grid-cols-3">
             <FeeCard pct="50%" color="text-candy" bubble="bg-candy-pale" icon="⚡" title="Active-trader rebate boosts">
               Earned from your trading activity and claimed on-chain. Not sit-and-earn staking.
             </FeeCard>
@@ -172,7 +185,7 @@ export default function Home() {
             <FeeCard pct="20%" color="text-sun-deep" bubble="bg-sun-pale" icon="🛠" title="Dev">
               Keeps the contracts, router, and site moving.
             </FeeCard>
-          </div>
+          </Reveal>
           <div className="mt-10 flex justify-center gap-4">
             <ButtonLink href="/trade" tone="white">
               Open the router
@@ -192,7 +205,7 @@ export default function Home() {
           <h2 className="mt-3 font-display text-[48px] font-extrabold leading-[.95] lg:text-[72px]" style={{ textShadow: "0 5px 0 #13204A" }}>
             Level select.
           </h2>
-          <div className="relative mt-14 grid gap-8 lg:grid-cols-3">
+          <Reveal className="relative mt-14 grid gap-8 lg:grid-cols-3">
             <svg className="absolute left-[16%] top-[54px] hidden h-[20px] w-[68%] lg:block" viewBox="0 0 800 20" preserveAspectRatio="none" aria-hidden="true">
               <path d="M0 10 H800" stroke="#13204A" strokeWidth="8" strokeDasharray="20 14" strokeLinecap="round" />
             </svg>
@@ -205,7 +218,7 @@ export default function Home() {
                 </div>
                 <ul className="mt-4 space-y-2 font-bold text-navy/80">
                   <li>★ Agent ID slot mint</li>
-                  <li>★ Draw V1 (Chainlink VRF)</li>
+                  <li>★ Draw V1 prize wheel (per-mint VRF)</li>
                   <li>★ PancakeSwap v2 router</li>
                   <li>★ Active-trader rebates</li>
                   <li>★ All on BSC</li>
@@ -236,7 +249,7 @@ export default function Home() {
                 <p className="mt-2 font-bold text-white/85">Recurring rounds stocked by the Draw V2 allocation and router treasury. MVP contract in testing.</p>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 

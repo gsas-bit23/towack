@@ -50,7 +50,7 @@ export default function TokenomicsPage() {
             <Panel tone="navy" shadow={false}>
               <span className="rounded-full bg-sky px-3 py-1 text-sm font-black text-navy">LISTING</span>
               <p className="mt-3 font-bold text-white/90">
-                After the draw is finalized, the launch contract seeds PancakeSwap v2 at the mint price — 800,000 TWAK per BNB, the same rate as minting.
+                After the mint closes and every spin has landed, the launch contract seeds PancakeSwap v2 at the mint price — 800,000 TWAK per BNB, the same rate as minting.
                 Up to 250 BNB + 200M TWAK. LP tokens are burned to the zero address.
               </p>
             </Panel>
@@ -58,8 +58,8 @@ export default function TokenomicsPage() {
               <h3 className="font-display text-[22px] font-extrabold">What gets burned</h3>
               <ul className="mt-2 space-y-1.5 font-bold text-navy/80">
                 <li>★ Unsold mint tokens (80,000 per unsold slot) when the mint closes.</li>
-                <li>★ Unused Draw V1 bonus reserve after the draw.</li>
-                <li>★ Unused LP allocation if under 250 BNB is listed.</li>
+                <li>★ Draw V1 bonus reserve not assigned to any spin (14.8M at a full sellout, more if undersold).</li>
+                <li>★ Unused LP allocation if under 250 BNB is listed (e.g. an undersold mint).</li>
                 <li>★ Unclaimed Draw V1 bonuses after 180 days.</li>
                 <li>★ Every TWAK spent on Draw V2 lottery tickets.</li>
               </ul>

@@ -16,11 +16,11 @@ const HOWTO = [
     title: "Connect your wallet",
     body: "Use a browser wallet, the Binance Wallet, or WalletConnect. Connect the same address that holds your Agent ID. We never ask for keys, seed phrases, or pairing codes.",
   },
-  { n: 3, title: "Mint", body: "On Mint, send exactly 0.1 BNB. You confirm in your wallet and get 80,000 TWAK in the same transaction. One mint per Agent ID wallet." },
+  { n: 3, title: "Mint + spin", body: "On Mint, send exactly 0.1 BNB. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One mint per Agent ID wallet." },
   {
     n: 4,
     title: "Claim",
-    body: "After the mint closes, one VRF seed assigns prizes. When the draw is finalized, check Draw and claim within 180 days if your slot won something.",
+    body: "When the VRF answer lands, the wheel stops on your prize. If you won a refund or bonus, claim it from Mint or Draw. Claims stay open until 180 days after listing.",
   },
   {
     n: 5,
@@ -37,7 +37,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Can I lose my mint BNB?",
-    a: "Yes. The draw refunds 100%, 75%, 50%, or 25% of the mint price to some slots, and nothing to 1,500 of 5,000 at sellout. Your 80,000 TWAK is yours either way, but its market price can fall.",
+    a: "Yes. Each spin wins exactly one outcome from a 5,000-slot deck: 3,500 slots refund 100%, 75%, 50%, or 25% of the mint price, 1,020 slots pay a TWAK bonus instead (no BNB back), and 480 slots win nothing. Your 80,000 TWAK is yours either way, but its market price can fall.",
   },
   {
     q: "What are the trading risks?",
@@ -49,7 +49,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How is the draw kept fair?",
-    a: "One Chainlink VRF v2.5 random word seeds a fixed-slot shuffle across all minters. The tier counts are fixed in the contract, and the launch contract has no owner.",
+    a: "Every mint requests its own Chainlink VRF v2.5 random word. The contract uses it only as an index into the remaining fixed deck (word mod slots left) and removes that slot, so the deck counts are exact and nobody can change the word or who it belongs to. The launch contract has no owner.",
   },
   {
     q: "Are rebates staking?",

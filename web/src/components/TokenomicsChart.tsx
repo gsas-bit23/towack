@@ -1,3 +1,5 @@
+import { CoinColumn } from "./motion";
+
 // 1B TWAK split. Mirrors TowackToken constants; must sum to 100.
 export const SPLIT = [
   { pct: 40, color: "#FF4FA3", label: "Public mint", note: "400M · 80k per mint" },
@@ -18,21 +20,9 @@ export function TokenomicsChart() {
     <div className="overflow-x-auto">
       <div className="min-w-[720px]">
         <div className="grid h-[340px] grid-cols-9 items-end gap-4" role="img" aria-label={SPLIT.map((s) => `${s.label} ${s.pct}%`).join(", ")}>
-          {SPLIT.map((s) => {
-            const n = Math.max(1, Math.round(s.pct / 2.5));
-            return (
-              <div key={s.label} className="flex h-full flex-col-reverse items-center">
-                {Array.from({ length: n }, (_, i) => (
-                  <div
-                    key={i}
-                    className="-mt-0.5 h-4 w-[84%] rounded-full border-[3px] border-navy"
-                    style={{ background: s.color }}
-                  />
-                ))}
-                <div className="mb-2 font-display text-[28px] font-extrabold">{s.pct}%</div>
-              </div>
-            );
-          })}
+          {SPLIT.map((s, i) => (
+            <CoinColumn key={s.label} index={i} count={Math.max(1, Math.round(s.pct / 2.5))} color={s.color} label={`${s.pct}%`} />
+          ))}
         </div>
         <div className="mt-4 grid grid-cols-9 gap-4 text-center text-[13px] font-black leading-tight">
           {SPLIT.map((s) => (

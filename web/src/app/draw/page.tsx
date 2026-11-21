@@ -1,37 +1,28 @@
 import type { Metadata } from "next";
-import { BonusBars, BnbTierStubs } from "@/components/PrizeTables";
 import { PageHeader, Panel } from "@/components/ui";
 import { DrawMachine } from "./DrawMachine";
 
-export const metadata: Metadata = { title: "Draw" };
+export const metadata: Metadata = { title: "Prize booth" };
 
 export default function DrawPage() {
   return (
     <>
-      <PageHeader kicker="Draw V1 · Chainlink VRF v2.5" title="The draw machine." tone="candy">
-        One random seed assigns every slot at once from fixed prize tables. Nobody can pick winners, and the contract has no owner. Prizes are not
-        guaranteed — many slots win nothing.
+      <PageHeader kicker="Draw V1 · Chainlink VRF v2.5 · one spin per mint" title="The prize booth." tone="candy">
+        Every mint gets its own Chainlink VRF random word, and the contract pops one slot from a fixed 5,000-slot deck. One outcome per spin: a BNB
+        refund, a TWAK bonus, or better luck next time. Nobody can pick winners, and the contract has no owner. Prizes are not guaranteed.
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">
         <DrawMachine />
-        <Panel>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-display text-[28px] font-extrabold">BNB prize tickets at sellout (5,000 mints)</h2>
-            <div className="checker hidden h-6 w-[120px] rounded-md opacity-90 md:block" aria-hidden="true" />
-          </div>
-          <BnbTierStubs />
-          <p className="mt-5 font-semibold text-navy/70">
-            If fewer than 5,000 mint, each tier shrinks to floor(minted × slots ÷ 5,000) and the rest get no BNB prize. Total BNB prizes at sellout: 175
-            BNB from 500 BNB of mint proceeds.
-          </p>
-        </Panel>
-        <Panel tone="candyPale" shadow={false}>
-          <h2 className="font-display text-[28px] font-extrabold">Bonus round: extra TWAK at sellout</h2>
-          <p className="mt-1 font-semibold text-navy/70">
-            Drawn from the 50M Draw V1 bonus reserve with a separate shuffle. 1,020 winners at sellout; unused reserve is burned. You can win a BNB
-            refund, a token bonus, both, or neither.
-          </p>
-          <BonusBars />
+        <Panel tone="skyPale" shadow={false}>
+          <h2 className="font-display text-[24px] font-extrabold">How the deck works</h2>
+          <ul className="mt-3 space-y-2 font-bold text-navy/80">
+            <li>★ The deck always starts at 5,000 slots: 3,500 BNB refunds (500 full, 600 × 75%, 800 × 50%, 1,600 × 25%), 1,020 TWAK bonuses (20 × 5×,
+              40 × 3×, 80 × 2×, 160 × 1.5×, 320 × 1.25×, 400 × 1.1×) and 480 “better luck next time”.</li>
+            <li>★ Each VRF answer picks one remaining slot uniformly (random word mod slots left) and removes it. The odds shift as the deck empties.</li>
+            <li>★ At a full 5,000 sellout the prize pool is 175 BNB of refunds and 35.2M TWAK of bonuses. Assigned refunds stay in escrow until claimed.</li>
+            <li>★ If the mint ends early, undrawn slots are unsold: their BNB goes to liquidity / Draw V2 and their bonus TWAK is burned.</li>
+            <li>★ This is a game of chance, not an investment. Most spins get back less than the 0.1 BNB paid.</li>
+          </ul>
         </Panel>
       </section>
     </>

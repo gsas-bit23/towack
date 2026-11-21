@@ -23,7 +23,7 @@ export function Nav() {
               key={l.href}
               href={l.href}
               aria-current={isActive(l.href) ? "page" : undefined}
-              className={`transition hover:text-candy ${isActive(l.href) ? "text-candy underline decoration-[3px] underline-offset-[6px]" : ""}`}
+              className={`nav-pill hover:text-candy ${isActive(l.href) ? "text-candy underline decoration-[3px] underline-offset-[6px]" : ""}`}
             >
               {l.label}
             </Link>
@@ -41,7 +41,7 @@ export function Nav() {
               key={l.href}
               href={l.href}
               aria-current={isActive(l.href) ? "page" : undefined}
-              className={`shrink-0 rounded-full px-3 py-1.5 ${isActive(l.href) ? "bg-navy text-white" : "hover:text-candy"}`}
+              className={`nav-pill shrink-0 rounded-full px-3 py-1.5 ${isActive(l.href) ? "bg-navy text-white" : "hover:text-candy"}`}
             >
               {l.label}
             </Link>

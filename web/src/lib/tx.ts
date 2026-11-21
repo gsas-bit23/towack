@@ -12,12 +12,15 @@ const FRIENDLY: Record<string, string> = {
   WrongPrice: "Mint price must be exactly 0.1 BNB.",
   SoldOut: "All 5,000 slots are minted.",
   MintNotOpen: "The mint window is not open right now.",
-  WrongPhase: "The draw machine is not in the right phase for that.",
+  WrongPhase: "The launch is not in the right phase for that.",
+  NotAssigned: "Your prize has not been drawn yet — the wheel is still waiting for Chainlink VRF.",
+  AlreadyAssigned: "Your prize is already assigned.",
+  PrizesPending: "Some mints are still waiting for their VRF prize. Listing unlocks once every spin has landed.",
   MintStillOpen: "The mint is still open.",
   TooEarly: "Too early — try again later.",
   NotMinter: "This wallet did not mint.",
   AlreadyClaimed: "Already claimed.",
-  NothingToClaim: "No prize on this slot — your 80,000 TWAK from the mint is already in your wallet.",
+  NothingToClaim: "Better luck next time — no prize on this spin. Your 80,000 TWAK from the mint is already in your wallet.",
   ClaimWindowClosed: "The 180-day claim window has closed.",
   DailyLimitExceeded: "This trade would go over your daily limit.",
   InsufficientOutput: "Price moved beyond your slippage setting.",
@@ -33,7 +36,7 @@ const FRIENDLY: Record<string, string> = {
   AlreadySettled: "Already settled.",
   NotWinner: "This wallet did not win that round.",
   NotBound: "Contracts are still being wired up.",
-  PairLocked: "Trading opens after the draw is finalized.",
+  PairLocked: "Trading opens after the listing is finalized.",
 };
 
 export function explainError(err: unknown): string {

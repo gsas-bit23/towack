@@ -140,3 +140,13 @@ export function AddressLink({ address, label }: { address?: string; label?: stri
     </a>
   );
 }
+
+/** Shown when the configured launch address is the pre-wheel contract (no per-mint deck ABI). */
+export function LegacyLaunchNote() {
+  return (
+    <p className="mt-4 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+      Heads up: the launch contract on this network is the previous single-seed version. The new per-mint prize wheel contract is being
+      redeployed, so minting from this page is paused until the address is updated.
+    </p>
+  );
+}

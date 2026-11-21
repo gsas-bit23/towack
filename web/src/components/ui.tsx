@@ -143,17 +143,20 @@ export function PageHeader({
   title,
   children,
   tone = "sky",
+  art,
 }: {
   kicker: string;
   title: ReactNode;
   children?: ReactNode;
   tone?: "sky" | "candy" | "sun";
+  art?: ReactNode;
 }) {
   const bg = { sky: "bg-sky", candy: "bg-candy", sun: "bg-sun" }[tone];
   const text = tone === "sun" ? "text-navy" : "text-white";
   return (
     <section className="px-6 pt-4 pb-6">
       <div className={`relative mx-auto max-w-[1220px] overflow-hidden rounded-[48px] border-[6px] border-navy ${bg} px-8 py-12 shadow-[0_12px_0_#13204A] md:px-12`}>
+        {art}
         <div className="relative">
           <div className="drop inline-flex items-center gap-2 rounded-full bg-navy px-5 py-2 text-sm font-extrabold text-white">
             <span className="h-2 w-2 rounded-full bg-sun" />

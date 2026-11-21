@@ -2,6 +2,7 @@
 
 import "@rainbow-me/rainbowkit/styles.css";
 import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import { MotionConfig } from "motion/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
@@ -29,7 +30,10 @@ export function Providers({ children }: { children: ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={theme} initialChain={DEFAULT_CHAIN_ID} modalSize="compact">
-          <ViewChainProvider>{children}</ViewChainProvider>
+          <ViewChainProvider>
+            {/* Honour prefers-reduced-motion for every motion component (transforms off, fades kept). */}
+            <MotionConfig reducedMotion="user">{children}</MotionConfig>
+          </ViewChainProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

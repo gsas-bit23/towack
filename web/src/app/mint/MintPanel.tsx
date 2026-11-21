@@ -1,16 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { parseEther } from "viem";
 import { useBalance, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { agentIdAbi, towackLaunchAbi } from "@/abi";
-import { ChainNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
+import { AnimatedNumber, ProgressFill } from "@/components/motion";
+import { DemoWheel, MyWheel } from "@/components/MyWheel";
+import { SpinFeed, WheelStage } from "@/components/PrizeBooth";
+import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
 import { Button, Check, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
+import { DEMO_SPINS, LAUNCH_PHASES, useDemoWheel, useLaunchState, useRecentSpins } from "@/lib/draw";
 import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
-
-export const PHASES = ["Minting", "Draw pending", "Seeded", "Finalized"] as const;
 const MINT_PRICE_FALLBACK = parseEther("0.1");
 const CAP_FALLBACK = 5000n;
 
@@ -64,6 +67,10 @@ export function MintPanel() {
 
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
+  const { legacy, retryDelay } = useLaunchState();
+  const demo = useDemoWheel(legacy);
+  const spins = useRecentSpins(!legacy);
+  const [fresh, setFresh] = useState(false);
 
   const hasAgent = agentBal === undefined ? undefined : agentBal > 0n;
   const timeKnown = now > 0 && mintStart !== undefined && mintEnd !== undefined;
@@ -75,15 +82,24 @@ export function MintPanel() {
   const enoughBnb = bal ? bal.value > price : undefined; // a little headroom for gas
 
   const canMint =
-    Boolean(account) && hasAgent === true && minted === false && phaseOk === true && windowOpen === true && soldOut === false && bound === true;
+    Boolean(account) &&
+    hasAgent === true &&
+    minted === false &&
+    phaseOk === true &&
+    windowOpen === true &&
+    soldOut === false &&
+    bound === true &&
+    !legacy;
 
   const pct = mintCount !== undefined ? Math.min(100, (Number(mintCount) / Number(cap)) * 100) : 0;
 
   async function mint() {
     if (!launch || !canMint) return;
-    await tx.run("Mint", () =>
+    // Exactly MINT_PRICE (0.1 BNB). The wallet asks the user to confirm; nothing is auto-signed.
+    const ok = await tx.run("Mint", () =>
       writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "mint", value: price, chainId }),
     );
+    if (ok) setFresh(true); // confirmed: the wheel starts its anticipation spin right away
   }
 
   let windowText = "—";
@@ -93,23 +109,52 @@ export function MintPanel() {
     else windowText = `Closes in ${fmtDuration(Number(mintEnd) - now)}`;
   }
 
+  const wheel = demo.active ? (
+    <DemoWheel size={440} />
+  ) : launch && account && minted && !legacy ? (
+    <MyWheel fresh={fresh} retryDelay={retryDelay} size={440} />
+  ) : (
+    <WheelStage
+      status="none"
+      size={440}
+      idleNote={
+        legacy
+          ? "The wheel goes live once the per-mint launch contract is deployed on this network."
+          : "Mint to spin. Each mint pops one slot from the fixed 5,000-slot deck, drawn by Chainlink VRF."
+      }
+    />
+  );
+
   return (
     <div className="grid grid-cols-12 gap-8">
       <div className="col-span-12 space-y-8 lg:col-span-7">
+        <Panel className="relative overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-[28px] font-extrabold">The prize wheel</h2>
+            <ChainNote />
+          </div>
+          {legacy ? <LegacyLaunchNote /> : null}
+          <div className="mt-6">{wheel}</div>
+          {demo.allowed && !demo.active ? (
+            <p className="mt-2 text-center text-xs font-bold text-navy/50">
+              Preview only: <a className="underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
+            </p>
+          ) : null}
+        </Panel>
+
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-[28px] font-extrabold">Slot counter</h2>
-            <ChainNote />
           </div>
           <div className="mt-6">
           <NeedsContracts keys={["launch"]}>
             <div>
               <div className="flex items-end justify-between">
                 <div className="font-display text-[54px] font-extrabold leading-none">
-                  {mintCount !== undefined ? Number(mintCount).toLocaleString("en-US") : "—"}
+                  <AnimatedNumber value={mintCount !== undefined ? Number(mintCount) : undefined} />
                   <span className="text-[28px] text-navy/50"> / {Number(cap).toLocaleString("en-US")}</span>
                 </div>
-                <Pill tone={phase === 0 ? "sky" : "sun"}>{phase !== undefined ? PHASES[phase].toUpperCase() : "LOADING"}</Pill>
+                <Pill tone={phase === 0 ? "sky" : "sun"}>{phase !== undefined ? (LAUNCH_PHASES[phase] ?? "—").toUpperCase() : "LOADING"}</Pill>
               </div>
               <div
                 className="mt-4 h-8 overflow-hidden rounded-full border-4 border-navy bg-ice"
@@ -119,12 +164,12 @@ export function MintPanel() {
                 aria-valuemax={Number(cap)}
                 aria-label="Slots minted"
               >
-                <div className="h-full bg-candy transition-[width] duration-700" style={{ width: `${pct}%` }} />
+                <ProgressFill pct={pct} className="bg-candy" />
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Stat label="Price" value={`${fmt18(price)} BNB`} sub="exactly, no extra" />
                 <Stat label="Window" value={windowText} sub={mintEnd ? `ends ${fmtDate(mintEnd)}` : undefined} />
-                <Stat label="You get" value="80,000 TWAK" sub="instantly on mint" />
+                <Stat label="You get" value="80,000 TWAK" sub="instantly, plus one spin" />
               </div>
               {bound === false ? (
                 <p className="mt-4 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
@@ -141,18 +186,21 @@ export function MintPanel() {
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
             <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App on mainnet).</li>
             <li>Send exactly 0.1 BNB with <code className="rounded bg-white px-1">mint()</code>. You confirm it in your own wallet.</li>
-            <li>80,000 TWAK arrives in the same transaction.</li>
-            <li>When the window ends or all 5,000 are minted, anyone can close the mint. Unsold TWAK is burned.</li>
-            <li>One Chainlink VRF seed assigns every slot&apos;s prize. Then you pull your claim on the Draw page.</li>
+            <li>80,000 TWAK arrives in the same transaction, and the contract requests one Chainlink VRF v2.5 random word for you.</li>
+            <li>
+              When the VRF answer lands, the contract pops one slot from the remaining 5,000-slot deck and the wheel stops on it. Exactly one outcome:
+              a BNB refund tier, a TWAK bonus tier, or better luck next time.
+            </li>
+            <li>Claim your prize whenever you like (within 180 days of listing). Prizes are pulled, never pushed.</li>
           </ol>
           <p className="mt-4 font-semibold text-navy/70">
-            You can lose some or all of the 0.1 BNB. Most slots get back less than they paid. This is a game, not an investment.
+            You can lose some or all of the 0.1 BNB. Most slots get back less than they paid. This is a game of chance, not an investment.
           </p>
         </Panel>
       </div>
 
-      <div className="col-span-12 lg:col-span-5">
-        <Panel className="lg:sticky lg:top-[100px]">
+      <div className="col-span-12 space-y-8 lg:col-span-5">
+        <Panel>
           <h2 className="font-display text-[28px] font-extrabold">Your ticket</h2>
           <div className="mt-5">
             <NeedsWallet why="Connect to check your Agent ID and mint.">
@@ -167,10 +215,10 @@ export function MintPanel() {
                         : "No Agent ID in this wallet"}
                 </Check>
                 <Check ok={launch ? (minted === undefined ? undefined : !minted) : undefined}>
-                  {minted ? "Already minted with this wallet" : "Not minted yet"}
+                  {minted ? "Already minted with this wallet — see your spin" : "Not minted yet"}
                 </Check>
                 <Check ok={launch ? (phaseOk && windowOpen) : undefined}>
-                  {phase !== undefined && phase !== 0 ? "Mint is closed — the draw has started" : windowOpen === false ? `Mint window: ${windowText}` : "Mint window open"}
+                  {phase !== undefined && phase !== 0 ? "Mint is closed" : windowOpen === false ? `Mint window: ${windowText}` : "Mint window open"}
                 </Check>
                 <Check ok={launch ? (soldOut === undefined ? undefined : !soldOut) : undefined}>{soldOut ? "Sold out" : "Slots left"}</Check>
                 <Check ok={enoughBnb}>{bal ? `Balance ${fmt18(bal.value)} BNB (need 0.1 + gas)` : "Checking balance…"}</Check>
@@ -185,7 +233,7 @@ export function MintPanel() {
               {launch ? (
                 <>
                   <Button tone="candy" size="lg" className="mt-6 w-full" disabled={!canMint || tx.busy} onClick={mint}>
-                    {tx.busy ? "Check your wallet…" : minted ? "Already minted" : "Mint for 0.1 BNB"}
+                    {tx.busy ? "Check your wallet…" : minted ? "Already minted" : legacy ? "Mint paused for redeploy" : "Mint for 0.1 BNB"}
                   </Button>
                   <p className="mt-3 text-center text-sm font-bold text-navy/60">Your wallet will ask you to confirm. We never sign for you.</p>
                   <TxNotice state={tx.state} onClose={tx.reset} />
@@ -196,6 +244,18 @@ export function MintPanel() {
                 </div>
               )}
             </NeedsWallet>
+          </div>
+        </Panel>
+
+        <Panel tone="navy">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-[24px] font-extrabold text-sun">Recent spins</h2>
+            <span className="flex items-center gap-2 text-xs font-black text-white/70">
+              <span className="bulb h-2.5 w-2.5 rounded-full bg-candy" /> LIVE
+            </span>
+          </div>
+          <div className="mt-4 text-navy">
+            <SpinFeed spins={demo.active ? DEMO_SPINS : spins} />
           </div>
         </Panel>
       </div>

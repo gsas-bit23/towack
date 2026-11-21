@@ -8,7 +8,7 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 
 ## Layout
 - `src/TowackToken.sol`: fixed 1B supply ERC-20, no tax
-- `src/TowackLaunch.sol`: 0.1 BNB mint, Draw V1 (VRF v2.5 + swap-or-not shuffle), PancakeSwap listing
+- `src/TowackLaunch.sol`: 0.1 BNB mint, Draw V1 prize wheel (one VRF v2.5 request per mint, fixed 5,000-slot deck, one prize per mint), PancakeSwap listing
 - `src/TowackRouter.sol`: Agent ID-gated swaps, 1% BNB-leg fee, Leash-style daily limits
 - `src/RebateDistributor.sol`: fee-weighted weekly TWAK + BNB rebates
 - `src/TeamVesting.sol`: 1-year cliff, then 4 years linear daily
@@ -19,7 +19,7 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 
 ## Frontend (web/)
-Next.js App Router + wagmi/viem/RainbowKit, "Arcade Sky" design. Default chain BSC testnet (97), mainnet (56) via the network toggle.
+Next.js App Router + wagmi/viem/RainbowKit + motion, "Arcade Sky" design, with a carnival spin wheel on /mint and /draw (`?demo=wheel` previews it when no live per-mint launch contract is configured). Default chain BSC testnet (97), mainnet (56) via the network toggle.
 ```sh
 cd web && npm i && npm run dev        # http://localhost:3000
 npm run build                         # production build

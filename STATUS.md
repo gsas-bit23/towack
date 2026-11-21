@@ -3,10 +3,22 @@
 **Repo:** https://github.com/gsas-bit23/towack
 **Milestone:** 1 — contracts deployed on BSC testnet (97); Arcade Sky frontend wired to those addresses.
 
+## Draw V1 rewrite: per-mint prize wheel (2026-11-22, frontend committed, not yet redeployed)
+**The testnet addresses below are the OLD single-seed TowackLaunch.** The new contract must still be redeployed to BSC testnet (97) with `--legacy --with-gas-price 1gwei --start-fresh`. Until `web/src/config/addresses.json` is updated, the site detects the old ABI, shows a "previous version" note, pauses minting in the UI, and allows the `?demo=wheel` preview. No mainnet deploy. Frontend + docs are in this commit; contracts/tests/ABI already landed in `6c54553`.
+
+- **New model.** Every `mint()` requests its own Chainlink VRF v2.5 word. The callback pops one slot uniformly from a fixed, immutable 5,000-slot deck (`word % remainingTotal`, walk 11 packed counts, O(11)) and emits `PrizeAssigned(address indexed minter, uint256 indexed mintIndex, uint8 prizeId, uint256 bnbWei, uint256 bonusTokens)`. Prizes are mutually exclusive: 500/600/800/1,600 refunds (100/75/50/25%), 20/40/80/160/320/400 bonuses (5×…1.1×), and 480 no-win.
+- **New / changed functions:** `mint()` (now also requests VRF), `retryPrize(address)` (replaces `retryDraw`, per-minter, 1h delay), `claim()` (available as soon as the prize is assigned), `closeMint()` (no VRF request any more), `finalizeListing()` (replaces `finalizeDraw`; requires no pending VRF), `sweepUnclaimed()`. Views: `prizeOf(address) → (minted, assigned, prizeId, bnb, bonus, claimed)`, `tickets`, `requestMinter`, `remaining(id)`, `remainingCounts()`, `remainingTotal`, `pendingCount()`, `assignedCount`, `bnbAssigned/bonusAssigned/bnbOutstanding/bonusOutstanding`, `bonusBurned`, `prizeSlots/prizeBnb/prizeBonus(id)`. Removed: `seed`, `vrfRequestId`, `vrfRequestedAt`, `bnbTier*`/`bonusTier*` helpers, the SwapOrNot-based `prizeOf(index)`. Events: `PrizeRequested`, `PrizeAssigned`, `ListingFinalized` (replaces `DrawFinalized`). Phases: `Minting, Closed, Finalized`.
+- **Listing:** at sellout, 175 BNB stays reserved for prizes until claimed, LP gets 250 BNB + 200M TWAK, 75 BNB goes to DrawV2, and 14.8M bonus is burned. If undersold, undrawn deck slots are unsold: their BNB goes to LP/DrawV2 and their bonus is burned. The listing price is always the mint price.
+- **VRF callbackGasLimit:** 300k in the deploy script and fixtures (measured ~58k cold, worst-case walk).
+- **Tests (forge 1.10.0):** `forge test`: **68 passed, 0 failed, 1 skipped** (fork test, gated). `FOUNDRY_FUZZ_RUNS=2000 forge test --match-test testFuzz`: **6/6 passed**, including the new `testFuzz_DeckInvariants` (K ≤ 5000 draws: assigned + remaining = initial per tier, sum = remainingTotal, ids in 0..10, ≤175 BNB / ≤35.2M) and `testFuzz_SolvencyFlow` (mint → VRF → early claims → close → finalize → claims; contract ends empty). `BSC_FORK=1` fork test against real Pancake v2 testnet: **passed**.
+- **Frontend:** `motion` added. New carnival `SpinWheel` (odds-sized slices with a 13° minimum, legend shows true odds, deterministic landing from the on-chain prizeId), confetti (bigger for full refund / 5× / 3×), claim + Share on X, VRF retry button, and a live `PrizeAssigned` feed. `/draw` is now the prize booth (wheel, feed, status, deck legend with live remaining counts). Site-wide motion covers the hero entrance, scroll reveals, the animated mint counter and progress bar, growing tokenomics stacks and bonus bars, and hover micro-interactions. `prefers-reduced-motion` stops the loops, snaps the wheel to the prize, and turns off confetti. `npm run build` **green**, `npm run lint` clean. ABIs re-exported.
+
 ## Next steps
-1. Send a bit more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` if you want to run a real 0.1 tBNB mint (balance after deploy + smoke tests is ~0.089 tBNB, below the fixed mint price). The deployer already holds a Mock Agent ID.
-2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. Source is already an **exact match on Sourcify**.
-3. Vercel preview is up (not production): https://towack-788t1xqg4-abcd-532d.vercel.app — project `abcd-532d/towack`. Standard Vercel Authentication is on, so open it while logged into that Vercel team. Inspector: https://vercel.com/abcd-532d/towack/fM6UAYSZBm1KUtuuvD46Ym2Wjyt1
+1. Redeploy `script/DeployTestnet.s.sol` to BSC testnet 97 (`--legacy --with-gas-price 1gwei --slow --start-fresh`), write new `deployments/bsc-testnet.json`, wire `web/src/config/addresses.json`, Sourcify-verify the new addresses, and redeploy the Vercel preview (not production). A new MockAgentId will need a cheap `registerFor` for the deployer.
+2. Send a bit more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` if you want a real 0.1 tBNB mint after the second deploy (current remainder ~0.089 tBNB, below the mint price plus deploy gas). The current Mock Agent ID is on the old mock and will not carry over.
+3. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. The first deploy is already an **exact match on Sourcify**; the new deploy needs the same.
+4. Current Vercel preview (old frontend, old addresses): https://towack-788t1xqg4-abcd-532d.vercel.app — project `abcd-532d/towack`. Standard Vercel Authentication is on. Inspector: https://vercel.com/abcd-532d/towack/fM6UAYSZBm1KUtuuvD46Ym2Wjyt1
+5. Screenshot the wheel mid-spin, landed, and the home page (use `?demo=wheel` or a local anvil mint; do not spend 0.1 tBNB until the balance allows).
 
 ## BSC testnet deploy (22 Nov 2026, ~3:11 AM PKT)
 Broadcast of `script/DeployTestnet.s.sol` on chain 97, then MockAgentId smoke tests. Full record: `deployments/bsc-testnet.json`. Explorer: https://testnet.bscscan.com
@@ -50,12 +62,12 @@ Design: Arcade Sky (mockup variant C). Next.js 16 App Router, TypeScript strict,
 | Contract | Purpose |
 |---|---|
 | `TowackToken` | ERC-20, 1B fixed supply minted to allocation recipients in the constructor. No tax, no owner. One-way pre-listing pair guard (see docs). |
-| `TowackLaunch` | Mint (0.1 BNB → 80k TWAK, 1 per Agent ID, cap 5000). Close burns unsold tokens. One VRF v2.5 request. Fixed slot tables via seeded swap-or-not bijection. Pull claims. Lists on Pancake v2 at the mint price with LP burned to `address(0)`. Leftover BNB goes to DrawV2. 180-day claim window, then a sweep. **No owner.** |
+| `TowackLaunch` | Mint (0.1 BNB → 80k TWAK, 1 per Agent ID, cap 5000). One VRF v2.5 request per mint; the callback pops one prize from a fixed 5,000-slot deck (mutually exclusive). Close burns unsold tokens. Pull claims. Lists on Pancake v2 at the mint price with LP burned to `address(0)`. Leftover BNB goes to DrawV2. 180-day claim window, then a sweep. **No owner.** |
 | `TowackRouter` | Agent ID-gated buy/sell via Pancake v2. 1% BNB-leg fee split 50/30/20 (rebates / DrawV2 / dev). Exact approvals only. Leash daily limits: decreases immediate, raises after 24h. Records volume and fees. **No owner.** |
 | `RebateDistributor` | 100M TWAK over 104 weekly epochs, pro-rata to router fees paid, plus the 50% BNB fee boost. Empty epochs roll over. On-chain claims. |
 | `TeamVesting` | 50M TWAK. Start = deploy. 1-year cliff (nothing unlocks at the cliff), then linear daily over 4 years. |
 | `DrawV2` | MVP weekly draw: burn TWAK for tickets at $1 = 1 ticket. The price input is a setter or price source behind a 48h `TimelockController`. VRF picks the winner. Prize = 700k TWAK + 20% of the free BNB pot. Owner cannot withdraw. |
-| `VRFConsumerV25`, `TokenBound`, `libraries/SwapOrNot` | Shared bases and the shuffle library. |
+| `VRFConsumerV25`, `TokenBound`, `libraries/SwapOrNot` | Shared bases. SwapOrNot is no longer used by TowackLaunch (kept with its tests). |
 | `interfaces/` | `IAgentId`, Pancake v2 factory/pair/router/WBNB, VRF v2.5 coordinator. |
 | `mocks/` | `MockAgentId` (soulbound), `MockVRFCoordinator` (owner-fulfilled, **not secure**), Pancake v2 + WBNB mocks (tests only). |
 
@@ -93,11 +105,13 @@ Design details: `docs/ARCHITECTURE.md`.
 - **Rebates**: epoch 0 starts at deploy. Pre-listing epochs roll into the first epoch with trades. Wash trading costs 1% per leg, but if the TWAK budget is worth more than about 50% of the fees, washing can be profitable. Consider capping per-epoch emissions relative to fees.
 - **DrawV2** is an MVP: single winner per round, no TWAP oracle implementation yet (`ITwakPriceSource` interface only), and the 20% BNB-pot policy is a placeholder. Prizes a winner never claims stay owed forever.
 - Seasons/referrals, ecosystem and POL buffer are plain recipient wallets. Use multisigs on mainnet.
-- No external audit. VRF retry after 24h lets anyone re-request if Chainlink stalls; Chainlink advises against re-requests. This was accepted to avoid a permanent lock.
+- No external audit. `retryPrize` (1h without an answer) lets anyone re-request a single minter's VRF. Chainlink advises against re-requests (a still-pending fulfilment could be front-run with a retry = re-roll). This was accepted so one stuck request can't block `finalizeListing` forever.
+- `finalizeListing` waits for **every** mint's VRF answer. If the VRF subscription runs dry, listing stalls until it is funded and `retryPrize` is called for the stuck minters. There is no owner override.
+- Each mint now pays VRF fees (subscription or native). Budget ~5,000 requests for a sellout.
+- The section "Test results (2026-11-22, forge 1.10.0)" below describes the old single-seed model; see the Draw V1 rewrite section above for current results.
 - The mainnet deploy script is intentionally not written.
 
-## Next steps
-1. Testnet contracts are deployed (see top of this file). To run a live 0.1 tBNB mint, send more tBNB to the deployer (current remainder ~0.089). Sourcify verification is done; BscScan listing needs a paid API plan.
-2. End-to-end testnet rehearsal: mint, close, fulfil, finalize, claims, router trades, rebate claim.
-3. Implement or choose a TWAP price source for DrawV2. Review the rebate anti-wash parameters.
-4. **Next milestone: frontend, AFTER Mateen picks a template.** Do not build it before then.
+## Later (after the testnet redeploy)
+1. End-to-end testnet rehearsal on the new contracts: mint (needs more tBNB), VRF fulfil, claim, close, finalize, router trades, rebate claim.
+2. Implement or choose a TWAP price source for DrawV2. Review the rebate anti-wash parameters.
+3. No mainnet deploy and no hackathon form submit until Mateen asks.
