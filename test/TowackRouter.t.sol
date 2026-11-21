@@ -9,7 +9,7 @@ contract TowackRouterTest is Fixture {
 
     function setUp() public override {
         super.setUp();
-        launchWith(1000, 3); // lists 65 BNB / 52M TWAK
+        launchWith(1000, 3); // lists ~65 BNB at the mint price
         alice = newAgent("alice");
         vm.deal(alice, 100 ether);
     }

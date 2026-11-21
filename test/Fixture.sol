@@ -56,7 +56,7 @@ contract Fixture is Test {
             keyHash: bytes32(uint256(1)),
             subId: 1,
             requestConfirmations: 3,
-            callbackGasLimit: 200_000,
+            callbackGasLimit: 300_000,
             nativePayment: false
         });
 
@@ -105,16 +105,33 @@ contract Fixture is Test {
         }
     }
 
-    function closeAndSeed(uint256 word) internal {
-        if (launch.mintCount() < launch.MAX_MINTS()) vm.warp(mintEnd);
-        launch.closeMint();
-        vrf.fulfill(launch.vrfRequestId(), word);
+    /// @dev Deterministic per-request VRF word for tests.
+    function wordFor(uint256 salt, uint256 i) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encode(salt, i)));
     }
 
-    function launchWith(uint256 n, uint256 word) internal {
+    /// @dev Fulfils the live VRF request of user(from) .. user(from+n-1).
+    function fulfillUsers(uint256 from, uint256 n, uint256 salt) internal {
+        for (uint256 i = from; i < from + n; ++i) {
+            vrf.fulfill(requestOf(user(i)), wordFor(salt, i));
+        }
+    }
+
+    function requestOf(address u) internal view returns (uint256 id) {
+        (,,,,, id) = launch.tickets(u);
+    }
+
+    function close() internal {
+        if (launch.mintCount() < launch.MAX_MINTS()) vm.warp(mintEnd);
+        launch.closeMint();
+    }
+
+    /// mint n, fulfil every request, close, finalize the listing.
+    function launchWith(uint256 n, uint256 salt) internal {
         mintN(n);
-        closeAndSeed(word);
-        launch.finalizeDraw();
+        fulfillUsers(0, n, salt);
+        close();
+        launch.finalizeListing();
     }
 
     function newAgent(string memory name) internal returns (address a) {

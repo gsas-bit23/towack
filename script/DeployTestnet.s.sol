@@ -68,7 +68,7 @@ contract DeployTestnet is Script {
             keyHash: vm.envOr("VRF_KEY_HASH", bytes32(0)),
             subId: vm.envOr("VRF_SUB_ID", uint256(0)),
             requestConfirmations: 3,
-            callbackGasLimit: 200_000,
+            callbackGasLimit: 300_000,
             nativePayment: vm.envOr("VRF_NATIVE", false)
         });
 

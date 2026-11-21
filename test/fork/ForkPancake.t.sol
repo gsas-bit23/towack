@@ -29,7 +29,7 @@ contract ForkPancakeTest is Test {
 
         MockAgentId agentId = new MockAgentId();
         MockVRFCoordinator vrf = new MockVRFCoordinator();
-        VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(address(vrf), bytes32(0), 0, 3, 200_000, false);
+        VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(address(vrf), bytes32(0), 0, 3, 300_000, false);
         DrawV2 drawV2 = new DrawV2(address(this), cfg);
         TowackLaunch launch =
             new TowackLaunch(address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg);
@@ -56,10 +56,13 @@ contract ForkPancakeTest is Test {
             vm.prank(u);
             launch.mint{value: 0.1 ether}();
         }
+        for (uint256 i; i < 20; ++i) {
+            (,,,,, uint256 rid) = launch.tickets(address(uint160(0xA0000 + i)));
+            vrf.fulfill(rid, uint256(keccak256(abi.encode(777, i))));
+        }
         vm.warp(block.timestamp + 1 days);
         launch.closeMint();
-        vrf.fulfill(launch.vrfRequestId(), 777);
-        launch.finalizeDraw();
+        launch.finalizeListing();
 
         IPancakePair pair = IPancakePair(token.pair());
         assertGt(pair.totalSupply(), 0);
