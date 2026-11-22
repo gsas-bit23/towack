@@ -1026,5 +1026,47 @@
       "shareLinkStatus": 307,
       "viewports": "overflow=0 on /mint and /lottery at 360x740, 768x1024, 1440x900, 1920x1080 with BAW panel open"
     }
+  },
+  "paidV1MintAndRouterRehearsal": {
+    "atPkt": "2026-11-23 01:58:47\u201301:59:26 PKT",
+    "launch": "0x617f9d29B274118267CcdF9a7160F739927ba1aB",
+    "router": "0x20a8637766C62D7568B307104847B5C867ef5a73",
+    "paidMint": {
+      "result": "PASS",
+      "mintTx": "0x943472d477842e4f52377487fc9d1b9156f1fc13b1a64e5dc6e962775024634d",
+      "mintBlock": 144281263,
+      "mintPkt": "2026-11-23 01:58:47 PKT",
+      "valueSent": "0.1008",
+      "mintPrice": "0.1",
+      "exactWrapperFee": "0.000437296",
+      "excessRefunded": "0.000362704",
+      "gasTBnb": "0.000245010",
+      "twakInstant": "80000",
+      "fulfillTx": "0x766dd71b7eebdd70cff6b024a9f267725f417998a033cd6c056b1babed8cf8df",
+      "fulfillBlock": 144281274,
+      "fulfillPkt": "2026-11-23 01:58:52 PKT",
+      "prizeId": 3,
+      "prize": "0.25x BNB refund 0.025 tBNB, no bonus TWAK",
+      "claimTx": "0xd682f6a1c934489e3c3045175fd76b5beb2fa6f35e4b9e3f2b5178951b82b20e",
+      "claimBlock": 144281349,
+      "claimPkt": "2026-11-23 01:59:26 PKT",
+      "claimGas": 43304,
+      "bnbRefundNet": "0.024956696"
+    },
+    "routerRehearsal": {
+      "result": "BLOCKED",
+      "reason": "tradingOpen=false and TWAK/WBNB pair reserves are 0 until Launch.finalizeListing after mintEnd 2026-11-29 21:46:05 PKT (or sellout). buy() eth_call reverts PancakeLibrary: INSUFFICIENT_LIQUIDITY. Pair guard prevents pre-seeding TWAK into the pair. No buy/sell broadcast; recordFee/depositBoost not observable on-chain yet.",
+      "tradingOpen": false,
+      "pair": "0xDf9B1c704fc3d19c935bbA8e172CAEB028eA1A62",
+      "reserves": [
+        0,
+        0
+      ]
+    },
+    "funding": {
+      "beforeTBnb": "0.3218552352",
+      "afterTBnb": "0.2461296252",
+      "twakAfter": "122101000"
+    }
   }
 }
