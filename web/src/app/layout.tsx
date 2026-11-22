@@ -11,7 +11,7 @@ const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: [
 export const metadata: Metadata = {
   title: { default: "Towack — Arcade Sky", template: "%s · Towack" },
   description:
-    "Towack (TWAK): an Agent ID-only mint, prize draw, and router on BNB Smart Chain. A game of chance, not an investment.",
+    "Towack (TWAK): an Agent ID-only mint, an open prize draw and router with Agent ID rebates on BNB Smart Chain. A game of chance, not an investment.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

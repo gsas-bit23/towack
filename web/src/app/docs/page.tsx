@@ -25,7 +25,7 @@ const HOWTO = [
   {
     n: 5,
     title: "Trade",
-    body: "On Trade, swap TWAK ↔ BNB through the Agent ID-only router. 1% on the BNB leg. Sells use an exact approval for the amount you sell.",
+    body: "On Trade, any wallet can swap TWAK ↔ BNB through the Towack router. 1% on the BNB leg; rebates accrue only to Agent ID wallets. Sells use an exact approval for the amount you sell.",
   },
   { n: 6, title: "Rebates", body: "Trading pays fees; finished weeks pay back a pro-rata share of a TWAK budget plus half the BNB fees. Claim on Rebates." },
 ];
@@ -45,7 +45,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Why do I need an Agent ID?",
-    a: "Minting and the Towack router are limited to Agent ID holders, checked on-chain with balanceOf on the Agent ID registry. Without one, mint and trade are blocked.",
+    a: "Minting (paid mint and Genesis) is limited to Agent ID holders, checked on-chain against the Agent ID registry. Trader rebates also go only to Agent ID wallets. Anyone can trade TWAK and play Draw V2 without one; their trades pay the same 1% but earn no rebate.",
   },
   {
     q: "How is the draw kept fair?",

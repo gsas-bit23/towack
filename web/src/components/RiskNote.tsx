@@ -1,5 +1,5 @@
 export const RISK_NOTE =
-  "Towack is a game of chance, not an investment. No returns are promised. You can lose the BNB you pay to mint. Trading involves risk. An Agent ID is required. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Contracts are open source. This is a testnet / work-in-progress build and details may change.";
+  "Towack is a game of chance, not an investment. No returns are promised. You can lose the BNB you pay to mint. Trading involves risk. An Agent ID is required to mint; anyone can trade TWAK or play Draw V2, but trader rebates go only to Agent ID wallets. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Contracts are open source. This is a testnet / work-in-progress build and details may change.";
 
 export function RiskNote({ className = "" }: { className?: string }) {
   return (

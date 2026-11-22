@@ -156,11 +156,11 @@ export default function Home() {
       <section id="router" className="bg-sky-pale">
         <div className="mx-auto max-w-[1220px] px-6 py-[110px]">
           <div className="mx-auto max-w-[820px] text-center">
-            <div className="font-display text-[15px] font-extrabold uppercase tracking-[.25em] text-sky-deep">Agent ID-only router</div>
+            <div className="font-display text-[15px] font-extrabold uppercase tracking-[.25em] text-sky-deep">Open router · Agent ID rebates</div>
             <h2 className="mt-3 font-display text-[48px] font-extrabold leading-[.95] lg:text-[72px]">Your swaps, your rules.</h2>
             <p className="mt-5 text-[19px] font-semibold text-navy/75">
-              The official Towack router is for Agent ID holders. It charges <b className="text-navy">1% on the BNB leg</b> of a trade — not a transfer
-              tax on the token. You set your own on-chain daily spend limit.
+              Any wallet can trade through the official Towack router. It charges <b className="text-navy">1% on the BNB leg</b> of a trade — not a
+              transfer tax on the token. Rebates accrue only to Agent ID wallets. You set your own on-chain daily spend limit.
             </p>
           </div>
           <div className="mt-14 flex flex-wrap items-center justify-center gap-5">

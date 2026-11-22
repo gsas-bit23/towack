@@ -981,5 +981,50 @@
       "protection": "vercel_authentication",
       "viewports": "overflow=0 on /mint and /lottery at 360x740, 768x1024, 1440x900, 1920x1080; live counts match chain"
     }
+  },
+  "openRouter": {
+    "deployedAtPkt": "2026-11-23 00:46:33 PKT",
+    "script": "script/DeployRouterTestnet.s.sol",
+    "note": "Open TowackRouter: any wallet can buy/sell; rebates accrue only to Agent ID holders. Fresh RebateDistributor via setRouter; bind() not called and the original 100M TWAK stays in the previous distributor (no setter on that bytecode).",
+    "addresses": {
+      "router": "0x20a8637766C62D7568B307104847B5C867ef5a73",
+      "rebateDistributor": "0xdf918A70C20A88C8849414856620d51d6633F182",
+      "previousGatedRouter": "0xC9aC87b4DFcC7a17eb7D7A104A5e221EB387E9F5",
+      "previousRebateDistributor": "0x66B70dDF630E721C1416d00A59b5507BC28e117c",
+      "token": "0xbA24050D965991b01d06d10208663E321a5313c8",
+      "drawV2": "0x59c03c850F49763CC40557C9b3eE8dA2d3527E7e",
+      "agentId": "0xfF5f224349e6aDB7754249d5e4352dB0910717B7"
+    },
+    "txs": {
+      "rebatesCreate": "0x5ce97906e085a645a1eeea9f823762743fe40c310761201489afd514b2ebf52d",
+      "routerCreate": "0x4ea4f2ee3bc29a954eb0d258bf5625506dcab7956aaaba4db2c56256825ca69e",
+      "setRouter": "0xdeae39e3387ecfd1f20a57dff24e830d77f22db744cc814d4d27c7a64c1edad4"
+    },
+    "gas": {
+      "used": 2232828,
+      "priceGwei": 1,
+      "costTBnb": "0.002232828"
+    },
+    "sourcify": "exact_match (creation + runtime) for router and rebates",
+    "funding": {
+      "beforeTBnb": "0.0340880632",
+      "afterTBnb": "0.0318552352",
+      "rebatesBound": false,
+      "rebatesTwak": "0 (bind not called; original 100M remains in previous distributor)"
+    },
+    "preview": {
+      "url": "https://towack-acc08rpol-abcd-532d.vercel.app",
+      "inspector": "https://vercel.com/abcd-532d/towack/6ZPAPeszBSg293w5fdWRGbuK1rAf",
+      "id": "dpl_6ZPAPeszBSg293w5fdWRGbuK1rAf",
+      "createdPkt": "2026-11-23 00:48:11 PKT",
+      "readyPkt": "2026-11-23 00:48:36 PKT",
+      "target": "preview",
+      "protection": "vercel_authentication",
+      "shareLink": "https://towack-acc08rpol-abcd-532d.vercel.app?_vercel_share=QhRMIfmc4iK6Xmv8jI0YKp8SLtvlVnJT",
+      "shareExpiresPkt": "2026-12-23 00:49:01 PKT",
+      "shareTtlSeconds": 2592000,
+      "shareLinkStatus": 307,
+      "viewports": "overflow=0 on /mint and /lottery at 360x740, 768x1024, 1440x900, 1920x1080 with BAW panel open"
+    }
   }
 }

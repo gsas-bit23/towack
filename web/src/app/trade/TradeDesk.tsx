@@ -131,7 +131,7 @@ function SwapCard() {
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
 
-  const ready = Boolean(account && hasAgent && tradingOpen && amountIn && q && slipBps && deadlineSec && now > 0 && !insufficient && !overLimit);
+  const ready = Boolean(account && tradingOpen && amountIn && q && slipBps && deadlineSec && now > 0 && !insufficient && !overLimit);
 
   async function submit() {
     if (!ready || !amountIn || !q || !deadlineSec) return;
@@ -253,38 +253,41 @@ function SwapCard() {
       </div>
 
       <div className="mt-6">
-        <NeedsWallet why="Connect a wallet that holds an Agent ID to trade.">
+        <NeedsWallet why="Connect any wallet to trade. Rebates accrue only if it holds an Agent ID.">
           {hasAgent === false ? (
-            <div className="rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-4 font-bold">
-              <Pill tone="candy">AGENT ID REQUIRED</Pill>
+            <div className="mb-4 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-4 font-bold">
+              <Pill tone="candy">NO REBATES FOR THIS WALLET</Pill>
               <p className="mt-2">
-                The Towack router only serves Agent ID holders, and this wallet doesn&apos;t hold one. Get an Agent ID in the official Binance App
-                (mainnet), then reconnect with that wallet.
+                Anyone can trade here, but this wallet doesn&apos;t hold an Agent ID, so its trades earn no rebate. You still pay the same 1%; your
+                rebate half goes to the epoch&apos;s BNB boost pot for Agent ID traders. Agent IDs are issued in the official Binance App (mainnet).
               </p>
             </div>
-          ) : (
-            <>
-              {overLimit ? <p className="mb-3 font-bold text-candy-deep">This trade would go over your daily limit.</p> : null}
-              {insufficient ? <p className="mb-3 font-bold text-candy-deep">Not enough {inUnit} in this wallet.</p> : null}
-              <Button tone={side === "buy" ? "sky" : "candy"} size="lg" className="w-full" disabled={!ready || tx.busy} onClick={submit}>
-                {tx.busy
-                  ? "Check your wallet…"
-                  : side === "buy"
-                    ? "Buy TWAK"
-                    : needsApproval
-                      ? "Approve exact amount, then sell"
-                      : "Sell TWAK"}
-              </Button>
-              {side === "sell" ? (
-                <p className="mt-3 text-center text-sm font-bold text-navy/60">
-                  Selling asks for two wallet confirmations: an approval for exactly {amountIn ? fmt18(amountIn, 2) : "the"} TWAK, then the sell. Never
-                  an unlimited approval.
-                </p>
-              ) : (
-                <p className="mt-3 text-center text-sm font-bold text-navy/60">You confirm every swap in your wallet. We never sign for you.</p>
-              )}
-            </>
-          )}
+          ) : hasAgent ? (
+            <p className="mb-4 text-sm font-bold text-navy/70">
+              <Pill tone="sky">AGENT ID ✓</Pill> <span className="ml-1">Your trades earn weekly rebates on the Rebates page.</span>
+            </p>
+          ) : null}
+          <>
+            {overLimit ? <p className="mb-3 font-bold text-candy-deep">This trade would go over your daily limit.</p> : null}
+            {insufficient ? <p className="mb-3 font-bold text-candy-deep">Not enough {inUnit} in this wallet.</p> : null}
+            <Button tone={side === "buy" ? "sky" : "candy"} size="lg" className="w-full" disabled={!ready || tx.busy} onClick={submit}>
+              {tx.busy
+                ? "Check your wallet…"
+                : side === "buy"
+                  ? "Buy TWAK"
+                  : needsApproval
+                    ? "Approve exact amount, then sell"
+                    : "Sell TWAK"}
+            </Button>
+            {side === "sell" ? (
+              <p className="mt-3 text-center text-sm font-bold text-navy/60">
+                Selling asks for two wallet confirmations: an approval for exactly {amountIn ? fmt18(amountIn, 2) : "the"} TWAK, then the sell. Never
+                an unlimited approval.
+              </p>
+            ) : (
+              <p className="mt-3 text-center text-sm font-bold text-navy/60">You confirm every swap in your wallet. We never sign for you.</p>
+            )}
+          </>
           <TxNotice state={tx.state} onClose={tx.reset} />
         </NeedsWallet>
       </div>

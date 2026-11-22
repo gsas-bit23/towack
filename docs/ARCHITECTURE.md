@@ -81,12 +81,18 @@ Separate from TowackLaunch: it does not touch the paid 5,000 mints, the paid dec
 - **Testnet Agent ID:** the existing MockAgentId is balance-only (no token ids), so Genesis on testnet uses a separate ERC-721 `MockAgentIdNFT` `0x70BC…8036` (first deployed by the now-removed `DeployGenesisTestnet.s.sol`; reused by `DeployOfficialVrfTestnet.s.sol`, which registers a fresh token id for the deployer).
 
 ## TowackRouter
-- Agent ID-gated `buy` / `sell` via Pancake v2, with a 1% fee on the BNB leg. Fee split: 50% to RebateDistributor (forwarded immediately), 30% to DrawV2 and 20% to dev. The last two accrue in the router and are pushed by the permissionless `flushFees()`.
+- **Open** `buy` / `sell` via Pancake v2: any wallet can trade (no Agent ID gate; minting stays Agent ID-only on Launch and Genesis). 1% fee on the BNB leg of **every** trade. Fee split: 50% to RebateDistributor (forwarded immediately), 30% to DrawV2 and 20% to dev. The last two accrue in the router and are pushed by the permissionless `flushFees()`.
+- **Rebate eligibility = Agent ID.** `_takeFee` checks `agentId.balanceOf(trader)`: Agent holders → `rebates.recordFee{value: 50%}(trader, fee)` (fee credit, earns TWAK + BNB). Non-Agent → `rebates.depositBoost{value: 50%}()`: the BNB joins the current epoch's pot with **no** fee credit, so non-Agent volume never dilutes Agent TWAK rebates and the non-Agent cannot claim. Router stats (`volumeOf`, `feesPaidOf`, `totalFees`, events) count every trader.
 - Approvals are exact per swap and reset to 0. There is no unlimited-approval helper.
 - Leash: `setDailyLimit(wei)` sets a limit on BNB-leg notional per UTC day. Decreases apply immediately; increases apply after 24h. Default is unlimited.
 
 ## RebateDistributor
-- 100M TWAK over 104 weekly epochs. Each epoch's budget plus its BNB boost is split pro-rata by **fees paid** in that epoch. Empty epochs roll over. Claims are on-chain via `claim(epochs[])`. No staking.
+- 100M TWAK over 104 weekly epochs. Each epoch's budget plus its BNB boost is split pro-rata by **fees paid** (Agent ID trades only) in that epoch. Empty epochs (no Agent fees) roll their TWAK and BNB, including non-Agent `depositBoost` BNB, into the next epoch. Claims are on-chain via `claim(epochs[])`. No staking.
+- `recordFee` / `depositBoost` are `onlyRouter`. `setRouter(newRouter)`: deployer-only, non-zero, works before or after `bind` (fresh distributor can be wired before funding; a bound one can migrate routers without stranding the 100M). Trust assumption: the deployer chooses which router may record fees / deposit boosts; it cannot move tokens or BNB. `bind(token, router)` is unchanged (set-once token + router).
+- Testnet migration script (code only): `script/DeployRouterTestnet.s.sol` (new RebateDistributor + open TowackRouter + `setRouter`; no 100M transfer, no `bind`). Keyless dryRun estimate: **2,906,359 gas ≈ 0.0029 tBNB @ 1 gwei**.
+
+## Binance Agentic Wallet (AI agent) path
+- BAW is mainnet-only (chain 56) and cannot connect to web pages. `/mint` (Genesis + paid mint) and `/lottery` offer **“Use with your AI agent”** next to wallet connect: a copyable instruction for an agent with Binance's official `binance-agentic-wallet` skill (Developer Mode check → `baw contract-call preview` → explicit user confirmation → `execute`; raw-wei value incl. `vrfFeeAt(gasPrice)`; no gas price). On testnet the panel says BAW does not support testnet and to use a browser wallet. Chain-56 addresses come from `addresses.json`; empty ones render as `<TOWACK_…>` placeholders “pending mainnet deploy”. The site only displays text: no signing, no BAW CLI. Skill file: `web/public/skills/towack/SKILL.md` → `/skills/towack/SKILL.md`.
 
 ## TeamVesting
 - 50M TWAK. **Start = deploy timestamp.** Nothing vests during the 365-day cliff, then it vests linearly in daily steps over 1460 days. No listing unlock, no revocation.
@@ -165,6 +171,6 @@ Replaced the weekly burn raffle (no rounds, tickets, burns or USD price source a
 | TowackLaunch | none | — |
 | TowackGenesis | Ownable2Step owner (deployer → timelock) | open/close window, sweep surplus above `committed()` to the ecosystem wallet |
 | TowackRouter | none | — |
-| RebateDistributor | deployer, set-once bind | none after bind |
+| RebateDistributor | deployer | set-once bind; `setRouter` (which router may record fees / boosts) |
 | TeamVesting | deployer, set-once bind | none after bind |
 | DrawV2 | TimelockController (48h) | pause / unpause new entries only (no withdraw) |

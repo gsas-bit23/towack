@@ -240,9 +240,9 @@ function TreasuryNote() {
     <Panel tone="navy" shadow={false}>
       <Pill tone="sun">TESTNET NOTE</Pill>
       <p className="mt-3 font-bold text-white/85">
-        The live pool wheel is seeded with the full {POOL_INTENDED_SEED} Draw V2 allocation from the official-VRF full-stack
-        redeploy, and draws with official Chainlink VRF v2.5. Earlier testnet pools are retired, including the
-        skeleton treasury (the previous launch&apos;s fixed BNB destination) and the mid-stack official-VRF pool.
+        The live pool wheel holds the full {POOL_INTENDED_SEED} Draw V2 allocation and draws with the official Chainlink VRF v2.5
+        direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess refunded), with no subscription. Earlier
+        testnet pools are retired history, including the skeleton treasury and the mock-VRF pool.
       </p>
       {addresses.drawV2Legacy ? (
         <p className="mt-3 break-all text-sm font-bold text-white/70">
@@ -457,7 +457,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
       </div>
 
       <div className="mt-2 border-t-2 border-dashed border-navy/20 pt-6">
-        <NeedsWallet why="Connect to enter the pool wheel.">
+        <NeedsWallet why="Connect any wallet to enter the pool wheel. No Agent ID needed." agent="lottery">
           {bound === false ? (
             <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">The pool wheel is deployed but not wired to the token yet.</p>
           ) : paused ? (

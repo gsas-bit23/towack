@@ -15,6 +15,7 @@ import { AnimatedNumber, Confetti, ProgressFill } from "./motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "./PrizeBooth";
 import { SpinWheel } from "./SpinWheel";
 import { ConnectPill } from "./ConnectPill";
+import { AgentPathToggle } from "./AgentPath";
 import { TxNotice, VrfSource } from "./status";
 import { Button, Check, Kicker, Panel, Pill } from "./ui";
 
@@ -245,6 +246,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
         <div className="mt-3 flex justify-center">
           <ConnectPill />
         </div>
+        <AgentPathToggle flow="genesis" className="mt-3" />
       </div>
     );
   }

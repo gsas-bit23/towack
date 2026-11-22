@@ -7,6 +7,7 @@ import type { ContractKey } from "@/config/addresses";
 import { useTowack } from "@/lib/chain";
 import type { TxState } from "@/lib/tx";
 import { ConnectPill } from "./ConnectPill";
+import { AgentPathToggle, type AgentFlow } from "./AgentPath";
 import { LabelTicket } from "./art";
 import { Button } from "./ui";
 
@@ -63,7 +64,8 @@ export function NeedsContracts({ keys, children, soon }: { keys: ContractKey[]; 
   return <>{children}</>;
 }
 
-export function NeedsWallet({ children, why }: { children: ReactNode; why?: string }) {
+/** `agent`: also offer the "Use with your AI agent" (Binance Agentic Wallet, mainnet-only) copy-paste path. */
+export function NeedsWallet({ children, why, agent }: { children: ReactNode; why?: string; agent?: AgentFlow }) {
   const { isConnected, wrongNetwork, selectChain, chainId } = useTowack();
   if (!isConnected) {
     return (
@@ -73,6 +75,7 @@ export function NeedsWallet({ children, why }: { children: ReactNode; why?: stri
         <div className="mt-5 flex justify-center">
           <ConnectPill />
         </div>
+        {agent ? <AgentPathToggle flow={agent} className="mt-4" /> : null}
       </div>
     );
   }

@@ -224,7 +224,7 @@ export function MintPanel() {
         <Panel>
           <h2 className="font-display text-[28px] font-extrabold">Your ticket</h2>
           <div className="mt-5">
-            <NeedsWallet why="Connect to check your Agent ID and mint.">
+            <NeedsWallet why="Connect to check your Agent ID and mint." agent="launch">
               <ul className="space-y-3">
                 <Check ok={registry ? (agentLoading ? undefined : hasAgent) : false}>
                   {!registry
