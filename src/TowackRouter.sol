@@ -9,10 +9,13 @@ import {IPancakeRouter02} from "./interfaces/IPancakeV2.sol";
 import {RebateDistributor} from "./RebateDistributor.sol";
 
 /// @title TowackRouter
-/// @notice Agent ID-gated TWAK/BNB swaps through PancakeSwap v2.
-///  - 1% fee on the BNB leg (input for buys, output for sells).
-///  - Fee split: 50% rebate boost (RebateDistributor, active traders only), 30% Draw V2 / lottery
-///    treasury, 20% dev. The 50% share is forwarded immediately with the fee record; the 30/20 shares
+/// @notice TWAK/BNB swaps through PancakeSwap v2. Open to ANY wallet; trader rebates are Agent ID-only.
+///  - 1% fee on the BNB leg (input for buys, output for sells), charged on every trade.
+///  - Fee split: 50% rebate share (RebateDistributor), 30% Draw V2 / lottery treasury, 20% dev.
+///    Agent ID holders: the 50% share is forwarded with a fee record (`recordFee`), so they earn the
+///    epoch's TWAK + BNB rebate pro-rata to fees paid. Non-Agent wallets: no fee record (no TWAK
+///    dilution, nothing to claim); their 50% share is sent as an unattributed BNB boost
+///    (`depositBoost`) to the current epoch, shared by that epoch's Agent traders. The 30/20 shares
 ///    accrue here and are pushed by the permissionless `flushFees()` (so a reverting recipient can never
 ///    block swaps).
 ///  - Approvals: users approve this router for the exact sell amount; this router approves Pancake for
@@ -60,7 +63,6 @@ contract TowackRouter is ReentrancyGuard {
     uint256 public pendingLottery;
     uint256 public pendingDev;
 
-    error NoAgentId();
     error DailyLimitExceeded(uint256 wouldSpend, uint256 limit);
     error InsufficientOutput(uint256 out, uint256 min);
     error ZeroAmount();
@@ -91,11 +93,6 @@ contract TowackRouter is ReentrancyGuard {
         rebates = RebateDistributor(rebates_);
         lotteryTreasury = lotteryTreasury_;
         dev = dev_;
-    }
-
-    modifier onlyAgent() {
-        if (agentId.balanceOf(msg.sender) == 0) revert NoAgentId();
-        _;
     }
 
     // ================================================================= leash
@@ -154,7 +151,7 @@ contract TowackRouter is ReentrancyGuard {
 
     // ================================================================= swaps
     /// @notice Buy TWAK with BNB. 1% of msg.value is taken as fee before swapping.
-    function buy(uint256 minTokensOut, uint256 deadline) external payable nonReentrant onlyAgent returns (uint256 out) {
+    function buy(uint256 minTokensOut, uint256 deadline) external payable nonReentrant returns (uint256 out) {
         if (msg.value == 0) revert ZeroAmount();
         _spend(msg.sender, msg.value);
         uint256 fee = msg.value * FEE_BPS / BPS;
@@ -177,7 +174,6 @@ contract TowackRouter is ReentrancyGuard {
     function sell(uint256 amountIn, uint256 minBnbOut, uint256 deadline)
         external
         nonReentrant
-        onlyAgent
         returns (uint256 netOut)
     {
         if (amountIn == 0) revert ZeroAmount();
@@ -215,7 +211,12 @@ contract TowackRouter is ReentrancyGuard {
         uint256 toLottery = fee * LOTTERY_SHARE_BPS / BPS;
         pendingLottery += toLottery;
         pendingDev += fee - toRebate - toLottery;
-        rebates.recordFee{value: toRebate}(trader, fee);
+        if (agentId.balanceOf(trader) > 0) {
+            rebates.recordFee{value: toRebate}(trader, fee);
+        } else {
+            // Non-Agent: no rebate eligibility; half the fee still boosts this epoch's BNB pot.
+            rebates.depositBoost{value: toRebate}();
+        }
     }
 
     /// @notice Push accrued lottery/dev fees to their fixed recipients. Permissionless.

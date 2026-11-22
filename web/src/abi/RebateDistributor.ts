@@ -246,6 +246,13 @@ export const rebateDistributorAbi = [
   },
   {
     "type": "function",
+    "name": "depositBoost",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
     "name": "feesOf",
     "inputs": [
       {
@@ -314,6 +321,19 @@ export const rebateDistributorAbi = [
   },
   {
     "type": "function",
+    "name": "setRouter",
+    "inputs": [
+      {
+        "name": "newRouter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "startTime",
     "inputs": [],
     "outputs": [
@@ -378,6 +398,25 @@ export const rebateDistributorAbi = [
   },
   {
     "type": "event",
+    "name": "BoostDeposited",
+    "inputs": [
+      {
+        "name": "epoch",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "bnb",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Claimed",
     "inputs": [
       {
@@ -434,6 +473,19 @@ export const rebateDistributorAbi = [
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RouterSet",
+    "inputs": [
+      {
+        "name": "router",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false

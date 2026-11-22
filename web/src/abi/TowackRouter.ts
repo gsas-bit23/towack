@@ -594,11 +594,6 @@ export const towackRouterAbi = [
   },
   {
     "type": "error",
-    "name": "NoAgentId",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "ReentrancyGuardReentrantCall",
     "inputs": []
   },

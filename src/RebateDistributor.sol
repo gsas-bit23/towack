@@ -16,8 +16,16 @@ import {TokenBound} from "./TokenBound.sol";
 /// TWAK budget plus half of fees, so washing is only "profitable" if the TWAK budget for the epoch is
 /// worth more than ~50% of the fees a washer pays, and every other trader dilutes them.
 ///
+/// Eligibility: the router only calls `recordFee` for Agent ID holders. Non-Agent trades call
+/// `depositBoost` instead, which adds BNB to the current epoch pot without any fee credit, so
+/// non-Agent volume never dilutes Agent TWAK rebates.
+///
+/// Trust assumption: `deployer` can repoint `router` (`setRouter`) - i.e. choose which contract may
+/// record fees and deposit boosts. It cannot move tokens or BNB, and has no other power.
+///
 /// Epoch 0 starts at deploy. Epochs with zero fees (e.g. before listing) roll their TWAK and BNB
-/// budgets into the next epoch, so nothing is stranded. No owner; parameters are constants.
+/// budgets into the next epoch, so nothing is stranded. No owner; parameters are constants (except the
+/// deployer-settable router above).
 contract RebateDistributor is TokenBound, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -44,6 +52,8 @@ contract RebateDistributor is TokenBound, ReentrancyGuard {
     error EpochNotFinished(uint256 epoch);
 
     event FeeRecorded(uint256 indexed epoch, address indexed trader, uint256 fee, uint256 bnbBoost);
+    event BoostDeposited(uint256 indexed epoch, uint256 bnb);
+    event RouterSet(address indexed router);
     event Claimed(address indexed trader, uint256 indexed epoch, uint256 tokens, uint256 bnb);
 
     constructor() {
@@ -58,6 +68,17 @@ contract RebateDistributor is TokenBound, ReentrancyGuard {
         _bindToken(token_);
         require(router_ != address(0), "router");
         router = router_;
+        emit RouterSet(router_);
+    }
+
+    /// @notice Point the distributor at a (new) router. Deployer only; works before or after `bind`,
+    /// so a fresh distributor can be wired before funding and a bound one can migrate routers
+    /// without stranding the allocation.
+    function setRouter(address newRouter) external {
+        if (msg.sender != deployer) revert NotDeployer();
+        require(newRouter != address(0), "router");
+        router = newRouter;
+        emit RouterSet(newRouter);
     }
 
     function currentEpoch() public view returns (uint256) {
@@ -81,6 +102,17 @@ contract RebateDistributor is TokenBound, ReentrancyGuard {
         feesOf[e][trader] += fee;
         bnbDeposited[e] += msg.value;
         emit FeeRecorded(e, trader, fee, msg.value);
+    }
+
+    /// @notice Called by the router for non-Agent trades: `msg.value` (the 50% fee share) is added to the
+    /// current epoch's BNB pot with no fee credit to anyone. Rolls over like any BNB if the epoch has no
+    /// Agent fees.
+    function depositBoost() external payable {
+        if (msg.sender != router) revert OnlyRouter();
+        checkpoint();
+        uint256 e = currentEpoch();
+        bnbDeposited[e] += msg.value;
+        emit BoostDeposited(e, msg.value);
     }
 
     /// @notice Finalizes every finished epoch. Permissionless; also called by claim/recordFee.

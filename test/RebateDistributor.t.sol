@@ -27,6 +27,92 @@ contract RebateDistributorTest is Fixture {
         rebates.recordFee(alice, 1);
     }
 
+    function test_OnlyRouterDepositsBoost() public {
+        vm.deal(address(this), 1 ether);
+        vm.expectRevert(RebateDistributor.OnlyRouter.selector);
+        rebates.depositBoost{value: 1}();
+    }
+
+    function test_DepositBoostAddsPotWithoutFees() public {
+        uint256 e = rebates.currentEpoch();
+        vm.deal(address(router), 1 ether);
+        vm.prank(address(router));
+        rebates.depositBoost{value: 0.3 ether}();
+        assertEq(rebates.bnbDeposited(e), 0.3 ether);
+        assertEq(rebates.totalFees(e), 0);
+        // epoch with only boosts and no Agent fees rolls its BNB forward
+        uint256 t0 = block.timestamp;
+        vm.warp(t0 + 7 days);
+        rebates.checkpoint();
+        assertEq(rebates.bnbBudget(e), 0);
+        assertEq(rebates.carryBnb(), 0.3 ether);
+        // next Agent trader collects it
+        vm.prank(alice);
+        router.buy{value: 1 ether}(0, t0 + 7 days);
+        vm.warp(t0 + 14 days);
+        rebates.checkpoint();
+        (, uint256 b) = rebates.claimable(alice, e + 1);
+        assertEq(b, 0.3 ether + 0.005 ether);
+    }
+
+    function test_SetRouter() public {
+        address newRouter = makeAddr("newRouter");
+        // non-deployer
+        vm.prank(alice);
+        vm.expectRevert(bytes4(keccak256("NotDeployer()")));
+        rebates.setRouter(newRouter);
+        // zero
+        vm.expectRevert(bytes("router"));
+        rebates.setRouter(address(0));
+        // deployer (this fixture) after bind
+        rebates.setRouter(newRouter);
+        assertEq(rebates.router(), newRouter);
+        // old router locked out of both entry points
+        vm.deal(address(router), 1 ether);
+        vm.startPrank(address(router));
+        vm.expectRevert(RebateDistributor.OnlyRouter.selector);
+        rebates.recordFee{value: 1}(alice, 1);
+        vm.expectRevert(RebateDistributor.OnlyRouter.selector);
+        rebates.depositBoost{value: 1}();
+        vm.stopPrank();
+        // ...so trades through the old router now revert (no stranded fee)
+        vm.prank(alice);
+        vm.expectRevert(RebateDistributor.OnlyRouter.selector);
+        router.buy{value: 1 ether}(0, block.timestamp);
+        // new router can do both
+        uint256 e = rebates.currentEpoch();
+        vm.deal(newRouter, 1 ether);
+        vm.startPrank(newRouter);
+        rebates.recordFee{value: 0.1 ether}(alice, 0.2 ether);
+        rebates.depositBoost{value: 0.1 ether}();
+        vm.stopPrank();
+        assertEq(rebates.feesOf(e, alice), 0.2 ether);
+        assertEq(rebates.bnbDeposited(e), 0.2 ether);
+    }
+
+    function test_SetRouterBeforeBind() public {
+        vm.prank(alice);
+        RebateDistributor fresh = new RebateDistributor();
+        address r = makeAddr("r");
+        vm.prank(bob);
+        vm.expectRevert(bytes4(keccak256("NotDeployer()")));
+        fresh.setRouter(r);
+        vm.prank(alice);
+        fresh.setRouter(r);
+        assertEq(fresh.router(), r);
+        assertEq(address(fresh.token()), address(0));
+        vm.deal(r, 1 ether);
+        vm.startPrank(r);
+        fresh.recordFee{value: 0.01 ether}(bob, 0.02 ether);
+        fresh.depositBoost{value: 0.01 ether}();
+        vm.stopPrank();
+        assertEq(fresh.bnbDeposited(0), 0.02 ether);
+        // bind still needs the exact 100M allocation
+        vm.prank(alice);
+        vm.expectRevert();
+        fresh.bind(address(token), r);
+    }
+
     function test_EmissionsSumToAllocation() public view {
         uint256 sum;
         for (uint256 e; e < 110; ++e) {
