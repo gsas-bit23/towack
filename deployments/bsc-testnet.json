@@ -1068,5 +1068,104 @@
       "afterTBnb": "0.2461296252",
       "twakAfter": "122101000"
     }
+  },
+  "instantRehearsal": {
+    "deployedAtPkt": "2026-11-23 02:42:03 PKT",
+    "script": "script/DeployRehearsalStackTestnet.s.sol",
+    "note": "Separate instant-list rehearsal stack (instantClose=true). Not written into web/src/config/addresses.json. Official VRF v2.5 wrapper, reused MockAgentId. No 1-hour window.",
+    "instantClose": true,
+    "addresses": {
+      "timelock": "0x992476dD3F2d5565661501e193c04D2dFc6B565A",
+      "drawV2": "0x00c6a3B1A44e53c800531D913dE82A01D8A55635",
+      "launch": "0x2D8Bd8aeb0a225660f61cf130A91eaaDE5C35f3E",
+      "rebateDistributor": "0xEBc3C111dA28c096C6a1C9a9ebC43e4bb3CEd5Fe",
+      "teamVesting": "0xC67129ADdEC2A0452292B271151ec034EA9DdD0C",
+      "token": "0xa306F3135375C5b6ea4f52F76aE872a0fAAc8455",
+      "pair": "0xc8e756Af35F991250D12148cCa6dE5B4Abb995FB",
+      "router": "0x535E44559DB22FCAcef7D3E49234A048d75Ba546",
+      "genesis": "0x78357ed0C1E539CA769A242d1BBd0424c05ea5a4",
+      "agentId": "0xfF5f224349e6aDB7754249d5e4352dB0910717B7",
+      "vrfWrapper": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94"
+    },
+    "createTxs": {
+      "timelock": "0x4929b25ed9f7aba3ce3e99c3069122a7ec55860009c67716ef5c83557c0bb1eb",
+      "drawV2": "0x8862a3d7646e712cd902f4a7b47daef6ae8aaca97ba66317c75918ea689f1a95",
+      "launch": "0x5b90ebdde12c4fc8596bcfba7dfc163f5eda20c9247e67db8f5a0964ad6b2f8b",
+      "rebates": "0xaf9cbccb830bba7c7ea6d5650f487ecb01f603180ad96448da1ff2beed6278a4",
+      "teamVesting": "0x887b542833cc55a877c1c222987da4c5c4c9082a7acedaa97f89a33feb9b1b91",
+      "token": "0xc8528ce8f39f4e32eabe4c657b7ac596d83cbbd91a8bc4c4c0050b33dcba29dd",
+      "router": "0xb57ad8ef02144cc04d490d13c2d49e4bb30bee766979550796f1c26acd812df5",
+      "genesis": "0x46efeb8572673adbe531012f3e25f73304752867074104ab88f1e1242188bda7"
+    },
+    "gas": {
+      "used": 13513193,
+      "priceGwei": 1,
+      "costTBnb": "0.013513193"
+    },
+    "sourcify": "exact_match (creation + runtime) for all eight",
+    "paidMint": {
+      "result": "PASS",
+      "mintTx": "0x805841905db91b9f4c36001c7cc4c1b9a13fbcc2a4574f9696f07cc6cd5bea3f",
+      "mintPkt": "2026-11-23 02:43:27 PKT",
+      "fulfillTx": "0x6b12e2c50bdd272fc3bb4688ebe9c04f126a8b1f952724c6c423a1e162f36c85",
+      "fulfillPkt": "2026-11-23 02:43:34 PKT",
+      "claimTx": "0x4d132b082f15db5c985ca8691b17671eb6a9cd208784efa5c6091bc0bc64f054",
+      "claimPkt": "2026-11-23 02:44:17 PKT",
+      "prizeId": 0,
+      "prize": "1.0x full 0.1 tBNB refund, no bonus TWAK",
+      "exactWrapperFee": "0.000437296",
+      "excessRefunded": "0.000362704"
+    },
+    "listing": {
+      "result": "PASS",
+      "closeMintTx": "0x61eb881e7c64b2a24ca4e2bd998d61621c68b81ce87141ca1d0f049db1829480",
+      "finalizeTx": "0xf5503120a6c1c3437069a7447ce9255620fc05fde1c6eb9e434d66bcc0099508",
+      "tradingOpen": true,
+      "finalizeSeededLp": false,
+      "reasonNoLp": "prizeId 0 reserved the entire 0.1 mint proceeds",
+      "lpSeedAfterOpen": {
+        "approveTx": "0x283a6372e296d01ca087b94abf0f31b80274210d45c00a9d068f3fb98599e3e5",
+        "addLiquidityTx": "0x3b074aabc32f0f6d434dd5b2f649efe1084223dd995224aa7e940a3cca4a1a25",
+        "twak": "4000",
+        "bnb": "0.005"
+      }
+    },
+    "routerRehearsal": {
+      "result": "PASS",
+      "agentBuyTx": "0x595a1d56c7772f41d2a125ceaf0b09d97cad989d0447575c55b915bb1fa3843f",
+      "agentApproveTx": "0x0d63133333afdb2396b68eba3affe8d00c03e0bb102c1662d132ba7398bc0cee",
+      "agentSellTx": "0xca50d7a6ad55cc8a634a69a448f78fb116810d5babcddbf3f477a513a2f74583",
+      "agentRecordFee": true,
+      "nonAgent": "0xa2D1EA1F821Bd8a5Ed6CeD4A9E53D1C6f8904894",
+      "fundNonAgentTx": "0x64e66bf0a97ced344d6f94fdecac9d79ad69917bdc561956cefd0daedd409f35",
+      "nonAgentBuyTx": "0xbefff1d16df67fc52ed1d1bb50ab5d37106b5cb7450f8ae4059fead9ffbd7e9f",
+      "nonAgentSellTx": "0x761dd9cbe9a504d57f337745ba8346d12049571201ebf298b6bddee27f6e830b",
+      "nonAgentFeesOf": "0",
+      "depositBoost": true,
+      "flushFeesTx": "0x68575650107aee232f852003f05be24927179674b867691e6423d958016daf74",
+      "totalFeeWei": "15191153871428",
+      "toRebatesWei": "7595576935714",
+      "toLotteryWei": "4557346161428",
+      "toDevWei": "3038230774287"
+    },
+    "drawV2NonAgent": {
+      "result": "PASS",
+      "approveTx": "0xf12dd949dcc13bab77be9a51ee91f1d3290b55fd712d8c86bf31016d8f985d3a",
+      "enterTx": "0xc310c3ffed3da8a7c68ba009cc86083c4ef57386bd19874766008bba2f3344cd",
+      "fulfillTx": "0x21a8ff8cd7926332c172aaff15b12be70db3aa182b6a28e1cfbf95f2e002fe55",
+      "prizeId": 0
+    },
+    "nonAgentMints": {
+      "launchTx": "0x0e84cb9d2cfd998f0e2b61b58b1e93a3f49a608831ed5ebc67c37dbeb6677c89",
+      "launchRevert": "WrongPhase(2)",
+      "genesisTx": "0x8b2ed04af2791e977ecadb2a33a484969c46ac2adf3638ff920bc43d18b6f67c",
+      "genesisRevert": "NotAgentOwner",
+      "note": "Launch was already Finalized so NoAgentId is not reached; Genesis uses NotAgentOwner rather than NoAgentId."
+    },
+    "funding": {
+      "beforeTBnb": "0.2461296252",
+      "afterDeployTBnb": "0.2326164322",
+      "afterTBnb": "0.217427825977449244"
+    }
   }
 }
