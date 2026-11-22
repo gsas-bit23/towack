@@ -241,7 +241,7 @@ function TreasuryNote() {
       <Pill tone="sun">TESTNET NOTE</Pill>
       <p className="mt-3 font-bold text-white/85">
         The live pool wheel is seeded with the full {POOL_INTENDED_SEED} Draw V2 allocation from the official-VRF full-stack
-        redeploy, and draws with the official Chainlink VRF v2.5 coordinator. Earlier testnet pools are retired, including the
+        redeploy, and draws with official Chainlink VRF v2.5. Earlier testnet pools are retired, including the
         skeleton treasury (the previous launch&apos;s fixed BNB destination) and the mid-stack official-VRF pool.
       </p>
       {addresses.drawV2Legacy ? (
@@ -286,7 +286,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
   const now = useNow(5_000);
   const [fresh, setFresh] = useState(false);
   // Every entry / retry is a VRF request: the player sends the Chainlink VRF fee in BNB (excess refunded).
-  // It goes to the VRF subscription, never into the BNB pot.
+  // Exactly the wrapper's price goes to the Chainlink VRF wrapper, never into the BNB pot.
   const vrf = useVrfFee(draw, chainId);
 
   const c = { address: draw, abi: drawV2Abi, chainId } as const;

@@ -861,5 +861,125 @@
       "readyAtPkt": "2026-11-22 19:48:00 PKT",
       "protection": "vercel_authentication"
     }
+  },
+  "fullStackWrapper": {
+    "deployedAtPkt": "2026-11-22 21:46:05 PKT",
+    "commitCode": "wrapper switch (uncommitted at deploy time; follows 6b07db1 + this work)",
+    "vrf": {
+      "mode": "direct-funding wrapper, native BNB, user-paid, no subscription, no min-balance deposit",
+      "wrapper": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94",
+      "coordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+      "callbackGas": {
+        "launch": 165000,
+        "genesis": 170000,
+        "drawV2": 200000
+      },
+      "feeAt1gweiExact": {
+        "launch": "0.000437296",
+        "genesis": "0.000445296",
+        "drawV2": "0.000493296"
+      },
+      "feeAt1gweiQuotePlus10pct": {
+        "launch": "0.000481026",
+        "genesis": "0.000489826",
+        "drawV2": "0.000542626"
+      },
+      "cancelledSub": {
+        "id": "108109298338446825657484225053166289400607095163447504257161866471831941368513",
+        "tx": "0xa9af28b2537088fc4579259144233bcbfb2a71ec9ae908717327e1bebc1f37fa",
+        "recoveredTBnb": "0.044947722"
+      }
+    },
+    "mintWindow": {
+      "startUnix": 1795365965,
+      "endUnix": 1795970765,
+      "startPkt": "2026-11-22 21:46:05 PKT",
+      "endPkt": "2026-11-29 21:46:05 PKT",
+      "days": 7
+    },
+    "gas": {
+      "used": 13404953,
+      "priceGwei": 1,
+      "costTBnb": "0.013404953"
+    },
+    "addresses": {
+      "timelock": "0xCE536A50733D08C6dAB3FBC51fe15a3C783D260d",
+      "drawV2": "0x59c03c850F49763CC40557C9b3eE8dA2d3527E7e",
+      "launch": "0x617f9d29B274118267CcdF9a7160F739927ba1aB",
+      "rebates": "0x66B70dDF630E721C1416d00A59b5507BC28e117c",
+      "teamVesting": "0x0fCC0EBa4D62abD55f84b9822Dffb02A5d9D78Ec",
+      "token": "0xbA24050D965991b01d06d10208663E321a5313c8",
+      "pair": "0xDf9B1c704fc3d19c935bbA8e172CAEB028eA1A62",
+      "router": "0xC9aC87b4DFcC7a17eb7D7A104A5e221EB387E9F5",
+      "genesis": "0x515BA3EA9c4106dcC49C7B2c1C314d2CfeC68cAb",
+      "agentId": "0xfF5f224349e6aDB7754249d5e4352dB0910717B7",
+      "agentIdNft": "0x70BC7133E62427DAE709299454ed8c9015898036",
+      "vrfWrapper": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94"
+    },
+    "createTxs": {
+      "timelock": "0xbe6ce453e7fdfd51674ad40a74b56744f843cb8af0355e8f33dd4d37e3f99313",
+      "drawV2": "0x7a7a97f938b398e05f05482e317c8fe4208215d6a81ea122e1c8e5ef1c57b7f1",
+      "launch": "0x876cbc23810166ed7a6334d8c2e3729d74387cb634fe5252547fc6e8d18ad7bc",
+      "rebates": "0x5393596e4b51b58515d9923e903c535828c944193a28b291a8b4d50de3bd187c",
+      "teamVesting": "0x529b64d7595adaa3601f21016ec7902183b160f19476226fb1aa546aa7c155d7",
+      "token": "0xa53990dea9b649913f49f5055ed7755499f067f185705dd406604f1fd99e66ee",
+      "router": "0x1468d2bd0c7156fe0385f02ab2dee5c1ec92fbaa833a61e3f9553e68cb97a31e",
+      "genesis": "0xf4783ace65819e5cf3aa68263604bca1baaf898de15a3af684b223fe0845ad42"
+    },
+    "otherTxs": {
+      "bindLaunch": "0x214d8c91151a61aba046d3c46c9b6e47bb1914294f68c8bc095d0a16067902ce",
+      "bindTeam": "0x90d56d4dca61b9c55525f3de0548b3c60e418e85138acb676b1a023ccebf407d",
+      "bindDrawV2": "0x0c6c28667d89054fade09f261796523acad7329ec850f49de617a99e54a6cbc1",
+      "bindRebates": "0x08a7e6ccf3665aa9849f9368a8ea0b6200d66e12eeb08fe8b8b2d4cfcf3c75c4",
+      "genesisApprove": "0x9f5b0806e0b15d98a6c18d9699622a0a87295eaf38fcdbc925ed0e84e68c168a",
+      "genesisFund": "0x5bbe7d9fe53fed033cdd89e39df46bf8e6d30c7e7c9733d98fd8184baf187754",
+      "genesisOpen": "0x6e54e9d73e22f505e1da1b0bb0cf45fcad0359ad23323f49b6e1ff9196c72c5f"
+    },
+    "sourcify": "exact_match (creation + runtime) for all eight",
+    "rehearsal": {
+      "paidMint": "skipped \u2014 0.1 + fee exceeds remaining ~0.034 tBNB",
+      "genesis": {
+        "action": "mint(2)",
+        "prizeId": 5,
+        "extraTwak": 2000,
+        "mintTx": "0x8a3517741e0b491875f7fe115e87b6e670d0dae030b097b4b5241f7dc4dfe2c4",
+        "fulfillTx": "0x1b46205c8162719e3d6f3a30e1effb5d739507f60f87ff19fe3ca2b02c63735c",
+        "claimTx": "0x99f974f91e0750cfad8f3b166623a798367489e7545049e3573b756877cf00e0",
+        "feeSent": "0.0008 (excess refunded)"
+      },
+      "drawV2": {
+        "action": "enter(1000 TWAK)",
+        "prizeId": 0,
+        "result": "0x \u2014 entry stays in the pool; availableTwak 70,001,000; claim reverts NothingToClaim",
+        "approveTx": "0xd93bafb3c384aa074755dbb4a3a8c90448f7697150dcb8c34e72400d7daafb49",
+        "enterTx": "0xd89b0fade7f3281c2c8e5049a1b10335ca89a930abf674532eb1ae53dc064ae2",
+        "fulfillTx": "0xaf4ecb009ae6c4648db342533ba1b619744f27f2b31393e8fc101143841fca10",
+        "feeSent": "0.0009 (excess refunded)"
+      }
+    },
+    "funding": {
+      "afterCancelTBnb": "0.049206650",
+      "afterDeployTBnb": "0.035801697",
+      "afterRehearsalTBnb": "0.034088063",
+      "twakAfterRehearsal": "122021000"
+    },
+    "mainnetEstimate": {
+      "note": "keyless fork only, never broadcast; no VRF min-balance deposit",
+      "gas": 14707199,
+      "bnbAt0_05gwei": "0.000735",
+      "bnbAt0_1gwei": "0.00147",
+      "bnbAt1gwei": "0.0147",
+      "bnbAt3gwei": "0.0441"
+    },
+    "preview": {
+      "url": "https://towack-hupied6hv-abcd-532d.vercel.app",
+      "inspector": "https://vercel.com/abcd-532d/towack/9EAMmJuSDeyMiSoTeS9S7Q6TBtch",
+      "id": "dpl_9EAMmJuSDeyMiSoTeS9S7Q6TBtch",
+      "createdPkt": "2026-11-22 21:52:57 PKT",
+      "readyPkt": "2026-11-22 21:53:35 PKT",
+      "target": "preview",
+      "protection": "vercel_authentication",
+      "viewports": "overflow=0 on /mint and /lottery at 360x740, 768x1024, 1440x900, 1920x1080; live counts match chain"
+    }
   }
 }

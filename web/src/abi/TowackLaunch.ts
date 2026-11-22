@@ -34,19 +34,9 @@ export const towackLaunchAbi = [
         "internalType": "struct VRFConsumerV25.VRFConfig",
         "components": [
           {
-            "name": "coordinator",
+            "name": "wrapper",
             "type": "address",
             "internalType": "address"
-          },
-          {
-            "name": "keyHash",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "subId",
-            "type": "uint256",
-            "internalType": "uint256"
           },
           {
             "name": "requestConfirmations",
@@ -57,21 +47,6 @@ export const towackLaunchAbi = [
             "name": "callbackGasLimit",
             "type": "uint32",
             "internalType": "uint32"
-          },
-          {
-            "name": "nativePayment",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "minFeeGasPrice",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "maxFeeGasPrice",
-            "type": "uint64",
-            "internalType": "uint64"
           }
         ]
       }
@@ -98,19 +73,6 @@ export const towackLaunchAbi = [
   {
     "type": "function",
     "name": "CLAIM_WINDOW",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "COORDINATOR_OVERHEAD_GAS",
     "inputs": [],
     "outputs": [
       {
@@ -956,19 +918,6 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
-    "name": "vrfCoordinator",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IVRFCoordinatorV2Plus"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "vrfFee",
     "inputs": [],
     "outputs": [
@@ -1001,58 +950,6 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
-    "name": "vrfKeyHash",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfMaxFeeGasPrice",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfMinFeeGasPrice",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfNativePayment",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "vrfRequestConfirmations",
     "inputs": [],
     "outputs": [
@@ -1066,13 +963,13 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
-    "name": "vrfSubId",
+    "name": "vrfWrapper",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "address",
+        "internalType": "contract IVRFV2PlusWrapper"
       }
     ],
     "stateMutability": "view"
@@ -1398,7 +1295,7 @@ export const towackLaunchAbi = [
   },
   {
     "type": "error",
-    "name": "OnlyCoordinator",
+    "name": "OnlyVRFWrapperCanFulfill",
     "inputs": [
       {
         "name": "have",

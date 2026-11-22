@@ -17,11 +17,16 @@ export const CONTRACT_KEYS = [
   "genesis", // Genesis 300 on the OFFICIAL Chainlink VRF v2.5 coordinator
   "genesisMock", // old Genesis on MockVRFCoordinator (closed; history only)
   "drawV2Mock", // old pool wheel on MockVRFCoordinator (5M locked, no withdraw; history only)
-  "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (Genesis + DrawV2)
+  "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (the LIVE testnet Genesis + DrawV2, subscription model)
+  "vrfWrapper", // official Chainlink VRF v2.5 direct-funding wrapper (redeployed stack: Launch + Genesis + DrawV2)
   "launchVrfMock", // MockVRFCoordinator still used by the testnet TowackLaunch (owner-fulfilled)
 ] as const;
 
-/** Non-address VRF metadata kept next to the address book (vrfSubId, vrfKeyHash). */
+/**
+ * Non-address VRF metadata kept next to the address book (vrfSubId, vrfKeyHash). LEGACY: only describes the live
+ * subscription-model testnet deploy. The wrapper-model contracts have no subscription and their key hash lives on
+ * the wrapper; drop these once the redeploy is live.
+ */
 export const VRF_META: Record<SupportedChainId, { subId?: string; keyHash?: string }> = {
   97: { subId: str(97, "vrfSubId"), keyHash: str(97, "vrfKeyHash") },
   56: { subId: str(56, "vrfSubId"), keyHash: str(56, "vrfKeyHash") },

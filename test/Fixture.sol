@@ -11,30 +11,22 @@ import {TeamVesting} from "../src/TeamVesting.sol";
 import {DrawV2} from "../src/DrawV2.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
 import {MockAgentId} from "../src/mocks/MockAgentId.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {VRFWrapperMock} from "./VRFWrapperMock.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {MockWBNB, MockPancakeFactory, MockPancakeRouter, MockPancakePair} from "../src/mocks/MockPancake.sol";
 
 contract Fixture is Test {
     MockAgentId agentId;
-    /// Official Chainlink VRF v2.5 mock with a native-payment subscription (no MockVRFCoordinator).
-    VRFCoordinatorV2_5Mock vrf;
-    uint256 subId;
-    bytes32 constant KEY_HASH = 0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26;
+    /// Mock of Chainlink's official VRFV2PlusWrapper (direct funding, native), live BSC wrapper config.
+    VRFWrapperMock vrf;
     /// Per-contract callback gas limits (production values; see docs/ARCHITECTURE.md for the measurements).
-    /// Worst case cold, incl. the official mock's own overhead: Launch 131,772 (first 1.1x draw), Genesis 135,600,
-    /// DrawV2 158,463 (first jackpot + BNB). Limits leave >= 20% headroom over those (more over the bare callback).
+    /// Measured worst case cold, gas actually used inside the wrapper's exact-gas CALL (incl. the CALL's own
+    /// cold-access cost): see test_CallbackGas_* in OfficialVRF.t.sol. Limits keep >= 20% headroom over those.
     uint32 constant LAUNCH_CALLBACK_GAS = 165_000;
     uint32 constant GENESIS_CALLBACK_GAS = 170_000;
     uint32 constant DRAW_CALLBACK_GAS = 200_000;
-    /// Fee quote clamp (BSC testnet: the Chainlink node fulfils at 1 gwei; 50 gwei lane cap).
-    uint64 constant FEE_MIN_GAS_PRICE = 1 gwei;
-    uint64 constant FEE_MAX_GAS_PRICE = 50 gwei;
-    // Mock billing: flat 0.0001 BNB + 1 gwei per callback gas, paid from the sub's native balance.
-    uint96 constant MOCK_BASE_FEE = 1e14;
-    uint96 constant MOCK_GAS_PRICE = 1e9;
-    int256 constant MOCK_WEI_PER_LINK = 4e15;
-    bytes32 constant FULFILLED_SIG = keccak256("RandomWordsFulfilled(uint256,uint256,uint256,uint96,bool,bool,bool)");
+    /// tx.gasprice for every test call (the wrapper prices requests at tx.gasprice; 0 would make them free).
+    uint256 constant TEST_GAS_PRICE = 1 gwei;
     MockWBNB wbnb;
     MockPancakeFactory factory;
     MockPancakeRouter pancake;
@@ -56,18 +48,18 @@ contract Fixture is Test {
     uint256 mintStart;
     uint256 mintEnd;
     uint256 constant PRICE = 0.1 ether;
-    /// VRF fee quotes, cached after deploy (the official mock bills a fixed i_gas_price, so they are constant).
-    /// Cached so tests can use them right after vm.prank without an extra external call eating the prank.
+    /// Buffered VRF fee quotes `vrfFeeAt(TEST_GAS_PRICE)` (what the UI would send), cached after deploy so tests
+    /// can use them right after vm.prank without an extra external call eating the prank. The exact wrapper
+    /// price is `wrapperPrice(limit)`; the difference is refunded in the same tx.
     uint256 launchFee;
     uint256 drawFee;
 
     function setUp() public virtual {
         vm.warp(1_700_000_000);
         agentId = new MockAgentId();
-        vrf = new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE, MOCK_WEI_PER_LINK);
-        subId = vrf.createSubscription();
+        vm.txGasPrice(TEST_GAS_PRICE);
+        vrf = new VRFWrapperMock();
         vm.deal(address(this), 10_000 ether);
-        vrf.fundSubscriptionWithNative{value: 5_000 ether}(subId);
         wbnb = new MockWBNB();
         factory = new MockPancakeFactory();
         pancake = new MockPancakeRouter(address(factory), address(wbnb));
@@ -106,88 +98,66 @@ contract Fixture is Test {
             address(token), address(pancake), address(agentId), address(rebates), address(drawV2), dev
         );
         rebates.bind(address(token), address(router));
-        vrf.addConsumer(subId, address(drawV2));
-        vrf.addConsumer(subId, address(launch));
-        launchFee = launch.vrfFeeAt(0);
-        drawFee = drawV2.vrfFeeAt(0);
+        launchFee = launch.vrfFeeAt(TEST_GAS_PRICE);
+        drawFee = drawV2.vrfFeeAt(TEST_GAS_PRICE);
     }
 
     // ---------------------------------------------------------------- VRF helpers
-    /// Production-shaped config against the official mock: 50 gwei lane key hash, native payment, 3 conf.
+    /// Production-shaped config against the wrapper mock: 3 confirmations, per-contract callback limit.
     function vrfCfg(uint32 callbackGas) internal view returns (VRFConsumerV25.VRFConfig memory) {
-        return VRFConsumerV25.VRFConfig({
-            coordinator: address(vrf),
-            keyHash: KEY_HASH,
-            subId: subId,
-            requestConfirmations: 3,
-            callbackGasLimit: callbackGas,
-            nativePayment: true,
-            minFeeGasPrice: FEE_MIN_GAS_PRICE,
-            maxFeeGasPrice: FEE_MAX_GAS_PRICE
-        });
+        return VRFConsumerV25.VRFConfig({wrapper: address(vrf), requestConfirmations: 3, callbackGasLimit: callbackGas});
     }
 
-    /// Expected quote against the official mock: (i_base_fee + (100k overhead + limit) * i_gas_price) * 1.15.
-    function mockFee(uint32 callbackGas) internal pure returns (uint256) {
-        return (uint256(MOCK_BASE_FEE) + (100_000 + uint256(callbackGas)) * MOCK_GAS_PRICE) * 11_500 / 10_000;
+    /// Exact wrapper price at `gp` (official formula, live BSC config): 13,400 wrapper overhead +
+    /// (limit + 99,500 + 435) * 1.6, all times the gas price.
+    function wrapperPriceAt(uint32 callbackGas, uint256 gp) internal pure returns (uint256) {
+        return gp * 13_400 + gp * (uint256(callbackGas) + 99_500 + 435) * 160 / 100;
     }
 
-    /// Delivers `word` for request `id` to `consumer` through the official mock (the mock forwards exactly
-    /// the request's callbackGasLimit and bills the subscription). Asserts the callback did not revert / OOG.
+    function wrapperPrice(uint32 callbackGas) internal pure returns (uint256) {
+        return wrapperPriceAt(callbackGas, TEST_GAS_PRICE);
+    }
+
+    /// Delivers `word` for request `id` through the wrapper mock (exactly the request's callbackGasLimit).
+    /// `consumer` is the expected recipient; asserts the callback did not revert / OOG.
     function fulfillTo(address consumer, uint256 id, uint256 word) internal {
         bool ok = fulfillToRaw(consumer, id, word);
         assertTrue(ok, "VRF callback failed (reverted or out of gas)");
     }
 
-    /// Same as fulfillTo but returns the mock's `success` flag instead of asserting it.
+    /// Same as fulfillTo but returns the callback's success flag. Delivers to `consumer` with the gas limit the
+    /// request was made with (so a request can also be delivered to the wrong consumer on purpose).
     function fulfillToRaw(address consumer, uint256 id, uint256 word) internal returns (bool success) {
+        (address c, uint32 gasLimit,,,) = vrf.callbacks(id);
+        require(c != address(0), "unknown request");
+        if (c == consumer) return vrf.fulfill(id, word);
         uint256[] memory words = new uint256[](1);
         words[0] = word;
-        vm.recordLogs();
-        vrf.fulfillRandomWordsWithOverride(id, consumer, words);
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-        for (uint256 i = logs.length; i > 0; --i) {
-            Vm.Log memory l = logs[i - 1];
-            if (l.emitter == address(vrf) && l.topics[0] == FULFILLED_SIG) {
-                (,,, success,) = abi.decode(l.data, (uint256, uint96, bool, bool, bool));
-                return success;
-            }
-        }
-        revert("no RandomWordsFulfilled");
+        return vrf.fulfillRawTo(consumer, id, words, gasLimit);
     }
 
-    bytes32 constant REQUESTED_SIG =
-        keccak256("RandomWordsRequested(bytes32,uint256,uint256,uint256,uint16,uint32,uint32,bytes,address)");
+    bytes32 constant REQUESTED_SIG = keccak256("Requested(uint256,address,uint32,uint16,uint256)");
 
     struct VrfReq {
-        bytes32 keyHash;
         uint256 requestId;
-        uint256 subId;
-        uint16 confirmations;
-        uint32 callbackGasLimit;
-        uint32 numWords;
-        bytes extraArgs;
         address sender;
+        uint32 callbackGasLimit;
+        uint16 confirmations;
+        uint256 paid;
     }
 
-    /// Last RandomWordsRequested in `logs` (from vm.getRecordedLogs()).
+    /// Last wrapper `Requested` in `logs` (from vm.getRecordedLogs()).
     function lastVrfRequest(Vm.Log[] memory logs) internal view returns (VrfReq memory r) {
         for (uint256 i = logs.length; i > 0; --i) {
             Vm.Log memory l = logs[i - 1];
             if (l.emitter == address(vrf) && l.topics[0] == REQUESTED_SIG) {
-                r.keyHash = l.topics[1];
-                r.subId = uint256(l.topics[2]);
-                r.sender = address(uint160(uint256(l.topics[3])));
-                (r.requestId,, r.confirmations, r.callbackGasLimit, r.numWords, r.extraArgs) =
-                    abi.decode(l.data, (uint256, uint256, uint16, uint32, uint32, bytes));
+                r.requestId = uint256(l.topics[1]);
+                r.sender = address(uint160(uint256(l.topics[2])));
+                (r.callbackGasLimit, r.confirmations, r.paid) = abi.decode(l.data, (uint32, uint16, uint256));
                 return r;
             }
         }
-        revert("no RandomWordsRequested");
-    }
-
-    function subNativeBalance() internal view returns (uint96 nb) {
-        (, nb,,,) = vrf.getSubscription(subId);
+        revert("no wrapper Requested");
     }
 
     // ---------------------------------------------------------------- helpers
@@ -233,6 +203,9 @@ contract Fixture is Test {
         close();
         launch.finalizeListing();
     }
+
+    /// Retries / enters from the test contract get the unused fee buffer refunded.
+    receive() external payable virtual {}
 
     function newAgent(string memory name) internal returns (address a) {
         a = makeAddr(name);

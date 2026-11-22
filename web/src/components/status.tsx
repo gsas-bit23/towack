@@ -27,6 +27,7 @@ const KEY_LABEL: Record<ContractKey, string> = {
   genesisMock: "Genesis 300 (old, mock VRF)",
   drawV2Mock: "Draw V2 pool (old, mock VRF)",
   vrfCoordinator: "Chainlink VRF v2.5 coordinator",
+  vrfWrapper: "Chainlink VRF v2.5 wrapper",
   launchVrfMock: "Test VRF coordinator (Launch)",
 };
 
@@ -159,25 +160,36 @@ export function LegacyLaunchNote() {
   );
 }
 
-const VRF_COORDINATOR_ABI = [
+const VRF_SOURCE_ABI = [
+  { type: "function", name: "vrfWrapper", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
   { type: "function", name: "vrfCoordinator", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
 ] as const;
 
 /**
- * Where a contract's randomness comes from, read on-chain (`vrfCoordinator()`): the official Chainlink VRF v2.5
- * coordinator, or the owner-answered test coordinator that the testnet launch contract still uses.
+ * Where a contract's randomness comes from, read on-chain: `vrfWrapper()` on the wrapper-model contracts (official
+ * Chainlink VRF v2.5 direct-funding wrapper), else `vrfCoordinator()` on older deploys (official coordinator, or
+ * the owner-answered test coordinator the old testnet launch contract uses).
  */
 export function VrfSource({ consumer }: { consumer?: Address }) {
   const { chainId, addresses, meta } = useTowack();
-  const { data } = useReadContract({
+  const { data: wrapper, isError: noWrapper } = useReadContract({
     address: consumer,
-    abi: VRF_COORDINATOR_ABI,
+    abi: VRF_SOURCE_ABI,
+    functionName: "vrfWrapper",
+    chainId,
+    query: { enabled: Boolean(consumer), staleTime: Infinity, retry: false },
+  });
+  const { data: coordinator } = useReadContract({
+    address: consumer,
+    abi: VRF_SOURCE_ABI,
     functionName: "vrfCoordinator",
     chainId,
-    query: { enabled: Boolean(consumer), staleTime: Infinity },
+    query: { enabled: Boolean(consumer) && noWrapper, staleTime: Infinity, retry: false },
   });
+  const data = wrapper ?? coordinator;
   if (!consumer || !data) return null;
-  const official = addresses.vrfCoordinator && data.toLowerCase() === addresses.vrfCoordinator.toLowerCase();
+  const same = (a?: Address) => Boolean(a) && data.toLowerCase() === a!.toLowerCase();
+  const official = wrapper ? same(addresses.vrfWrapper) : same(addresses.vrfCoordinator);
   if (official) {
     return (
       <a

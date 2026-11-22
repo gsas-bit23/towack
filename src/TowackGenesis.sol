@@ -10,8 +10,9 @@ import {VRFConsumerV25} from "./VRFConsumerV25.sol";
 
 /// @title TowackGenesis ("Genesis 300")
 /// @notice 300 FREE mints for Agent ID holders, separate from the 5,000 paid TowackLaunch mints. No mint
-/// price: the only BNB a minter sends is the Chainlink VRF fee (`vrfFeeAt(gasPrice)`), forwarded straight into
-/// the VRF subscription in the same tx (excess refunded). The contract never holds BNB.
+/// price: the only BNB a minter sends is the Chainlink VRF fee (quote: `vrfFeeAt(gasPrice)`). Exactly the
+/// wrapper's price is forwarded to the VRF v2.5 direct-funding wrapper in the same tx and the excess is refunded.
+/// The contract never holds BNB.
 ///
 /// Design numbers:
 ///  - Cap 300 free mints. Base grant 20,000 TWAK per mint (paid mint: 80,000), sent instantly on mint.

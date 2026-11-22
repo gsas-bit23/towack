@@ -14,7 +14,8 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 - `src/TeamVesting.sol`: 1-year cliff, then 4 years linear daily
 - `src/DrawV2.sol`: instant pool wheel (TWAK into the pool, VRF multiplier 0×–10×, 95% expected return)
 - `src/mocks/`: test/testnet mocks (Agent ID, VRF, Pancake)
-- `script/DeployTestnet.s.sol`: BSC testnet deploy (chainid 97 only)
+- `script/DeployFullStackTestnet.s.sol`: BSC testnet full-stack deploy (chainid 97 only, Chainlink VRF v2.5 wrapper)
+- `script/EstimateFullRedeploy.s.sol`: keyless deploy-cost estimate for 97 / 56 (refuses `--broadcast`)
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 
@@ -38,5 +39,5 @@ BSC_FORK=1 forge test --match-contract ForkPancake -vv   # real Pancake v2 on a 
 ## Deploy (testnet)
 ```sh
 set -a; source /workspace/secrets/towack-deployer.env; set +a   # PRIVATE_KEY, never committed
-forge script script/DeployTestnet.s.sol --rpc-url bsc_testnet --broadcast
+forge script script/DeployFullStackTestnet.s.sol --rpc-url bsc_testnet --broadcast --legacy --with-gas-price 1gwei --slow
 ```

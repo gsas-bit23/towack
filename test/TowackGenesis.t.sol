@@ -30,8 +30,7 @@ contract TowackGenesisTest is Fixture {
         super.setUp();
         nft = new MockAgentIdNFT();
         genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS));
-        vrf.addConsumer(subId, address(genesis));
-        genesisFee = genesis.vrfFeeAt(0);
+        genesisFee = genesis.vrfFeeAt(TEST_GAS_PRICE);
     }
 
     // ---------------------------------------------------------------- helpers
@@ -236,8 +235,8 @@ contract TowackGenesisTest is Fixture {
         assertEq(token.balanceOf(ecosystem), ecoBal - BUDGET);
     }
 
-    /// No mint price and no BNB kept: plain BNB is rejected; a mint pays only the VRF fee into the
-    /// subscription and any extra msg.value comes straight back.
+    /// No mint price and no BNB kept: plain BNB is rejected; a mint pays only the exact VRF wrapper
+    /// price and any extra msg.value comes straight back.
     function test_NoBnbKept_OnlyVrfFee() public {
         vm.deal(address(this), 1 ether);
         (bool ok,) = address(genesis).call{value: 1 ether}("");
@@ -245,14 +244,15 @@ contract TowackGenesisTest is Fixture {
         _fundAndOpen();
         (address u, uint256 id) = _newHolder(0);
         vm.deal(u, 1 ether);
-        uint96 sub0 = subNativeBalance();
+        uint256 w0 = address(vrf).balance;
+        uint256 price = wrapperPrice(GENESIS_CALLBACK_GAS);
         vm.prank(u);
         (ok,) = address(genesis).call{value: 0.1 ether}(abi.encodeCall(TowackGenesis.mint, (id)));
         assertTrue(ok, "mint pays only the VRF fee");
         assertEq(address(genesis).balance, 0, "no BNB kept");
-        assertEq(u.balance, 1 ether - genesisFee, "excess refunded");
-        assertEq(subNativeBalance() - sub0, genesisFee, "fee credited to the sub");
-        assertEq(genesisFee, mockFee(GENESIS_CALLBACK_GAS));
+        assertEq(u.balance, 1 ether - price, "excess over the exact wrapper price refunded");
+        assertEq(address(vrf).balance - w0, price, "wrapper got exactly its price");
+        assertEq(genesisFee, price * 11_000 / 10_000, "quote = wrapper estimate + 10%");
     }
 
     function test_MintGivesBaseAndRequestsVrf() public {
@@ -264,8 +264,7 @@ contract TowackGenesisTest is Fixture {
         _mint(u, id);
         VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
         assertEq(r.callbackGasLimit, GENESIS_CALLBACK_GAS);
-        assertEq(r.subId, subId);
-        assertEq(r.keyHash, KEY_HASH);
+        assertEq(r.paid, wrapperPrice(GENESIS_CALLBACK_GAS));
         assertEq(r.confirmations, 3);
         assertEq(r.sender, address(genesis));
         assertEq(token.balanceOf(u), BASE);

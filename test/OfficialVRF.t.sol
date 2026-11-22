@@ -2,46 +2,47 @@
 pragma solidity 0.8.24;
 
 import {Fixture} from "./Fixture.sol";
+import {VRFWrapperMock} from "./VRFWrapperMock.sol";
 import {DrawV2} from "../src/DrawV2.sol";
 import {TowackGenesis} from "../src/TowackGenesis.sol";
 import {TowackLaunch} from "../src/TowackLaunch.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
 import {MockAgentIdNFT} from "../src/mocks/MockAgentIdNFT.sol";
-import {
-    VRFV2PlusClient,
-    IVRFCoordinatorV2Plus as OurCoordinator,
-    IVRFSubscriptionV2Plus as OurSubscription
-} from "../src/interfaces/IVRFCoordinatorV2Plus.sol";
+import {VRFV2PlusClient} from "../src/interfaces/IVRFCoordinatorV2Plus.sol";
 import {VRFV2PlusClient as ChainlinkClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-import {
-    IVRFCoordinatorV2Plus as ChainlinkCoordinator
-} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
-import {
-    IVRFSubscriptionV2Plus as ChainlinkSubscription
-} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFSubscriptionV2Plus.sol";
-import {SubscriptionAPI} from "@chainlink/contracts/src/v0.8/vrf/dev/SubscriptionAPI.sol";
+import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFV2PlusWrapper.sol";
+import {VRFV2PlusWrapperConsumerBase} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFV2PlusWrapperConsumerBase.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @dev ADVERSARIAL coordinator for reentrancy tests only (the honest path uses Chainlink's official
-/// VRFCoordinatorV2_5Mock). Inside `requestRandomWords` it (1) synchronously "fulfils" the id it is about
-/// to return and (2) re-enters the consumer with an arbitrary call. Both must be harmless.
-contract ReentrantCoordinator {
+/// @dev ADVERSARIAL wrapper for reentrancy tests only (the honest path uses VRFWrapperMock). Inside
+/// `requestRandomWordsInNative` it (1) synchronously "fulfils" the id it is about to return and (2) re-enters the
+/// consumer with an arbitrary call. Both must be harmless. Price = flat 0.001 BNB.
+contract ReentrantWrapper {
     address public target;
     bytes public reenterCall;
     uint256 public nextId = 1;
     bool public reenterSucceeded;
     bytes public reenterRevertData;
 
-    /// Accepts the consumer's fee forward (no subscription bookkeeping).
-    function fundSubscriptionWithNative(uint256) external payable {}
+    function link() external pure returns (address) {
+        return address(0x1111);
+    }
+
+    function calculateRequestPriceNative(uint32, uint32) external pure returns (uint256) {
+        return 0.001 ether;
+    }
+
+    function estimateRequestPriceNative(uint32, uint32, uint256) external pure returns (uint256) {
+        return 0.001 ether;
+    }
 
     function arm(address t, bytes calldata c) external {
         target = t;
         reenterCall = c;
     }
 
-    function requestRandomWords(VRFV2PlusClient.RandomWordsRequest calldata) external returns (uint256 id) {
+    function requestRandomWordsInNative(uint32, uint16, uint32, bytes calldata) external payable returns (uint256 id) {
         id = nextId++;
         if (target == address(0)) return id;
         uint256[] memory w = new uint256[](1);
@@ -50,6 +51,26 @@ contract ReentrantCoordinator {
         (bool ok, bytes memory ret) = target.call(reenterCall);
         if (ok) reenterSucceeded = true;
         reenterRevertData = ret;
+    }
+}
+
+/// @dev Wrapper that is down (Chainlink `disable()`d it, or it reverts for any reason): requests must revert
+/// atomically with the mint / entry.
+contract DisabledWrapper {
+    function link() external pure returns (address) {
+        return address(0x1111);
+    }
+
+    function calculateRequestPriceNative(uint32, uint32) external pure returns (uint256) {
+        return 0.001 ether;
+    }
+
+    function estimateRequestPriceNative(uint32, uint32, uint256) external pure returns (uint256) {
+        return 0.001 ether;
+    }
+
+    function requestRandomWordsInNative(uint32, uint16, uint32, bytes calldata) external payable returns (uint256) {
+        revert("wrapper is disabled");
     }
 }
 
@@ -112,35 +133,6 @@ contract ReentrantPlayer {
     }
 }
 
-/// @dev Coordinator stub exposing an official-shaped `s_config()` (BSC testnet values: premium 60%,
-/// gasAfterPaymentCalculation 48,500, maxGasLimit 2.5M) so the fee quote's official branch can be checked
-/// against `_calculatePaymentAmountNative` by hand. Records the funded amount; never fulfils.
-contract ConfigCoordinator {
-    uint32 public flatPPM;
-    uint256 public funded;
-    uint256 public nextId = 1;
-
-    function setFlat(uint32 f) external {
-        flatPPM = f;
-    }
-
-    function s_config()
-        external
-        view
-        returns (uint16, uint32, bool, uint32, uint32, uint32, uint32, uint8, uint8)
-    {
-        return (3, 2_500_000, false, 0, 48_500, flatPPM, 0, 60, 0);
-    }
-
-    function fundSubscriptionWithNative(uint256) external payable {
-        funded += msg.value;
-    }
-
-    function requestRandomWords(VRFV2PlusClient.RandomWordsRequest calldata) external returns (uint256) {
-        return nextId++;
-    }
-}
-
 /// @dev A caller that cannot receive BNB (no receive / fallback): any refund to it must revert the request.
 contract NoReceive {
     function enter(DrawV2 d, IERC20 t, uint256 amt) external payable {
@@ -164,8 +156,7 @@ contract OfficialVRFTest is Fixture {
         genesis = new TowackGenesis(
             address(token), address(nft), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS)
         );
-        genesisFee = genesis.vrfFeeAt(0);
-        vrf.addConsumer(subId, address(genesis));
+        genesisFee = genesis.vrfFeeAt(TEST_GAS_PRICE);
         vm.startPrank(ecosystem);
         token.approve(address(genesis), 8_000_000e18);
         genesis.fund(8_000_000e18);
@@ -187,7 +178,7 @@ contract OfficialVRFTest is Fixture {
     }
 
     // ================================================================ official library / interface parity
-    function test_ClientEncodingMatchesChainlink() public pure {
+    function test_ClientEncodingAndWrapperInterfaceMatchChainlink() public pure {
         assertEq(VRFV2PlusClient.EXTRA_ARGS_V1_TAG, ChainlinkClient.EXTRA_ARGS_V1_TAG);
         for (uint256 i; i < 2; ++i) {
             bool native = i == 1;
@@ -196,50 +187,21 @@ contract OfficialVRFTest is Fixture {
                 ChainlinkClient._argsToBytes(ChainlinkClient.ExtraArgsV1({nativePayment: native}))
             );
         }
-        assertEq(OurCoordinator.requestRandomWords.selector, ChainlinkCoordinator.requestRandomWords.selector);
-        assertEq(OurSubscription.createSubscription.selector, ChainlinkSubscription.createSubscription.selector);
+        // the mock exposes the official wrapper's selectors
+        assertEq(VRFWrapperMock.calculateRequestPriceNative.selector, IVRFV2PlusWrapper.calculateRequestPriceNative.selector);
+        assertEq(VRFWrapperMock.estimateRequestPriceNative.selector, IVRFV2PlusWrapper.estimateRequestPriceNative.selector);
+        assertEq(VRFWrapperMock.requestRandomWordsInNative.selector, IVRFV2PlusWrapper.requestRandomWordsInNative.selector);
+        assertEq(bytes4(keccak256("lastRequestId()")), IVRFV2PlusWrapper.lastRequestId.selector); // mock getter
+        assertEq(bytes4(keccak256("link()")), IVRFV2PlusWrapper.link.selector); // mock getter
+        // our callback entry point is the one the official wrapper calls
         assertEq(
-            OurSubscription.fundSubscriptionWithNative.selector,
-            ChainlinkSubscription.fundSubscriptionWithNative.selector
+            VRFConsumerV25.rawFulfillRandomWords.selector, VRFV2PlusWrapperConsumerBase.rawFulfillRandomWords.selector
         );
-        assertEq(OurSubscription.addConsumer.selector, ChainlinkSubscription.addConsumer.selector);
-        assertEq(OurSubscription.removeConsumer.selector, ChainlinkSubscription.removeConsumer.selector);
-        assertEq(OurSubscription.getSubscription.selector, ChainlinkSubscription.getSubscription.selector);
-        assertEq(OurSubscription.pendingRequestExists.selector, ChainlinkSubscription.pendingRequestExists.selector);
-        assertEq(OurSubscription.cancelSubscription.selector, ChainlinkSubscription.cancelSubscription.selector);
-    }
-
-    function test_SubscriptionSetupThroughOurInterface() public {
-        OurCoordinator c = OurCoordinator(address(vrf));
-        uint256 s = c.createSubscription();
-        c.fundSubscriptionWithNative{value: 0.04 ether}(s);
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(s, DRAW_CALLBACK_GAS));
-        c.addConsumer(s, address(d));
-        (uint96 link, uint96 nb, uint64 reqs, address owner, address[] memory cons) = c.getSubscription(s);
-        assertEq(link, 0, "no LINK needed");
-        assertEq(nb, 0.04 ether);
-        assertEq(reqs, 0);
-        assertEq(owner, address(this));
-        assertEq(cons.length, 1);
-        assertEq(cons[0], address(d));
-        c.removeConsumer(s, address(d));
-        (,,,, cons) = c.getSubscription(s);
-        assertEq(cons.length, 0);
     }
 
     // ================================================================ constructor validation
     function test_ConstructorRejectsNonProductionConfig() public {
         VRFConsumerV25.VRFConfig memory c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.keyHash = bytes32(0);
-        vm.expectRevert("VRF: keyHash");
-        new DrawV2(address(timelock), address(token), c);
-
-        c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.subId = 0;
-        vm.expectRevert("VRF: subId");
-        new DrawV2(address(timelock), address(token), c);
-
-        c = vrfCfg(DRAW_CALLBACK_GAS);
         c.requestConfirmations = 2;
         vm.expectRevert("VRF: confirmations");
         new DrawV2(address(timelock), address(token), c);
@@ -260,205 +222,210 @@ contract OfficialVRFTest is Fixture {
         new DrawV2(address(timelock), address(token), c);
 
         c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.nativePayment = false;
-        vm.expectRevert("VRF: native");
+        c.wrapper = makeAddr("eoa");
+        vm.expectRevert("VRF: wrapper");
         new DrawV2(address(timelock), address(token), c);
 
         c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.minFeeGasPrice = 0;
-        vm.expectRevert("VRF: fee gas price");
-        new DrawV2(address(timelock), address(token), c);
-
-        c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.minFeeGasPrice = c.maxFeeGasPrice + 1;
-        vm.expectRevert("VRF: fee gas price");
-        new DrawV2(address(timelock), address(token), c);
-
-        c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.coordinator = makeAddr("eoa");
-        vm.expectRevert("VRF: coordinator");
+        c.wrapper = address(0);
+        vm.expectRevert("VRF: wrapper");
         new DrawV2(address(timelock), address(token), c);
 
         DrawV2 ok = new DrawV2(address(timelock), address(token), vrfCfg(DRAW_CALLBACK_GAS));
-        assertEq(address(ok.vrfCoordinator()), address(vrf));
-        assertEq(ok.vrfKeyHash(), KEY_HASH);
-        assertEq(ok.vrfSubId(), subId);
+        assertEq(address(ok.vrfWrapper()), address(vrf));
         assertEq(ok.vrfRequestConfirmations(), 3);
         assertEq(ok.vrfCallbackGasLimit(), DRAW_CALLBACK_GAS);
-        assertTrue(ok.vrfNativePayment());
+        assertEq(address(launch.vrfWrapper()), address(vrf));
+        assertEq(launch.vrfCallbackGasLimit(), LAUNCH_CALLBACK_GAS);
+        assertEq(address(genesis.vrfWrapper()), address(vrf));
+        assertEq(genesis.vrfCallbackGasLimit(), GENESIS_CALLBACK_GAS);
     }
 
-    // ================================================================ subscription gating + billing
-    function test_UnaddedConsumerCannotRequest_MintAndEnterAtomic() public {
-        DrawV2 d = new DrawV2(address(timelock), address(token), vrfCfg(DRAW_CALLBACK_GAS)); // NOT added
-        vm.startPrank(seasons);
-        token.approve(address(d), type(uint256).max);
-        d.seed(1_000_000e18);
-        uint256 bal = token.balanceOf(seasons);
-        vm.expectRevert(abi.encodeWithSelector(SubscriptionAPI.InvalidConsumer.selector, subId, address(d)));
-        d.enter{value: drawFee}(1_000e18);
-        vm.stopPrank();
-        assertEq(token.balanceOf(seasons), bal, "entry not taken");
-        assertEq(d.reservedTwak(), 0);
-
-        // removing Genesis from the sub blocks new mints atomically (no 20k base handed out)
-        vrf.removeConsumer(subId, address(genesis));
-        uint256 tid = nft.registerFor(alice);
-        vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(SubscriptionAPI.InvalidConsumer.selector, subId, address(genesis)));
-        genesis.mint{value: genesisFee}(tid);
-        assertEq(genesis.mintCount(), 0);
-        assertEq(token.balanceOf(alice), 5_000_000e18);
-    }
-
-    function test_FulfilmentBillsNativeSubscription() public {
-        vm.recordLogs();
-        (, uint256 req) = _enter(alice, 1_000e18);
-        VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
-        uint96 before = subNativeBalance(); // after the user's fee was credited
-        assertEq(r.extraArgs, VRFV2PlusClient.argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: true})));
-        fulfillTo(address(drawV2), req, 0);
-        uint96 afterBal = subNativeBalance();
-        assertLt(afterBal, before, "paid in native");
-        (uint96 link,, uint64 reqCount,,) = vrf.getSubscription(subId);
-        assertEq(link, 0, "no LINK used");
-        assertEq(reqCount, 0, "the official mock does not track reqCount");
-        emit log_named_uint("mock native charge per fulfil (wei)", before - afterBal);
+    // ================================================================ fee quote
+    /// vrfFeeAt(gp) = wrapper.estimateRequestPriceNative(limit, 1, gp) * 1.10. Mock = official formula with the
+    /// live BSC wrapper config (13,400 + (limit + 99,500 + 435) * 1.6, times gp; flat fee 0).
+    function test_Fee_QuoteIsWrapperEstimatePlusBuffer() public {
+        uint256[4] memory gps = [uint256(0.05 gwei), 0.1 gwei, 1 gwei, 5 gwei];
+        for (uint256 i; i < 4; ++i) {
+            uint256 g = gps[i];
+            assertEq(launch.vrfFeeAt(g), wrapperPriceAt(LAUNCH_CALLBACK_GAS, g) * 11_000 / 10_000);
+            assertEq(genesis.vrfFeeAt(g), wrapperPriceAt(GENESIS_CALLBACK_GAS, g) * 11_000 / 10_000);
+            assertEq(drawV2.vrfFeeAt(g), wrapperPriceAt(DRAW_CALLBACK_GAS, g) * 11_000 / 10_000);
+            assertEq(drawV2.vrfFeeAt(g), vrf.estimateRequestPriceNative(DRAW_CALLBACK_GAS, 1, g) * 11_000 / 10_000);
+        }
+        assertEq(drawV2.vrfFeeAt(0), 0, "no flat fee on BSC: an eth_call quote at gas price 0 is 0 (UI must pass a gas price)");
+        assertEq(drawV2.vrfFee(), drawV2.vrfFeeAt(tx.gasprice));
+        assertEq(launchFee, launch.vrfFeeAt(TEST_GAS_PRICE));
+        // 1 gwei, Launch 165k: 13,400 + 264,935 * 1.6 = 437,296 gwei-units -> 0.000437296 BNB (matches the live
+        // testnet wrapper's estimateRequestPriceNative(165000, 1, 1 gwei) read 2026-11-22).
+        assertEq(wrapperPrice(LAUNCH_CALLBACK_GAS), 437_296 gwei);
+        // a flat fee on the wrapper flows straight into the quote
+        vrf.setConfig(13_400, 99_500, 435, 60, 5_000);
+        assertEq(drawV2.vrfFeeAt(1 gwei), (wrapperPriceAt(DRAW_CALLBACK_GAS, 1 gwei) + 5_000 * 1e12) * 11_000 / 10_000);
+        emit log_named_uint("Launch fee quote @1 gwei (wei)", launchFee);
+        emit log_named_uint("DrawV2 fee quote @1 gwei (wei)", drawFee);
+        emit log_named_uint("Genesis fee quote @1 gwei (wei)", genesisFee);
     }
 
     // ================================================================ user-paid VRF fee
-    /// Against the official mock the quote is base + (100k overhead + limit) * i_gas_price, +15%; the mock
-    /// bills a fixed gas price, so the quote does not depend on the gas price argument.
-    function test_Fee_QuoteDeterministic_MockBranch() public view {
-        assertEq(launch.vrfFeeAt(0), mockFee(LAUNCH_CALLBACK_GAS));
-        assertEq(genesis.vrfFeeAt(0), mockFee(GENESIS_CALLBACK_GAS));
-        assertEq(drawV2.vrfFeeAt(0), mockFee(DRAW_CALLBACK_GAS));
-        assertEq(drawV2.vrfFeeAt(7 gwei), drawV2.vrfFeeAt(0));
-        assertEq(drawV2.vrfFee(), drawV2.vrfFeeAt(0));
-        assertEq(launchFee, mockFee(LAUNCH_CALLBACK_GAS));
-        assertEq(drawFee, mockFee(DRAW_CALLBACK_GAS));
-        // the quote covers what the mock actually bills for a worst-case fulfilment (checked below too)
-        assertGt(mockFee(DRAW_CALLBACK_GAS), uint256(MOCK_BASE_FEE) + uint256(DRAW_CALLBACK_GAS) * MOCK_GAS_PRICE);
-    }
-
-    /// Official branch: matches VRFCoordinatorV2_5._calculatePaymentAmountNative on the full callback limit
-    /// + 100k overhead, +15%, with the gas price clamped to [1 gwei floor, 50 gwei lane cap].
-    function test_Fee_OfficialFormulaAndClamp() public {
-        ConfigCoordinator c = new ConfigCoordinator();
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(subId, DRAW_CALLBACK_GAS, address(c)));
-        uint256 gasUnits = 48_500 + 100_000 + uint256(DRAW_CALLBACK_GAS);
-        uint256 at1 = 1 gwei * gasUnits * 160 / 100 * 11_500 / 10_000;
-        assertEq(d.vrfFeeAt(1 gwei), at1);
-        assertEq(d.vrfFeeAt(0), at1, "floor: an eth_call / low-priced tx cannot underpay");
-        assertEq(d.vrfFeeAt(0.5 gwei), at1);
-        uint256 at3 = 3 gwei * gasUnits * 160 / 100 * 11_500 / 10_000;
-        assertEq(d.vrfFeeAt(3 gwei), at3);
-        uint256 cap = 50 gwei * gasUnits * 160 / 100 * 11_500 / 10_000;
-        assertEq(d.vrfFeeAt(50 gwei), cap);
-        assertEq(d.vrfFeeAt(1_000 gwei), cap, "capped at the lane max");
-        c.setFlat(5_000); // 0.005 native flat fee
-        assertEq(d.vrfFeeAt(1 gwei), (1 gwei * gasUnits * 160 / 100 + 5_000 * 1e12) * 11_500 / 10_000);
-        emit log_named_uint("testnet-shaped fee @1 gwei (DrawV2 limit), wei", at1);
-
-        // the request path charges vrfFeeAt(tx.gasprice) and forwards exactly that
-        c.setFlat(0);
-        vm.startPrank(seasons);
-        token.approve(address(d), type(uint256).max);
-        d.seed(1_000_000e18);
-        vm.txGasPrice(3 gwei);
-        uint256 b0 = seasons.balance;
-        d.enter{value: 1 ether}(1_000e18);
-        vm.stopPrank();
-        assertEq(c.funded(), at3, "fee at the tx gas price");
-        assertEq(b0 - seasons.balance, at3, "excess refunded");
-    }
-
     function test_Fee_TooLow_RevertsAtomically_AllConsumers() public {
-        // Launch: 0.1 BNB + fee - 1
+        uint256 lp = wrapperPrice(LAUNCH_CALLBACK_GAS);
+        uint256 gp = wrapperPrice(GENESIS_CALLBACK_GAS);
+        uint256 dp = wrapperPrice(DRAW_CALLBACK_GAS);
+        // Launch: 0.1 BNB + exact price - 1
         address u = newAgent("lowfee");
         vm.deal(u, 1 ether);
-        uint96 sub0 = subNativeBalance();
+        uint256 w0 = address(vrf).balance;
         vm.prank(u);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, launchFee - 1, launchFee));
-        launch.mint{value: PRICE + launchFee - 1}();
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, lp - 1, lp));
+        launch.mint{value: PRICE + lp - 1}();
+        vm.prank(u);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, lp));
+        launch.mint{value: PRICE}();
         assertEq(u.balance, 1 ether, "Launch BNB not taken");
         assertEq(address(launch).balance, 0);
         assertEq(token.balanceOf(u), 0, "no TWAK");
         assertEq(launch.mintCount(), 0);
         assertFalse(launch.hasMinted(u));
 
-        // Genesis: fee - 1 (no mint price)
+        // Genesis: price - 1 (no mint price)
         uint256 tid = nft.registerFor(u);
         vm.prank(u);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, genesisFee - 1, genesisFee));
-        genesis.mint{value: genesisFee - 1}(tid);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, gp - 1, gp));
+        genesis.mint{value: gp - 1}(tid);
         vm.prank(u);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, genesisFee));
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, gp));
         genesis.mint(tid);
         assertEq(genesis.mintCount(), 0);
         assertFalse(genesis.tokenIdUsed(tid));
         assertEq(token.balanceOf(u), 0, "no 20k base");
 
-        // DrawV2: fee - 1
+        // DrawV2: price - 1
         uint256 a0 = token.balanceOf(alice);
         uint256 ab = alice.balance;
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, drawFee - 1, drawFee));
-        drawV2.enter{value: drawFee - 1}(1_000e18);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, dp - 1, dp));
+        drawV2.enter{value: dp - 1}(1_000e18);
         assertEq(token.balanceOf(alice), a0, "no TWAK moved");
         assertEq(alice.balance, ab);
         assertEq(drawV2.spinCount(), 0, "no spin");
         assertEq(drawV2.reservedTwak(), 0);
         assertEq(drawV2.totalEntered(), 0);
-        assertEq(subNativeBalance(), sub0, "sub untouched");
+        assertEq(address(vrf).balance, w0, "wrapper untouched");
+        assertEq(vrf.requestCount(), 0);
     }
 
-    /// Exact fee lands in the subscription BEFORE fulfilment; excess comes back; only 0.1 BNB stays in Launch.
-    function test_Fee_ExcessRefunded_SubCreditedBeforeFulfil_Launch() public {
+    /// The wrapper gets EXACTLY its price (not the buffered quote, not the mint price); excess comes back in the
+    /// same tx; only 0.1 BNB stays in Launch.
+    function test_Fee_ExcessRefunded_WrapperGetsExactPrice_Launch() public {
         address u = newAgent("over");
         vm.deal(u, 1 ether);
-        uint96 sub0 = subNativeBalance();
-        vm.expectEmit(true, false, false, true, address(launch));
-        emit VRFConsumerV25.VrfFeePaid(u, 1, launchFee);
+        uint256 price = wrapperPrice(LAUNCH_CALLBACK_GAS);
+        assertGt(launchFee, price, "quote carries a buffer");
+        uint256 w0 = address(vrf).balance;
+        vm.expectEmit(true, true, false, true, address(launch));
+        emit VRFConsumerV25.VrfFeePaid(u, 1, price);
         vm.prank(u);
         launch.mint{value: PRICE + launchFee + 0.37 ether}();
-        assertEq(u.balance, 1 ether - PRICE - launchFee, "refund = msg.value - MINT_PRICE - fee");
+        assertEq(u.balance, 1 ether - PRICE - price, "refund = msg.value - MINT_PRICE - exact price");
         assertEq(address(launch).balance, PRICE, "mint price stays, nothing else");
-        assertEq(subNativeBalance() - sub0, launchFee, "exactly the fee, not the mint price");
-        // the fulfilment is then billed from that balance
+        assertEq(address(vrf).balance - w0, price, "wrapper got exactly its price, not the buffer");
+        assertEq(vrf.totalPaid(), price);
         fulfillTo(address(launch), requestOf(u), 0);
-        assertLt(subNativeBalance(), sub0 + launchFee);
+        assertEq(launch.assignedCount(), 1);
     }
 
     function test_Fee_ExcessRefunded_GenesisAndDrawV2_FeeNotInBnbPot() public {
-        uint96 sub0 = subNativeBalance();
+        uint256 w0 = address(vrf).balance;
+        uint256 gp = wrapperPrice(GENESIS_CALLBACK_GAS);
+        uint256 dp = wrapperPrice(DRAW_CALLBACK_GAS);
         uint256 tid = nft.registerFor(alice);
         uint256 ab = alice.balance;
         vm.prank(alice);
         genesis.mint{value: 1 ether}(tid);
-        assertEq(ab - alice.balance, genesisFee);
+        assertEq(ab - alice.balance, gp);
         assertEq(address(genesis).balance, 0);
 
         vm.deal(address(drawV2), 10 ether); // BNB pot
+        uint256 avail0 = drawV2.availableBnb();
         ab = alice.balance;
         vm.prank(alice);
         (uint256 spinId,) = drawV2.enter{value: 5 ether}(1_000e18);
         (,,,,,, uint256 bnbCap,) = drawV2.spins(spinId);
         assertEq(bnbCap, 0.2 ether, "2% of the 10 BNB pot; msg.value is not pot money");
-        assertEq(address(drawV2).balance, 10 ether, "fee forwarded, excess refunded");
-        assertEq(ab - alice.balance, drawFee);
-        assertEq(subNativeBalance() - sub0, genesisFee + drawFee);
+        assertEq(address(drawV2).balance, 10 ether, "price forwarded, excess refunded: pot unchanged");
+        assertEq(drawV2.availableBnb(), avail0 - bnbCap, "only the reservation moved");
+        assertEq(ab - alice.balance, dp);
+        assertEq(address(vrf).balance - w0, gp + dp);
     }
 
     function testFuzz_Fee_RefundExact(uint96 extra) public {
         uint256 x = bound(extra, 0, 50 ether);
+        uint256 price = wrapperPrice(DRAW_CALLBACK_GAS);
         uint256 ab = alice.balance;
-        uint96 sub0 = subNativeBalance();
+        uint256 w0 = address(vrf).balance;
         vm.prank(alice);
-        drawV2.enter{value: drawFee + x}(1_000e18);
-        assertEq(ab - alice.balance, drawFee);
-        assertEq(subNativeBalance() - sub0, drawFee);
+        drawV2.enter{value: price + x}(1_000e18);
+        assertEq(ab - alice.balance, price);
+        assertEq(address(vrf).balance - w0, price);
         assertEq(address(drawV2).balance, 0);
+    }
+
+    /// Whatever the tx gas price, the charge is the wrapper's price at THAT gas price and the quote at the same
+    /// gas price always covers it (refund = the 10% buffer).
+    function testFuzz_Fee_ChargedAtTxGasPrice(uint256 gpRaw) public {
+        uint256 g = bound(gpRaw, 0.01 gwei, 1_000 gwei);
+        vm.txGasPrice(g);
+        uint256 quote = drawV2.vrfFeeAt(g);
+        uint256 price = wrapperPriceAt(DRAW_CALLBACK_GAS, g);
+        uint256 ab = alice.balance;
+        vm.prank(alice);
+        drawV2.enter{value: quote}(1_000e18);
+        assertEq(ab - alice.balance, price);
+        assertEq(address(vrf).balance, price);
+    }
+
+    /// Gas spike between quote and inclusion. A fee quoted at 1 gwei is NOT enough for a request mined at
+    /// 5 gwei (the wrapper prices at tx.gasprice): it reverts atomically. Quoting at the real gas price works.
+    /// The frontend (`useVrfFee`) quotes at gasPrice x 1.25 and sends the quote + 10%; with the contract's own
+    /// 10% buffer that tolerates a ~1.5x move. Both buffers are refunded when unused.
+    function test_Fee_GasSpike_LowQuoteReverts_HigherQuoteSucceeds() public {
+        uint256 q1 = drawV2.vrfFeeAt(1 gwei);
+        vm.txGasPrice(5 gwei);
+        uint256 p5 = wrapperPriceAt(DRAW_CALLBACK_GAS, 5 gwei);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, q1, p5));
+        drawV2.enter{value: q1}(1_000e18);
+        uint256 lq1 = launch.vrfFeeAt(1 gwei);
+        uint256 lp5 = wrapperPriceAt(LAUNCH_CALLBACK_GAS, 5 gwei);
+        address u = newAgent("spike");
+        vm.deal(u, 1 ether);
+        vm.prank(u);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, lq1, lp5));
+        launch.mint{value: PRICE + lq1}();
+        uint256 tid = nft.registerFor(u);
+        uint256 gq1 = genesis.vrfFeeAt(1 gwei);
+        uint256 gp5 = wrapperPriceAt(GENESIS_CALLBACK_GAS, 5 gwei);
+        vm.prank(u);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, gq1, gp5));
+        genesis.mint{value: gq1}(tid);
+        assertEq(vrf.requestCount(), 0);
+
+        // quoted at the real 5 gwei: succeeds, charged exactly p5, buffer refunded
+        uint256 q5 = drawV2.vrfFeeAt(5 gwei);
+        uint256 ab = alice.balance;
+        vm.prank(alice);
+        drawV2.enter{value: q5}(1_000e18);
+        assertEq(ab - alice.balance, p5);
+        assertEq(address(vrf).balance, p5);
+
+        // frontend recipe: estimate 1 gwei -> quote vrfFeeAt(1.25 gwei), send +10%; tx lands at 1.5 gwei -> ok
+        uint256 sent = drawV2.vrfFeeAt(1.25 gwei) * 110 / 100;
+        vm.txGasPrice(1.5 gwei);
+        ab = alice.balance;
+        vm.prank(alice);
+        drawV2.enter{value: sent}(1_000e18);
+        assertEq(ab - alice.balance, wrapperPriceAt(DRAW_CALLBACK_GAS, 1.5 gwei), "charged at 1.5 gwei, rest refunded");
     }
 
     function test_Fee_RetryPathsCollectFee() public {
@@ -468,24 +435,27 @@ contract OfficialVRFTest is Fixture {
         genesis.mint{value: genesisFee}(tid);
         mintN(1);
         vm.warp(block.timestamp + 1 hours);
+        uint256 dp = wrapperPrice(DRAW_CALLBACK_GAS);
+        uint256 gp = wrapperPrice(GENESIS_CALLBACK_GAS);
+        uint256 lp = wrapperPrice(LAUNCH_CALLBACK_GAS);
 
         address r = makeAddr("retrier");
         vm.deal(r, 1 ether);
         vm.startPrank(r);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, drawFee));
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, dp));
         drawV2.retrySpin(spinId);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, genesisFee - 1, genesisFee));
-        genesis.retryPrize{value: genesisFee - 1}(bob);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, launchFee));
-        launch.retryPrize(user(0));
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, gp - 1, gp));
+        genesis.retryPrize{value: gp - 1}(bob);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, lp - 1, lp));
+        launch.retryPrize{value: lp - 1}(user(0));
 
-        uint96 sub0 = subNativeBalance();
+        uint256 w0 = address(vrf).balance;
         drawV2.retrySpin{value: drawFee + 0.1 ether}(spinId);
         genesis.retryPrize{value: genesisFee + 0.1 ether}(bob);
         launch.retryPrize{value: launchFee + 0.1 ether}(user(0));
         vm.stopPrank();
-        assertEq(subNativeBalance() - sub0, drawFee + genesisFee + launchFee, "each retry funds its request");
-        assertEq(r.balance, 1 ether - drawFee - genesisFee - launchFee, "retrier refunded the excess");
+        assertEq(address(vrf).balance - w0, dp + gp + lp, "each retry pays the wrapper its exact price");
+        assertEq(r.balance, 1 ether - dp - gp - lp, "retrier refunded the excess");
         assertEq(address(launch).balance, PRICE, "retry fee never touches launch accounting");
     }
 
@@ -494,38 +464,59 @@ contract OfficialVRFTest is Fixture {
         vm.prank(seasons);
         token.transfer(address(nr), 10_000e18);
         vm.deal(address(this), 1 ether);
+        uint256 price = wrapperPrice(DRAW_CALLBACK_GAS);
         vm.expectRevert(VRFConsumerV25.RefundFailed.selector);
-        nr.enter{value: drawFee + 1}(drawV2, IERC20(address(token)), 1_000e18);
+        nr.enter{value: price + 1}(drawV2, IERC20(address(token)), 1_000e18);
         assertEq(drawV2.spinCount(), 0);
-        nr.enter{value: drawFee}(drawV2, IERC20(address(token)), 1_000e18); // exact fee: no refund call
+        nr.enter{value: price}(drawV2, IERC20(address(token)), 1_000e18); // exact price: no refund call
         assertEq(drawV2.spinCount(), 1);
     }
 
-    /// The quote must cover what the coordinator bills for the worst-case cold callback.
-    function test_Fee_CoversWorstCaseMockBill() public {
-        vm.deal(address(drawV2), 10 ether);
+    /// The request carries ExtraArgsV1{nativePayment: true} (the mock rejects anything else, like the real
+    /// wrapper's checkPaymentMode), the consumer's own confirmations and callback limit, one word.
+    function test_RequestShape() public {
+        vm.recordLogs();
         (, uint256 req) = _enter(alice, 1_000e18);
-        vm.cool(address(drawV2));
-        uint96 b0 = subNativeBalance();
-        fulfillTo(address(drawV2), req, JACKPOT_WORD);
-        uint256 billed = b0 - subNativeBalance();
-        emit log_named_uint("DrawV2 worst-case mock bill (wei)", billed);
-        emit log_named_uint("DrawV2 quoted fee (wei)", drawFee);
-        assertGt(drawFee, billed);
+        VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
+        assertEq(r.requestId, req);
+        assertEq(vrf.lastRequestId(), 0, "native path does not set lastRequestId (official behaviour)");
+        assertEq(r.sender, address(drawV2));
+        assertEq(r.callbackGasLimit, DRAW_CALLBACK_GAS);
+        assertEq(r.confirmations, 3);
+        assertEq(r.paid, wrapperPrice(DRAW_CALLBACK_GAS));
+        (,,, uint32 numWords,) = vrf.callbacks(req);
+        assertEq(numWords, 1);
     }
 
-    // ================================================================ callback gas through the official mock
-    /// The official mock forwards exactly `callbackGasLimit` (per-contract tight limits, see Fixture). `fulfillTo` asserts success, so each
-    /// worst case below would fail if it did not fit. The mock bill (base + gas x 1 gwei) bounds the gas.
+    /// A wrapper that reverts (e.g. disabled by Chainlink) makes mint / enter revert atomically.
+    function test_WrapperDown_RequestsRevertAtomically() public {
+        DisabledWrapper w = new DisabledWrapper();
+        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(DRAW_CALLBACK_GAS, address(w)));
+        vm.startPrank(seasons);
+        token.approve(address(d), type(uint256).max);
+        d.seed(1_000_000e18);
+        uint256 bal = token.balanceOf(seasons);
+        vm.expectRevert("wrapper is disabled");
+        d.enter{value: 1 ether}(1_000e18);
+        vm.stopPrank();
+        assertEq(token.balanceOf(seasons), bal, "entry not taken");
+        assertEq(d.reservedTwak(), 0);
+        assertEq(d.spinCount(), 0);
+    }
+
+    // ================================================================ callback gas through the wrapper mock
+    /// The wrapper forwards exactly `callbackGasLimit` (`_callWithExactGas`). `fulfillTo` asserts success, so each
+    /// worst case below would fail if it did not fit. `lastCallbackGasUsed` = gas consumed by the CALL into the
+    /// consumer (callee execution + the CALL's cold-account / memory costs): an upper bound on callback use.
     function test_CallbackGas_DrawV2WorstCaseCold() public {
         vm.deal(address(drawV2), 10 ether); // BNB pot -> jackpot books BNB too
         (, uint256 req) = _enter(alice, 1_000e18); // fresh player: owedTwak/owedBnb 0 -> non-zero
         vm.cool(address(drawV2));
-        uint256 used = _billedGas(address(drawV2), req, JACKPOT_WORD);
+        uint256 used = _callbackGas(address(drawV2), req, JACKPOT_WORD);
         (uint256 t, uint256 b) = drawV2.spinPrize(1);
         assertEq(t, 10_000e18);
         assertGt(b, 0);
-        emit log_named_uint("DrawV2 jackpot+BNB, cold (incl. mock overhead)", used);
+        emit log_named_uint("DrawV2 jackpot+BNB, cold (through wrapper)", used);
         assertLe(used * 120 / 100, DRAW_CALLBACK_GAS, ">= 20% headroom at the tight limit");
     }
 
@@ -535,10 +526,10 @@ contract OfficialVRFTest is Fixture {
         genesis.mint{value: genesisFee}(tid);
         (,,,,,, uint256 req) = genesis.tickets(alice);
         vm.cool(address(genesis));
-        uint256 used = _billedGas(address(genesis), req, 199); // last 1.1x slot: longest walk with extra
+        uint256 used = _callbackGas(address(genesis), req, 199); // last 1.1x slot: longest walk with extra
         (,, uint8 pid,,) = genesis.prizeOf(alice);
         assertEq(pid, 5);
-        emit log_named_uint("Genesis worst walk + extra, cold (incl. mock overhead)", used);
+        emit log_named_uint("Genesis worst walk + extra, cold (through wrapper)", used);
         assertLe(used * 120 / 100, GENESIS_CALLBACK_GAS, ">= 20% headroom at the tight limit");
     }
 
@@ -551,48 +542,67 @@ contract OfficialVRFTest is Fixture {
         uint256[3] memory words = [uint256(4_519), 4_999, 3_499]; // last 1.1x slot, last no-win slot, last 25% refund
         uint8[3] memory ids = [uint8(9), 10, 3];
         uint256 worst;
+        uint256 worstId;
         for (uint256 i; i < 3; ++i) {
             vm.revertToState(snap);
             vm.cool(address(launch));
-            uint256 used = _billedGas(address(launch), req, words[i]);
+            uint256 used = _callbackGas(address(launch), req, words[i]);
             (,, uint8 id,,,) = launch.prizeOf(user(0));
             assertEq(id, ids[i]);
-            if (used > worst) worst = used;
-            emit log_named_uint("Launch first draw, cold (incl. mock overhead), prize id", ids[i]);
+            if (used > worst) (worst, worstId) = (used, id);
+            emit log_named_uint("Launch first draw, cold (through wrapper), prize id", ids[i]);
             emit log_named_uint("  gas", used);
         }
+        assertEq(worstId, 9, "first 1.1x bonus is the worst case");
         assertLe(worst * 120 / 100, LAUNCH_CALLBACK_GAS, ">= 20% headroom at the tight limit");
     }
 
-    /// A limit below the real cost: the coordinator reports failure, nothing is assigned, the reservation
-    /// stays booked (no overdraw) and the player is not charged twice.
+    /// A limit below the real cost: the wrapper reports failure (WrapperFulfillmentFailed, no revert), nothing is
+    /// assigned, the reservation stays booked (no overdraw); a retry recovers.
     function test_CallbackOutOfGas_StateSafe() public {
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(subId, 100_000));
-        vrf.addConsumer(subId, address(d));
+        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(50_000, address(vrf)));
         vm.deal(address(d), 1 ether);
         vm.startPrank(seasons);
         token.approve(address(d), type(uint256).max);
         d.seed(1_000_000e18);
-        (uint256 id, uint256 req) = d.enter{value: d.vrfFeeAt(0)}(1_000e18);
+        (uint256 id, uint256 req) = d.enter{value: d.vrfFeeAt(TEST_GAS_PRICE)}(1_000e18);
         vm.stopPrank();
         vm.cool(address(d));
-        bool ok = fulfillToRaw(address(d), req, JACKPOT_WORD);
-        assertFalse(ok, "100k is too little for a cold jackpot");
+        vm.expectEmit(true, true, false, false, address(vrf));
+        emit VRFWrapperMock.WrapperFulfillmentFailed(req, address(d));
+        bool ok = vrf.fulfill(req, JACKPOT_WORD);
+        assertFalse(ok, "50k is too little for a cold jackpot");
         (, uint8 st,,,,,,) = d.spins(id);
         assertEq(st, 1, "still pending");
         assertEq(d.reservedTwak(), 10_000e18, "reservation held");
         assertEq(d.outstandingTwak(), 0);
     }
 
-    // ================================================================ coordinator-only / stale / unknown
-    function test_OnlyCoordinatorCanCallback_AllConsumers() public {
+    // ================================================================ wrapper-only / stale / unknown
+    function test_OnlyWrapperCanCallback_AllConsumers() public {
         uint256[] memory w = new uint256[](1);
         address[3] memory cs = [address(launch), address(drawV2), address(genesis)];
+        address[2] memory callers = [alice, 0xDA3b641D438362C440Ac5458c57e00a712b66700]; // incl. the coordinator
         for (uint256 i; i < 3; ++i) {
-            vm.prank(alice);
-            vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyCoordinator.selector, alice, address(vrf)));
-            VRFConsumerV25(cs[i]).rawFulfillRandomWords(1, w);
+            for (uint256 k; k < 2; ++k) {
+                vm.prank(callers[k]);
+                vm.expectRevert(
+                    abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, callers[k], address(vrf))
+                );
+                VRFConsumerV25(cs[i]).rawFulfillRandomWords(1, w);
+            }
         }
+        // a real pending request answered by a random caller: reverts, request stays pending, wrapper can still answer
+        (uint256 spinId, uint256 req) = _enter(alice, 1_000e18);
+        w[0] = JACKPOT_WORD;
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, bob, address(vrf)));
+        drawV2.rawFulfillRandomWords(req, w);
+        (, uint8 st,,,,,,) = drawV2.spins(spinId);
+        assertEq(st, 1);
+        fulfillTo(address(drawV2), req, 0);
+        (, st,,,,,,) = drawV2.spins(spinId);
+        assertEq(st, 2);
     }
 
     function test_RequestDeliveredToWrongConsumerIgnored() public {
@@ -606,15 +616,20 @@ contract OfficialVRFTest is Fixture {
         assertEq(st, 1);
         fulfillTo(address(launch), dreq, 0);
         assertEq(launch.assignedCount(), 0);
-        // unknown id straight from the coordinator address: ignored
+        // unknown id straight from the wrapper address: ignored
         uint256[] memory w = new uint256[](1);
         vm.prank(address(vrf));
         genesis.rawFulfillRandomWords(12345, w);
         assertEq(genesis.assignedCount(), 0);
+        // empty words from the wrapper: ignored
+        vm.prank(address(vrf));
+        drawV2.rawFulfillRandomWords(dreq, new uint256[](0));
+        (, st,,,,,,) = drawV2.spins(spinId);
+        assertEq(st, 1);
     }
 
-    /// Retry after delay: the coordinator later answers BOTH requests (the stale one first or last).
-    /// Only the live one assigns; the sub pays for both.
+    /// Retry after delay: the wrapper later answers BOTH requests (the stale one first or last).
+    /// Only the live one assigns; each request was prepaid to the wrapper.
     function test_RetryAfterDelay_LateStaleAnswerIgnored_AllConsumers() public {
         // DrawV2
         (uint256 spinId, uint256 d1) = _enter(alice, 1_000e18);
@@ -636,7 +651,7 @@ contract OfficialVRFTest is Fixture {
         launch.retryPrize{value: launchFee}(user(0));
         uint256 l2 = requestOf(user(0));
 
-        uint96 b0 = subNativeBalance();
+        uint256 paid0 = vrf.totalPaid();
         fulfillTo(address(drawV2), d1, JACKPOT_WORD); // stale
         fulfillTo(address(genesis), g1, 0); // stale
         fulfillTo(address(launch), l1, 0); // stale
@@ -644,7 +659,7 @@ contract OfficialVRFTest is Fixture {
         assertEq(st, 1);
         assertEq(genesis.assignedCount(), 0);
         assertEq(launch.assignedCount(), 0);
-        assertLt(subNativeBalance(), b0, "stale answers still cost the sub");
+        assertEq(vrf.totalPaid(), paid0, "answers cost nothing extra: every request was prepaid");
 
         fulfillTo(address(drawV2), d2, 0);
         fulfillTo(address(genesis), g2, 299);
@@ -660,8 +675,8 @@ contract OfficialVRFTest is Fixture {
 
     // ================================================================ reentrancy
     function test_Reentrancy_SyncFulfilAndReenterDuringRequest_DrawV2() public {
-        ReentrantCoordinator evil = new ReentrantCoordinator();
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(subId, DRAW_CALLBACK_GAS, address(evil)));
+        ReentrantWrapper evil = new ReentrantWrapper();
+        DrawV2 d = new DrawV2(address(timelock), address(token), _cfgFor(DRAW_CALLBACK_GAS, address(evil)));
         vm.startPrank(seasons);
         token.approve(address(d), type(uint256).max);
         d.seed(1_000_000e18);
@@ -676,7 +691,7 @@ contract OfficialVRFTest is Fixture {
         ];
         for (uint256 i; i < 3; ++i) {
             evil.arm(address(d), calls[i]);
-            uint256 f = d.vrfFeeAt(0);
+            uint256 f = d.vrfFeeAt(TEST_GAS_PRICE);
             vm.prank(alice);
             (uint256 id, uint256 req) = d.enter{value: f}(1_000e18);
             assertFalse(evil.reenterSucceeded(), "re-entry blocked");
@@ -688,12 +703,13 @@ contract OfficialVRFTest is Fixture {
             assertEq(d.spinOfRequest(req), id);
         }
         assertEq(d.reservedTwak(), 3 * 10_000e18);
+        assertEq(address(evil).balance, 3 * 0.001 ether, "exact price each time");
     }
 
     function test_Reentrancy_SyncFulfilAndReenterDuringRequest_Genesis() public {
-        ReentrantCoordinator evil = new ReentrantCoordinator();
+        ReentrantWrapper evil = new ReentrantWrapper();
         TowackGenesis g = new TowackGenesis(
-            address(token), address(nft), ecosystem, address(this), _cfgFor(subId, DRAW_CALLBACK_GAS, address(evil))
+            address(token), address(nft), ecosystem, address(this), _cfgFor(DRAW_CALLBACK_GAS, address(evil))
         );
         vm.startPrank(ecosystem);
         token.approve(address(g), 8_000_000e18);
@@ -703,7 +719,7 @@ contract OfficialVRFTest is Fixture {
         uint256 t2 = nft.registerFor(alice); // alice owns two Agent IDs
         uint256 t1 = nft.registerFor(alice);
         evil.arm(address(g), abi.encodeCall(TowackGenesis.mint, (t2)));
-        uint256 gf = g.vrfFeeAt(0);
+        uint256 gf = g.vrfFeeAt(TEST_GAS_PRICE);
         vm.prank(alice);
         g.mint{value: gf}(t1);
         assertFalse(evil.reenterSucceeded());
@@ -723,17 +739,21 @@ contract OfficialVRFTest is Fixture {
         vm.prank(seasons);
         token.transfer(address(p), 10_000e18);
         p.approve(IERC20(address(token)), address(drawV2));
-        (, uint256 req) = p.enter{value: drawFee}(1_000e18);
+        (, uint256 req) = p.enter{value: drawFee}(1_000e18); // the fee-buffer refund already hits receive()
+        assertEq(p.attempts(), 1);
+        assertEq(p.reentries(), 0, "no re-entry from the refund");
         fulfillTo(address(drawV2), req, JACKPOT_WORD);
         uint256 owedT = drawV2.owedTwak(address(p));
         uint256 owedB = drawV2.owedBnb(address(p));
         assertGt(owedB, 0);
         uint256 t0 = token.balanceOf(address(p));
+        uint256 pb0 = address(p).balance; // = the refunded fee buffer
+        assertEq(pb0, drawFee - wrapperPrice(DRAW_CALLBACK_GAS));
         p.claimDraw();
-        assertEq(p.attempts(), 1);
+        assertEq(p.attempts(), 2);
         assertEq(p.reentries(), 0, "no nested claim / enter / launch call succeeded");
         assertEq(token.balanceOf(address(p)) - t0, owedT, "paid once");
-        assertEq(address(p).balance, owedB);
+        assertEq(address(p).balance - pb0, owedB);
         assertEq(drawV2.outstandingTwak(), 0);
         assertEq(drawV2.spinCount(), 1);
 
@@ -743,8 +763,9 @@ contract OfficialVRFTest is Fixture {
         p.mintLaunch{value: PRICE + launchFee}();
         fulfillTo(address(launch), requestOf(address(p)), 0);
         uint256 b0 = address(p).balance;
+        assertEq(p.attempts(), 3, "mint refund");
         p.claimLaunch();
-        assertEq(p.attempts(), 2);
+        assertEq(p.attempts(), 4);
         assertEq(p.reentries(), 0);
         assertEq(address(p).balance - b0, PRICE, "full refund paid once");
         (,,,,, bool claimed) = launch.prizeOf(address(p));
@@ -752,12 +773,11 @@ contract OfficialVRFTest is Fixture {
     }
 
     // ================================================================ pending accounting while in flight
-    /// While requests are in flight on the coordinator, each pending spin keeps 10x booked, so concurrent
+    /// While requests are in flight on the wrapper, each pending spin keeps 10x booked, so concurrent
     /// enters shrink `availableTwak` / `maxEntry` and can never overdraw, whatever the answer order.
     function testFuzz_DrawV2PendingReservationHoldsInFlight(uint256 salt, uint8 nRaw) public {
         uint256 n = bound(nRaw, 2, 25);
         DrawV2 d = new DrawV2(address(timelock), address(token), vrfCfg(DRAW_CALLBACK_GAS));
-        vrf.addConsumer(subId, address(d));
         vm.startPrank(seasons);
         token.approve(address(d), type(uint256).max);
         d.seed(2_000_000e18);
@@ -833,7 +853,7 @@ contract OfficialVRFTest is Fixture {
         assertEq(token.balanceOf(address(genesis)), 0);
     }
 
-    /// Launch: pending mints block the listing until the coordinator answers (or a retry is answered).
+    /// Launch: pending mints block the listing until the wrapper answers (or a retry is answered).
     function test_LaunchPendingDeckAccounting() public {
         mintN(3);
         assertEq(launch.pendingCount(), 3);
@@ -861,26 +881,14 @@ contract OfficialVRFTest is Fixture {
         (spinId, req) = drawV2.enter{value: drawFee}(amt);
     }
 
-    function _cfgFor(uint256 s, uint32 gasLimit) internal view returns (VRFConsumerV25.VRFConfig memory c) {
-        c = vrfCfg(DRAW_CALLBACK_GAS);
-        c.subId = s;
-        c.callbackGasLimit = gasLimit;
+    function _cfgFor(uint32 gasLimit, address wrapper) internal view returns (VRFConsumerV25.VRFConfig memory c) {
+        c = vrfCfg(gasLimit);
+        c.wrapper = wrapper;
     }
 
-    function _cfgFor(uint256 s, uint32 gasLimit, address coord)
-        internal
-        view
-        returns (VRFConsumerV25.VRFConfig memory c)
-    {
-        c = _cfgFor(s, gasLimit);
-        c.coordinator = coord;
-    }
-
-    /// Fulfils through the official mock and returns the gas it billed (callback + the mock's own overhead).
-    function _billedGas(address consumer, uint256 req, uint256 word) internal returns (uint256) {
-        uint96 b0 = subNativeBalance();
+    /// Fulfils through the wrapper mock and returns the gas consumed by its exact-gas CALL into the consumer.
+    function _callbackGas(address consumer, uint256 req, uint256 word) internal returns (uint256) {
         fulfillTo(consumer, req, word);
-        uint256 paid = b0 - subNativeBalance();
-        return (paid - MOCK_BASE_FEE) / MOCK_GAS_PRICE;
+        return vrf.lastCallbackGasUsed();
     }
 }

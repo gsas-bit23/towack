@@ -1,38 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {IVRFCoordinatorV2Plus, VRFV2PlusClient} from "./interfaces/IVRFCoordinatorV2Plus.sol";
+import {VRFV2PlusClient} from "./interfaces/IVRFCoordinatorV2Plus.sol";
+import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFV2PlusWrapper.sol";
 
-/// @notice Minimal, ownerless Chainlink VRF v2.5 consumer. All VRF config is immutable.
-/// Production config = the official coordinator, a registered key hash, a native-payment subscription
-/// that lists this contract as a consumer, 3 confirmations. Only the coordinator may deliver words; the
-/// coordinator calls `rawFulfillRandomWords` with exactly `vrfCallbackGasLimit` gas, so callbacks are
-/// kept to a few SSTOREs and never revert on unknown / stale requests.
-/// Trade-off vs Chainlink's `VRFConsumerBaseV2Plus`: no owner can `setCoordinator`, so a Chainlink
-/// coordinator migration needs a redeploy of the consumer.
+/// @notice Minimal, ownerless Chainlink VRF v2.5 consumer on the official DIRECT-FUNDING WRAPPER
+/// (`VRFV2PlusWrapper`), paid in native BNB per request. No subscription, no deposit, no LINK.
+/// All config is immutable: wrapper address, request confirmations, callback gas limit. The key hash (gas lane)
+/// lives on the wrapper. BSC testnet (97) and mainnet (56) wrapper: 0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94.
 ///
-/// USER-PAID VRF FEE. Every randomness request is paid by its caller: the request path quotes
-/// `vrfFeeAt(tx.gasprice)`, forwards exactly that fee into the subscription with
-/// `fundSubscriptionWithNative` BEFORE `requestRandomWords`, and the caller refunds any excess `msg.value`.
-/// The subscription coordinator (unlike the direct-funding wrapper) has no price-quote function, so the quote
-/// re-implements `VRFCoordinatorV2_5._calculatePaymentAmountNative` (L1 cost = 0 on BSC) on the FULL callback
-/// gas limit, with the coordinator's live `s_config()` and a conservative coordinator-overhead constant:
-///   payment = gasPrice * (gasAfterPaymentCalculation + COORDINATOR_OVERHEAD_GAS + callbackGasLimit)
-///             * (100 + nativePremiumPercentage) / 100 + 1e12 * fulfillmentFlatFeeNativePPM
-///   fee     = payment * (BPS + FEE_BUFFER_BPS) / BPS
-/// `gasPrice` is clamped to [vrfMinFeeGasPrice, vrfMaxFeeGasPrice]: the floor is the gas price the Chainlink
-/// node actually fulfils at (so a user cannot underpay with a low-priced tx), the cap is the key hash lane
-/// maximum (the node never fulfils above it, so charging more would be pure overpayment).
+/// Same pattern as Chainlink's `VRFV2PlusWrapperConsumerBase.requestRandomnessPayInNative`, re-implemented so the
+/// hook keeps `calldata` words, the contract stays ownerless, and the constructor does not need `wrapper.link()`.
+/// Only the wrapper may deliver words: it calls `rawFulfillRandomWords` with exactly `vrfCallbackGasLimit` gas
+/// (`_callWithExactGas`), so callbacks are kept to a few SSTOREs and never revert on unknown / stale requests.
+/// Trade-off: no owner can repoint the wrapper, so a Chainlink wrapper migration needs a consumer redeploy.
+///
+/// USER-PAID VRF FEE. Every request is paid by its caller, at request time:
+///   price = wrapper.calculateRequestPriceNative(vrfCallbackGasLimit, 1)   // priced at THIS tx's tx.gasprice
+/// The request path requires `available >= price`, forwards EXACTLY `price` with `requestRandomWordsInNative`
+/// (the wrapper keeps any overpayment, it never refunds) and the caller refunds `available - price` itself.
+/// The wrapper's own premium + overheads cover fulfilment gas variance, so there is no gas-price floor here.
+/// The UI quote `vrfFeeAt(gasPrice)` = wrapper.estimateRequestPriceNative(limit, 1, gasPrice) + FEE_BUFFER_BPS;
+/// the buffer is never forwarded: whatever is not needed is refunded in the same tx.
 abstract contract VRFConsumerV25 {
     struct VRFConfig {
-        address coordinator;
-        bytes32 keyHash;
-        uint256 subId;
+        address wrapper; // official VRFV2PlusWrapper
         uint16 requestConfirmations;
-        uint32 callbackGasLimit;
-        bool nativePayment;
-        uint64 minFeeGasPrice; // fee quote floor (wei/gas)
-        uint64 maxFeeGasPrice; // fee quote cap = key hash lane max (wei/gas)
+        uint32 callbackGasLimit; // gas the wrapper forwards to rawFulfillRandomWords
     }
 
     /// @dev Chainlink v2.5 bounds: min confirmations 3 (BSC), max callback gas 2,500,000 (BSC config).
@@ -40,114 +34,65 @@ abstract contract VRFConsumerV25 {
     uint16 public constant MAX_REQUEST_CONFIRMATIONS = 200;
     uint32 public constant MIN_CALLBACK_GAS = 50_000;
     uint32 public constant MAX_CALLBACK_GAS = 2_500_000;
-
-    /// @notice Coordinator gas outside the callback that is billed to the sub (proof verification, request
-    /// bookkeeping, payment calc). Not in `s_config`. Chainlink's BSC mainnet direct-funding table lists
-    /// 99,500 (native); our real BSC-testnet fulfilments implied ~73k. Rounded up to 100,000.
-    uint256 public constant COORDINATOR_OVERHEAD_GAS = 100_000;
-    /// @notice 15% on top of the formula: the fulfilment tx may land at a higher gas price than the request.
-    /// The gas side already assumes the full callback limit (actual use is ~50-75% of it) and 100k overhead.
-    uint256 public constant FEE_BUFFER_BPS = 1_500;
+    /// @notice 10% UI buffer on top of the wrapper's quote in `vrfFeeAt`: absorbs a small gas-price move between
+    /// quoting and inclusion. Never forwarded to the wrapper; refunded by us when unused.
+    uint256 public constant FEE_BUFFER_BPS = 1_000;
     uint256 public constant FEE_BPS = 10_000;
-    /// @dev Fallback billing parameters when the coordinator exposes neither `s_config` nor mock getters.
-    uint256 internal constant FALLBACK_PREMIUM_PCT = 100;
-    uint256 internal constant FALLBACK_GAS_AFTER_PAYMENT = 60_000;
 
-    error OnlyCoordinator(address have, address want);
+    error OnlyVRFWrapperCanFulfill(address have, address want);
     error VrfFeeTooLow(uint256 sent, uint256 required);
     error RefundFailed();
 
+    /// @param fee the EXACT amount forwarded to the wrapper (its `calculateRequestPriceNative` at tx.gasprice).
     event VrfFeePaid(address indexed payer, uint256 indexed requestId, uint256 fee);
 
-    IVRFCoordinatorV2Plus public immutable vrfCoordinator;
-    bytes32 public immutable vrfKeyHash;
-    uint256 public immutable vrfSubId;
+    IVRFV2PlusWrapper public immutable vrfWrapper;
     uint16 public immutable vrfRequestConfirmations;
     uint32 public immutable vrfCallbackGasLimit;
-    bool public immutable vrfNativePayment;
-    uint64 public immutable vrfMinFeeGasPrice;
-    uint64 public immutable vrfMaxFeeGasPrice;
 
     constructor(VRFConfig memory cfg) {
-        require(cfg.coordinator.code.length > 0, "VRF: coordinator");
-        require(cfg.keyHash != bytes32(0), "VRF: keyHash");
-        require(cfg.subId != 0, "VRF: subId");
+        require(cfg.wrapper.code.length > 0, "VRF: wrapper");
         require(
             cfg.requestConfirmations >= MIN_REQUEST_CONFIRMATIONS
                 && cfg.requestConfirmations <= MAX_REQUEST_CONFIRMATIONS,
             "VRF: confirmations"
         );
         require(cfg.callbackGasLimit >= MIN_CALLBACK_GAS && cfg.callbackGasLimit <= MAX_CALLBACK_GAS, "VRF: gas");
-        // Users pay in native, so the subscription must bill in native.
-        require(cfg.nativePayment, "VRF: native");
-        require(cfg.minFeeGasPrice > 0 && cfg.minFeeGasPrice <= cfg.maxFeeGasPrice, "VRF: fee gas price");
-        vrfCoordinator = IVRFCoordinatorV2Plus(cfg.coordinator);
-        vrfKeyHash = cfg.keyHash;
-        vrfSubId = cfg.subId;
+        vrfWrapper = IVRFV2PlusWrapper(cfg.wrapper);
         vrfRequestConfirmations = cfg.requestConfirmations;
         vrfCallbackGasLimit = cfg.callbackGasLimit;
-        vrfNativePayment = cfg.nativePayment;
-        vrfMinFeeGasPrice = cfg.minFeeGasPrice;
-        vrfMaxFeeGasPrice = cfg.maxFeeGasPrice;
     }
 
     // ================================================================= fee quote
-    /// @notice VRF fee (wei) for one request sent at `gasPrice`. THE FRONTEND MUST CALL THIS (eth_call often
-    /// has tx.gasprice == 0) with the gas price it will send the tx at.
+    /// @notice Suggested `msg.value` for the VRF part of one request sent at `gasPrice`: the wrapper's own quote
+    /// plus FEE_BUFFER_BPS. THE FRONTEND MUST CALL THIS with the gas price it will send at (eth_call often has
+    /// tx.gasprice == 0, which makes the wrapper's `calculateRequestPriceNative` meaningless off-chain).
+    /// The amount actually charged is the wrapper's price at the request tx's real gas price; the rest is refunded.
     function vrfFeeAt(uint256 gasPrice) public view returns (uint256) {
-        uint256 gp = gasPrice < vrfMinFeeGasPrice ? vrfMinFeeGasPrice : gasPrice;
-        if (gp > vrfMaxFeeGasPrice) gp = vrfMaxFeeGasPrice;
-        uint256 gasUnits = COORDINATOR_OVERHEAD_GAS + vrfCallbackGasLimit;
-
-        uint256 payment;
-        (bool ok, bytes memory ret) =
-            address(vrfCoordinator).staticcall(abi.encodeWithSignature("s_config()"));
-        if (ok && ret.length >= 9 * 32) {
-            (, uint32 maxGasLimit,,, uint32 gasAfter, uint32 flatPPM,, uint8 premium,) =
-                abi.decode(ret, (uint16, uint32, bool, uint32, uint32, uint32, uint32, uint8, uint8));
-            if (maxGasLimit != 0) {
-                // Official VRFCoordinatorV2_5 (configured).
-                payment = gp * (uint256(gasAfter) + gasUnits) * (100 + uint256(premium)) / 100
-                    + 1e12 * uint256(flatPPM);
-                return payment * (FEE_BPS + FEE_BUFFER_BPS) / FEE_BPS;
-            }
-            // Zeroed s_config = Chainlink's VRFCoordinatorV2_5Mock: bills i_base_fee + gasUsed * i_gas_price.
-            (bool okB, bytes memory rb) = address(vrfCoordinator).staticcall(abi.encodeWithSignature("i_base_fee()"));
-            (bool okG, bytes memory rg) = address(vrfCoordinator).staticcall(abi.encodeWithSignature("i_gas_price()"));
-            if (okB && okG && rb.length >= 32 && rg.length >= 32) {
-                payment = abi.decode(rb, (uint256)) + gasUnits * abi.decode(rg, (uint256));
-                return payment * (FEE_BPS + FEE_BUFFER_BPS) / FEE_BPS;
-            }
-        }
-        // Unknown coordinator: conservative (100% premium, 60k post-payment gas).
-        payment = gp * (FALLBACK_GAS_AFTER_PAYMENT + gasUnits) * (100 + FALLBACK_PREMIUM_PCT) / 100;
-        return payment * (FEE_BPS + FEE_BUFFER_BPS) / FEE_BPS;
+        uint256 p = vrfWrapper.estimateRequestPriceNative(vrfCallbackGasLimit, 1, gasPrice);
+        return p * (FEE_BPS + FEE_BUFFER_BPS) / FEE_BPS;
     }
 
-    /// @notice Convenience: fee at this tx's gas price. Off-chain, prefer `vrfFeeAt(gasPrice)`.
+    /// @notice Convenience: `vrfFeeAt(tx.gasprice)`. Off-chain, prefer `vrfFeeAt(gasPrice)`.
     function vrfFee() external view returns (uint256) {
         return vrfFeeAt(tx.gasprice);
     }
 
     // ================================================================= request
-    /// @dev Quotes the fee at tx.gasprice, requires `available >= fee`, funds the subscription with exactly
-    /// the fee, then requests one word. Returns (requestId, fee); the caller refunds `available - fee`.
-    /// Reverts (atomically, with the caller) if the fee is not covered.
-    function _requestRandomWordPaid(uint256 available) internal returns (uint256 requestId, uint256 fee) {
-        fee = vrfFeeAt(tx.gasprice);
-        if (available < fee) revert VrfFeeTooLow(available, fee);
-        vrfCoordinator.fundSubscriptionWithNative{value: fee}(vrfSubId);
-        requestId = vrfCoordinator.requestRandomWords(
-            VRFV2PlusClient.RandomWordsRequest({
-                keyHash: vrfKeyHash,
-                subId: vrfSubId,
-                requestConfirmations: vrfRequestConfirmations,
-                callbackGasLimit: vrfCallbackGasLimit,
-                numWords: 1,
-                extraArgs: VRFV2PlusClient.argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: vrfNativePayment}))
-            })
+    /// @dev Prices the request at tx.gasprice through the wrapper, requires `available >= price`, sends the wrapper
+    /// EXACTLY `price` (it does not refund) and requests one word in native. Returns (requestId, price); the caller
+    /// refunds `available - price`. Reverts (atomically, with the caller) if the price is not covered.
+    function _requestRandomWordPaid(uint256 available) internal returns (uint256 requestId, uint256 price) {
+        IVRFV2PlusWrapper w = vrfWrapper;
+        price = w.calculateRequestPriceNative(vrfCallbackGasLimit, 1);
+        if (available < price) revert VrfFeeTooLow(available, price);
+        requestId = w.requestRandomWordsInNative{value: price}(
+            vrfCallbackGasLimit,
+            vrfRequestConfirmations,
+            1,
+            VRFV2PlusClient.argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: true}))
         );
-        emit VrfFeePaid(msg.sender, requestId, fee);
+        emit VrfFeePaid(msg.sender, requestId, price);
     }
 
     /// @dev Sends `amount` back to msg.sender (no-op for 0). Call last (CEI); callers are nonReentrant.
@@ -157,9 +102,9 @@ abstract contract VRFConsumerV25 {
         if (!ok) revert RefundFailed();
     }
 
-    /// @dev Called by the coordinator. Name/signature must match Chainlink's VRFConsumerBaseV2Plus.
+    /// @dev Called by the wrapper. Name/signature match Chainlink's VRFV2PlusWrapperConsumerBase.
     function rawFulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
-        if (msg.sender != address(vrfCoordinator)) revert OnlyCoordinator(msg.sender, address(vrfCoordinator));
+        if (msg.sender != address(vrfWrapper)) revert OnlyVRFWrapperCanFulfill(msg.sender, address(vrfWrapper));
         _fulfillRandomWords(requestId, randomWords);
     }
 

@@ -72,7 +72,7 @@ export function MintPanel() {
   const demo = useDemoWheel(legacy);
   const spins = useRecentSpins(!legacy);
   const [fresh, setFresh] = useState(false);
-  // Chainlink VRF fee on top of the 0.1 BNB price (forwarded to the VRF subscription; excess refunded).
+  // Chainlink VRF fee on top of the 0.1 BNB price (exact wrapper price forwarded to the Chainlink VRF wrapper; excess refunded by us).
   const vrf = useVrfFee(launch, chainId);
   const mintValue = vrf.value !== undefined ? price + vrf.value : undefined;
 
@@ -203,9 +203,9 @@ export function MintPanel() {
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
             <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App on mainnet).</li>
             <li>
-              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-white px-1">mint()</code>. The fee goes
-              straight to the VRF subscription that pays for your random draw, and anything above 0.1 BNB + fee is refunded in the same
-              transaction. You confirm it in your own wallet.
+              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-white px-1">mint()</code>. Exactly
+              Chainlink&apos;s price for your random draw goes straight to the Chainlink VRF wrapper, and anything above 0.1 BNB + that price is
+              refunded in the same transaction. You confirm it in your own wallet.
             </li>
             <li>80,000 TWAK arrives in the same transaction, and the contract requests one Chainlink VRF v2.5 random word for you.</li>
             <li>

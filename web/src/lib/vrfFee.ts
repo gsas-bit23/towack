@@ -18,9 +18,14 @@ const vrfFeeAbi = [
 
 /**
  * Chainlink VRF fee the user pays on every randomness request (mint / Genesis mint / pool entry / retry).
- * Quoted on-chain with `vrfFeeAt(gasPrice)` (never `vrfFee()`: eth_call often has tx.gasprice = 0). Two small UI
- * cushions, both refunded by the contract in the same tx: quote at +25% of the current gas price (the wallet may
- * bump it), then send +10%.
+ * Paid in BNB per request to the official Chainlink VRF v2.5 direct-funding WRAPPER (no subscription).
+ * Quoted on-chain with OUR contract's `vrfFeeAt(gasPrice)` = the wrapper's `estimateRequestPriceNative` at that gas
+ * price + 10% (never `vrfFee()` / the wrapper's `calculateRequestPriceNative`: both use tx.gasprice, which is often
+ * 0 in eth_call). On-chain the contract charges the wrapper's price at the tx's REAL gas price, forwards exactly
+ * that (the wrapper itself never refunds overpayment) and refunds everything else to the sender in the same tx.
+ * UI cushions on top, also refunded by our contract: quote at +25% of the current gas price (the wallet may bump
+ * it), then send +10%. Together with the contract's 10% they cover a ~1.5x gas-price move; beyond that the tx
+ * reverts with VrfFeeTooLow (nothing is taken).
  *
  * `supported === false` means the contract predates user-paid fees (the current testnet deploy): send no fee.
  */

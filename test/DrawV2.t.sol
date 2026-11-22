@@ -6,7 +6,7 @@ import {Fixture} from "./Fixture.sol";
 import {DrawV2} from "../src/DrawV2.sol";
 import {TokenBound} from "../src/TokenBound.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {VRFWrapperMock} from "./VRFWrapperMock.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -39,10 +39,9 @@ contract DrawV2Test is Fixture, WheelWords {
         token.approve(address(drawV2), type(uint256).max);
     }
 
-    /// Stand-alone pool on the shared official-mock subscription (consumer added, like the deploy script).
+    /// Stand-alone pool on the shared wrapper mock (no subscription / consumer registration needed).
     function _newPool(address preset) internal returns (DrawV2 d) {
         d = new DrawV2(address(timelock), preset, vrfCfg(DRAW_CALLBACK_GAS));
-        vrf.addConsumer(subId, address(d));
     }
 
     function _rawFulfil(DrawV2 d, uint256 req, uint256 word) internal {
@@ -386,10 +385,10 @@ contract DrawV2Test is Fixture, WheelWords {
         drawV2.retrySpin{value: drawFee}(id);
     }
 
-    function test_OnlyCoordinatorCanFulfil() public {
+    function test_OnlyVRFWrapperCanFulfillCanFulfil() public {
         _enter(alice, 1_000e18);
         uint256[] memory w = new uint256[](1);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyCoordinator.selector, address(this), address(vrf)));
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, address(this), address(vrf)));
         drawV2.rawFulfillRandomWords(1, w);
     }
 
@@ -584,13 +583,13 @@ contract DrawV2Test is Fixture, WheelWords {
         assertEq(s0 + d.totalEntered(), token.balanceOf(address(d)) + d.totalClaimedTwak());
     }
 
-    receive() external payable {}
+    receive() external payable override {}
 }
 
 /// @dev Handler for the stateful invariant run: its own VRF mock (so it may fulfil) and a stand-alone pool.
 contract DrawV2Handler is Test {
     IERC20 public token;
-    VRFCoordinatorV2_5Mock public vrf;
+    VRFWrapperMock public vrf;
     DrawV2 public d;
     address[3] public players;
     uint256[] public pending;
@@ -598,31 +597,22 @@ contract DrawV2Handler is Test {
     uint256 public bookedTwak;
     uint256 public bookedBnb;
     uint256 public maxOverTenX; // must stay 0
-    uint256 public fee; // VRF fee per request (constant against the official mock)
+    uint256 public fee; // buffered VRF fee quote at 1 gwei (excess over the wrapper price is refunded)
     uint256 public callbackFailures; // live-request fulfils that did not assign (revert / OOG): must stay 0
 
     constructor(IERC20 token_) {
         token = token_;
-        vrf = new VRFCoordinatorV2_5Mock(1e14, 1e9, 4e15);
-        uint256 sub = vrf.createSubscription();
-        vm.deal(address(this), 1_000 ether);
-        vrf.fundSubscriptionWithNative{value: 1_000 ether}(sub);
+        vrf = new VRFWrapperMock();
         d = new DrawV2(
             address(0xBEEF),
             address(token_),
             VRFConsumerV25.VRFConfig({
-                coordinator: address(vrf),
-                keyHash: bytes32(uint256(0x8596)),
-                subId: sub,
+                wrapper: address(vrf),
                 requestConfirmations: 3,
-                callbackGasLimit: 200_000, // production DrawV2 limit
-                nativePayment: true,
-                minFeeGasPrice: 1 gwei,
-                maxFeeGasPrice: 50 gwei
+                callbackGasLimit: 200_000 // production DrawV2 limit
             })
         );
-        fee = d.vrfFeeAt(0);
-        vrf.addConsumer(sub, address(d));
+        fee = d.vrfFeeAt(1 gwei);
         for (uint256 i; i < 3; ++i) {
             players[i] = address(uint160(0xA11CE0 + i));
         }
@@ -648,6 +638,7 @@ contract DrawV2Handler is Test {
         amt = bound(amt, 100e18, maxE);
         if (token.balanceOf(p) < amt) return;
         vm.deal(p, fee);
+        vm.txGasPrice(1 gwei);
         vm.prank(p);
         (uint256 id,) = d.enter{value: fee}(amt);
         (,,,,, uint256 tRes, uint256 bRes,) = d.spins(id);
@@ -676,6 +667,7 @@ contract DrawV2Handler is Test {
         (,,, uint64 at,,,, uint256 oldReq) = d.spins(id);
         vm.warp(uint256(at) + 1 hours);
         vm.deal(address(this), fee);
+        vm.txGasPrice(1 gwei);
         d.retrySpin{value: fee}(id);
         _fulfil(oldReq, word); // stale fulfil must be a no-op
     }
@@ -683,7 +675,9 @@ contract DrawV2Handler is Test {
     function _fulfil(uint256 req, uint256 word) internal {
         uint256[] memory w = new uint256[](1);
         w[0] = word;
-        vrf.fulfillRandomWordsWithOverride(req, address(d), w);
+        (address c,,,,) = vrf.callbacks(req);
+        if (c == address(0)) return;
+        vrf.fulfillWords(req, w);
     }
 
     function claim(uint256 who) external {
@@ -700,6 +694,8 @@ contract DrawV2Handler is Test {
         require(ok);
         bnbIn += amt;
     }
+
+    receive() external payable {} // retrySpin refunds the unused fee buffer
 }
 
 contract DrawV2InvariantTest is Fixture {

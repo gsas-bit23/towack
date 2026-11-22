@@ -53,7 +53,7 @@ contract TowackLaunchTest is Fixture {
         vm.expectRevert(TowackLaunch.WrongPrice.selector);
         launch.mint{value: 0.09 ether}();
         // exactly 0.1 BNB is no longer enough: the VRF fee is on top
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, launchFee));
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, wrapperPrice(LAUNCH_CALLBACK_GAS)));
         launch.mint{value: PRICE}();
         vm.stopPrank();
         assertEq(u.balance, 1 ether);
@@ -128,13 +128,10 @@ contract TowackLaunchTest is Fixture {
             assertEq(launch.requestMinter(rid), user(i));
         }
         assertEq(r.requestId, 3);
-        assertEq(r.keyHash, KEY_HASH);
-        assertEq(r.subId, subId);
+        assertEq(r.paid, wrapperPrice(LAUNCH_CALLBACK_GAS), "exact wrapper price, not the buffered quote");
         assertEq(r.confirmations, 3);
         assertEq(r.callbackGasLimit, LAUNCH_CALLBACK_GAS);
-        assertEq(r.numWords, 1);
-        assertEq(r.sender, address(launch));
-        assertEq(r.extraArgs, abi.encodeWithSelector(bytes4(0x92fd1338), true)); // nativePayment: true
+        assertEq(r.sender, address(launch)); // the mock enforces ExtraArgsV1{nativePayment: true}
         assertEq(launch.pendingCount(), 3);
     }
 
@@ -147,10 +144,10 @@ contract TowackLaunchTest is Fixture {
         launch.mint{value: PRICE + launchFee}();
     }
 
-    function test_OnlyCoordinatorCanFulfill() public {
+    function test_OnlyVRFWrapperCanFulfillCanFulfill() public {
         mintN(1);
         uint256[] memory w = new uint256[](1);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyCoordinator.selector, address(this), address(vrf)));
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, address(this), address(vrf)));
         launch.rawFulfillRandomWords(1, w);
     }
 

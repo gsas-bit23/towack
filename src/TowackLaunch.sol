@@ -16,8 +16,8 @@ import {TowackToken} from "./TowackToken.sol";
 ///
 /// Flow:
 ///  1. mint(): 0.1 BNB + the VRF fee (`vrfFeeAt(gasPrice)`) -> 80,000 TWAK instantly. One per Agent ID
-///     holder, cap 5000. Each mint makes its own Chainlink VRF v2.5 request; the fee is forwarded to the
-///     subscription and any excess over 0.1 BNB + fee is refunded. Only the 0.1 BNB stays in this contract.
+///     holder, cap 5000. Each mint makes its own Chainlink VRF v2.5 request; exactly the wrapper's price is
+///     forwarded to the VRF v2.5 direct-funding wrapper and any excess over 0.1 BNB + price is refunded. Only the 0.1 BNB stays in this contract.
 ///  2. VRF callback: pops ONE slot uniformly at random from the remaining fixed 5,000-slot prize deck and
 ///     assigns it to that minter (event `PrizeAssigned`). Prizes are mutually exclusive: a BNB refund
 ///     tier, a TWAK bonus tier, or "better luck next time".
@@ -199,7 +199,7 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         t.index = uint32(idx);
         token.safeTransfer(msg.sender, TOKENS_PER_MINT);
         emit Minted(msg.sender, idx);
-        // MINT_PRICE stays here (launch accounting); the VRF fee goes to the subscription; the rest is refunded.
+        // MINT_PRICE stays here (launch accounting); exactly the wrapper price goes to the VRF wrapper; the rest is refunded.
         uint256 available = msg.value - MINT_PRICE;
         uint256 fee = _request(msg.sender, t, available);
         _refund(available - fee);
@@ -228,7 +228,7 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     }
 
     // ================================================================= 2. VRF callback: draw from deck
-    /// @dev O(PRIZE_TIERS). Never reverts on bad input (stale / unknown ids are ignored) so the coordinator
+    /// @dev O(PRIZE_TIERS). Never reverts on bad input (stale / unknown ids are ignored) so the wrapper
     /// never sees a failed callback for them.
     function _fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         address minter = requestMinter[requestId];
