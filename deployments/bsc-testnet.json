@@ -1167,5 +1167,153 @@
       "afterDeployTBnb": "0.2326164322",
       "afterTBnb": "0.217427825977449244"
     }
+  },
+  "fullStackReferrals": {
+    "deployedAtPkt": "2026-11-23 03:23:57 PKT",
+    "script": "script/DeployFullStackTestnet.s.sol",
+    "note": "Main testnet stack redeploy with paid-mint referrals (5% / 0.005 BNB) and 95% BNB prize rebalance. instantClose=false, 7-day mint window. Official VRF v2.5 wrapper, reused MockAgentId + MockAgentIdNFT. Replaces the live addresses.json chain-97 pointers (previous wrapper stack launch 0x617f9d29B274118267CcdF9a7160F739927ba1aB remains on-chain).",
+    "instantClose": false,
+    "vrf": {
+      "mode": "direct-funding wrapper",
+      "wrapper": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94",
+      "coordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+      "callbackGas": {
+        "launch": 165000,
+        "genesis": 170000,
+        "drawV2": 200000
+      },
+      "feeAt1gweiExact": "0.000437296",
+      "feeAt1gweiQuotePlus10pct": "0.0004810256"
+    },
+    "mintWindow": {
+      "startUnix": 1795386237,
+      "endUnix": 1795991037,
+      "startPkt": "2026-11-23 03:23:57 PKT (Asia/Karachi)",
+      "endPkt": "2026-11-30 03:23:57 PKT (Asia/Karachi)",
+      "days": 7
+    },
+    "gas": {
+      "priceGwei": 1,
+      "costTBnb": "0.013931772",
+      "deployerAfterDeployTBnb": "0.203496053977449244"
+    },
+    "economics": {
+      "referralFeeBnb": "0.005",
+      "source": "5% set-aside from the residual that would otherwise go to LP then DrawV2",
+      "prizeBnb": [
+        "0.095",
+        "0.07125",
+        "0.0475",
+        "0.02375"
+      ],
+      "deckBnbTotal": "166.25",
+      "selloutNoReferrer": {
+        "lp": "250",
+        "drawV2": "83.75"
+      },
+      "selloutAllReferred": {
+        "lp": "250",
+        "drawV2": "58.75",
+        "referrals": "25"
+      }
+    },
+    "addresses": {
+      "timelock": "0x391b7d762Ec2A3c0216509e697f945b9DfCd5A0A",
+      "drawV2": "0xEaA88c6E3715F34F99f919C3044583a9Cee8800A",
+      "launch": "0x002Ef29b8985642f7CF7837C21DD06753Bc64a2a",
+      "rebateDistributor": "0xbb463EE5569e6a6a8Bdb31425b4374D65A997C5d",
+      "teamVesting": "0x49075ae164457314304f23Daf3bBfa86105E80D1",
+      "token": "0xBdba6e4630a1B0AcE0FDeBEc65C6C350eBb2e3E4",
+      "pair": "0xf5E0FFa7FF912cC9979e42631A76848412e403D2",
+      "router": "0x7E7B2Cc7C7A7198a69ea443314E64137feD88B67",
+      "genesis": "0x1f9e3FFcF81699F3EF57B29fe346ca67f6fcE195",
+      "agentId": "0xfF5f224349e6aDB7754249d5e4352dB0910717B7",
+      "agentIdNft": "0x70BC7133E62427DAE709299454ed8c9015898036",
+      "vrfWrapper": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94"
+    },
+    "createTxs": {
+      "timelock": "0xfe39c08f6210cb1aea4f5d835b415ac4a6df7366040a0873abe5014545b255f1",
+      "drawV2": "0x7e34f52f2da3c84fe1be2db85df19a94b0d7249559b51fe49a0876c274a80b62",
+      "launch": "0xcb7eca3a0874aa5c8821bfaf05e25c9cd6f330981e46c6bdcc3b854364797e37",
+      "rebates": "0xf87c727ce772003b95c92f800e67dede1cb12272b3bd99631c04dff0e79df7aa",
+      "teamVesting": "0x5b8c771a746f2aed505e57361a5a8992cd0addef99366d6e1f99643ef1acf63c",
+      "token": "0xf3b54acfb17c8691e1fd9d9776d9f7864c1ca0e0a4c7d046e8eeacc09598ff23",
+      "router": "0x2e54e139a1ca8db6ac1fd6ca087ce97569c4ba420a88cb09047af709990f207f",
+      "genesis": "0xd17dc501c9ececac1ec8ecfc6a903dba35c55865bc19f0fca089f50a15d3d972"
+    },
+    "sourcify": "exact_match (creation + runtime) for all eight",
+    "sourcifyLinks": {
+      "timelock": "https://repo.sourcify.dev/contracts/full_match/97/0x391b7d762Ec2A3c0216509e697f945b9DfCd5A0A/",
+      "drawV2": "https://repo.sourcify.dev/contracts/full_match/97/0xEaA88c6E3715F34F99f919C3044583a9Cee8800A/",
+      "launch": "https://repo.sourcify.dev/contracts/full_match/97/0x002Ef29b8985642f7CF7837C21DD06753Bc64a2a/",
+      "rebateDistributor": "https://repo.sourcify.dev/contracts/full_match/97/0xbb463EE5569e6a6a8Bdb31425b4374D65A997C5d/",
+      "teamVesting": "https://repo.sourcify.dev/contracts/full_match/97/0x49075ae164457314304f23Daf3bBfa86105E80D1/",
+      "token": "https://repo.sourcify.dev/contracts/full_match/97/0xBdba6e4630a1B0AcE0FDeBEc65C6C350eBb2e3E4/",
+      "router": "https://repo.sourcify.dev/contracts/full_match/97/0x7E7B2Cc7C7A7198a69ea443314E64137feD88B67/",
+      "genesis": "https://repo.sourcify.dev/contracts/full_match/97/0x1f9e3FFcF81699F3EF57B29fe346ca67f6fcE195/"
+    },
+    "rehearsal": {
+      "walletB": "0x5112c0Be165b96694C68e2a4Dc0AEEE6ae600be1",
+      "referrer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+      "fundTx": "0x20c1488dd5426c97a2455fb5aed6cf143522f19cff2abdb4e494714c665891e8",
+      "fundPkt": "2026-11-23 03:27:09 PKT (Asia/Karachi)",
+      "registerTx": "0x3f7ea3fa98262df28f878e30c2166349b977b0e7afc44be8a9de136911165f72",
+      "registerPkt": "2026-11-23 03:27:24 PKT (Asia/Karachi)",
+      "selfReferral": {
+        "result": "reverted SelfReferral",
+        "ethCallData": "0x55e8f70e",
+        "tx": "0x8caef13b18ee8432a2f66f9baedce150f65adcd645b66269221f675c4222393d",
+        "txStatus": 0,
+        "pkt": "2026-11-23 03:27:26 PKT (Asia/Karachi)"
+      },
+      "referredMint": {
+        "result": "PASS",
+        "mintTx": "0xb8d1585fc819ef7c318db7f5ea28ac5fd31c3d643924dda118e2453ac4813d0a",
+        "mintPkt": "2026-11-23 03:27:40 PKT (Asia/Karachi)",
+        "fulfillTx": "0x83ec203b6536893e8ae0d10cfa4af038dfae32b3250f2aa6f319c05f593e0dac",
+        "fulfillPkt": "2026-11-23 03:27:44 PKT (Asia/Karachi)",
+        "prizeId": 3,
+        "prizeBnb": "0.02375",
+        "twakReceived": "80000",
+        "referrerOf": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+        "accruedBnb": "0.005"
+      },
+      "claimReferral": {
+        "result": "PASS",
+        "tx": "0xe920cf3e4d0a5b00fd06e6e318f405274b06f35f665ab94eb124222fcf255d00",
+        "pkt": "2026-11-23 03:28:06 PKT (Asia/Karachi)",
+        "amountBnb": "0.005",
+        "deployerBeforeTBnb": "0.098475053977449244",
+        "deployerAfterTBnb": "0.103437968977449244"
+      }
+    },
+    "preview": {
+      "url": "https://towack-a7bx3bw0j-abcd-532d.vercel.app",
+      "inspector": "https://vercel.com/abcd-532d/towack/AYFELYJLWodeSes7td9zNFSPwRrr",
+      "id": "dpl_AYFELYJLWodeSes7td9zNFSPwRrr",
+      "createdPkt": "2026-11-23 03:30:58 PKT (Asia/Karachi)",
+      "target": null,
+      "protection": "vercel_authentication",
+      "shareLink": "https://towack-a7bx3bw0j-abcd-532d.vercel.app?_vercel_share=TziReqCzdiny9fwRu2Pv2GrPYlJ198ub",
+      "shareExpiresPkt": "2026-12-23 03:30:58 PKT (Asia/Karachi)",
+      "shareTtlSeconds": 2592000,
+      "shareLinkStatus": 307,
+      "viewports": {
+        "sizes": [
+          "360x740",
+          "768x1024",
+          "1440x900",
+          "1920x1080"
+        ],
+        "pages": [
+          "/mint",
+          "/lottery",
+          "/referrals",
+          "/r/alice.ai"
+        ],
+        "overflowIssues": 0,
+        "shotsDir": "web/shots/"
+      }
+    }
   }
 }
