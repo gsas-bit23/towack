@@ -32,8 +32,11 @@ Mainnet contracts are **not deployed yet**. Until Towack publishes them, these a
 | DrawV2 | `<TOWACK_DRAWV2>` (pending mainnet deploy) |
 | TWAK token | `<TOWACK_TWAK>` (pending mainnet deploy) |
 | TowackRouter | `<TOWACK_ROUTER>` (pending mainnet deploy) |
-| PancakeSwap v2 router (quotes only) | `0x10ED43C718714eb63d5aA57B78B54704E256024E` |
-| WBNB | `<WBNB>` (fill from `addresses.json` `"56"`; do not guess) |
+| SPACE ID Agent ID (`HandleRegistry`) | `0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F` |
+| Chainlink VRF v2.5 Direct-Funding Wrapper | `0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94` |
+| PancakeSwap v2 Router02 (quotes only) | `0x10ED43C718714eb63d5aA57B78B54704E256024E` |
+| PancakeSwap v2 Factory | `0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73` |
+| WBNB | `0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c` |
 
 The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towack repo. Never use a zero address or guess one.
 
@@ -54,7 +57,8 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 
 ### Genesis 300 (Agent ID required)
 1. `fee = TowackGenesis.vrfFeeAt(gasPrice)`.
-2. `TowackGenesis.mint(uint256 agentTokenId)` payable (selector `0xa0712d68`): ABI-encode the user's Agent ID token id; `--value = fee` (no mint price). One per Agent ID and per wallet.
+2. Easiest on mainnet (`HandleRegistry`): `TowackGenesis.mintByHandle()` payable (selector `0x748049f4`): `--inputData 0x748049f4`, `--value = fee` (no mint price; resolves `handleOf(msg.sender)` on-chain).
+   Or `TowackGenesis.mint(uint256 agentTokenId)` payable (selector `0xa0712d68`): where `agentTokenId = uint256(keccak256(bytes(handle)))`, `--value = fee`. One per Agent ID and per wallet.
 3. Later: `TowackGenesis.claim()` (`--inputData 0x4e71d92d`, `--value 0`).
 
 ### Draw V2 pool wheel (anyone, no Agent ID)

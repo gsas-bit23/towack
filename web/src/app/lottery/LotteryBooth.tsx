@@ -9,7 +9,7 @@ import { Confetti } from "@/components/motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "@/components/PrizeBooth";
 import { SpinWheel } from "@/components/SpinWheel";
 import { AgentPathToggle } from "@/components/AgentPath";
-import { AddressLink, ChainNote, NeedsWallet, TxNotice, VrfSource } from "@/components/status";
+import { AddressLink, ChainNote, NeedsWallet, RpcErrorNotice, TxNotice, VrfSource } from "@/components/status";
 import { Button, Panel, Pill, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDuration } from "@/lib/format";
@@ -197,7 +197,7 @@ function PayoutTable({ entry }: { entry?: bigint }) {
             <span role="cell" className="min-w-0">
               <span className="block font-display text-[16px] font-extrabold leading-tight">{oddsPct(p).toFixed(0)}%</span>
               <span className="block text-[12px] font-bold text-navy/55">
-                {p.slots.toLocaleString("en-US")} slots{p.bnbBonusBps ? ` · +${p.bnbBonusBps / 100}% BNB pot` : ""}
+                {p.slots.toLocaleString("en-US")} slots{p.bnbBonusBps ? ` · up to +${p.bnbBonusBps / 100}% BNB pot` : ""}
               </span>
             </span>
             <span role="cell" className="whitespace-nowrap text-right font-display text-[15px] font-extrabold">
@@ -228,7 +228,7 @@ function HowItWorks() {
           Min {POOL_MIN_ENTRY} TWAK. Max {POOL_MAX_ENTRY_PCT}% of the free pool, so a 10× win is at most {POOL_MAX_PAYOUT_PCT}% of it.
         </li>
         <li>Every pending spin locks 10× its entry, so many spins at once can never overdraw the pool.</li>
-        <li>5× and 10× also win 1% / 2% of the free BNB pot (locked on entry). Empty pot = TWAK only.</li>
+        <li>5× and 10× also win up to 1% / 2% of the free BNB pot, scaled linearly by your entry size relative to the max entry (locked on entry). Empty pot = TWAK only.</li>
         <li>The owner (a timelock) can only pause new entries. It cannot withdraw TWAK or BNB.</li>
       </ol>
     </Panel>
@@ -236,12 +236,23 @@ function HowItWorks() {
 }
 
 function TreasuryNote() {
-  const { addresses } = useTowack();
+  const { addresses, meta } = useTowack();
+  if (!meta.testnet) {
+    return (
+      <Panel tone="navy" shadow={false}>
+        <Pill tone="sun">POOL &amp; VRF</Pill>
+        <p className="mt-3 font-bold text-white/85">
+          The Draw V2 pool wheel is funded with the full {POOL_INTENDED_SEED} allocation and draws with the official Chainlink VRF v2.5
+          direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess refunded), with no subscription.
+        </p>
+      </Panel>
+    );
+  }
   return (
     <Panel tone="navy" shadow={false}>
       <Pill tone="sun">TESTNET NOTE</Pill>
       <p className="mt-3 font-bold text-white/85">
-        The live pool wheel holds the full {POOL_INTENDED_SEED} Draw V2 allocation and draws with the official Chainlink VRF v2.5
+        The live testnet pool wheel holds the full {POOL_INTENDED_SEED} Draw V2 allocation and draws with the official Chainlink VRF v2.5
         direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess refunded), with no subscription. Earlier
         testnet pools are retired history, including the skeleton treasury and the mock-VRF pool.
       </p>
@@ -291,7 +302,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
   const vrf = useVrfFee(draw, chainId);
 
   const c = { address: draw, abi: drawV2Abi, chainId } as const;
-  const { data, refetch } = useReadContracts({
+  const { data, isError: poolErr, refetch } = useReadContracts({
     contracts: [
       { ...c, functionName: "availableTwak" },
       { ...c, functionName: "availableBnb" },
@@ -414,9 +425,10 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
 
   return (
     <>
+      {poolErr ? <RpcErrorNotice onRetry={() => void refetch()} label="Could not load pool wheel stats." /> : null}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 [&>*]:min-w-0">
         <PoolStat label="Free pool" value={`${fmt18(freeTwak, 0)}`} sub="TWAK" />
-        <PoolStat label="BNB pot" value={fmt18(freeBnb, 4)} sub={bonus ? `10× wins +${fmt18(bonus[0], 4)}` : "BNB"} />
+        <PoolStat label="BNB pot" value={fmt18(freeBnb, 4)} sub={bonus ? `up to +${fmt18(bonus[0], 4)} at max entry` : "BNB"} />
         <PoolStat label="Entry" value={`${POOL_MIN_ENTRY} – ${maxEntry !== undefined ? fmt18(maxEntry, 0) : "—"}`} sub="TWAK min – max" />
         <PoolStat label="Expected return" value={`${POOL_EV_PCT}%`} sub={spinCount !== undefined ? `${spinCount.toString()} spins so far` : "per spin, on average"} />
       </div>
@@ -545,9 +557,11 @@ export function LotteryBooth() {
               <LiveBooth amount={amount} setAmount={setAmount} />
             ) : (
               <>
-                <PoolWheelStage status="none" idleNote="The pool wheel contract is deploying soon. Nothing to sign yet." />
-                <div className="rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-4 text-center font-display text-[20px] font-extrabold">
-                  Pool wheel deploying soon
+                <PoolWheelStage status="none" idleNote="The pool wheel is launching soon on this network. Nothing to sign yet." />
+                <div className="rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-5 text-center">
+                  <div className="font-display text-[20px] font-extrabold">Pool wheel launching soon</div>
+                  <p className="mt-1 text-sm font-bold text-navy/70">Draw V2 contracts are not deployed on this network yet.</p>
+                  <AgentPathToggle flow="lottery" className="mt-4" />
                 </div>
               </>
             )}

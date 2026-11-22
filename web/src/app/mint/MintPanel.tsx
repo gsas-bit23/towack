@@ -8,7 +8,7 @@ import { AnimatedNumber, ProgressFill } from "@/components/motion";
 import { DemoWheel, MyWheel } from "@/components/MyWheel";
 import { SpinFeed, WheelStage } from "@/components/PrizeBooth";
 import { AgentPathToggle } from "@/components/AgentPath";
-import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, TxNotice, VrfSource } from "@/components/status";
+import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice, VrfSource } from "@/components/status";
 import { Button, Check, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { DEMO_SPINS, LAUNCH_PHASES, useDemoWheel, useLaunchState, useRecentSpins } from "@/lib/draw";
@@ -25,7 +25,7 @@ export function MintPanel() {
   const launch = addresses.launch;
   const now = useNow();
 
-  const { data: launchData } = useReadContracts({
+  const { data: launchData, isError: launchErr, refetch: refetchLaunch } = useReadContracts({
     contracts: [
       { address: launch, abi: towackLaunchAbi, functionName: "phase", chainId },
       { address: launch, abi: towackLaunchAbi, functionName: "mintCount", chainId },
@@ -181,6 +181,7 @@ export function MintPanel() {
             <h2 className="font-display text-[28px] font-extrabold">Slot counter</h2>
           </div>
           <div className="mt-6">
+          {launchErr ? <RpcErrorNotice onRetry={() => void refetchLaunch()} label="Could not load mint contract state." /> : null}
           <NeedsContracts keys={["launch"]}>
             <div>
               <div className="flex items-end justify-between">
@@ -291,8 +292,10 @@ export function MintPanel() {
                   <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </>
               ) : (
-                <div className="mt-6 rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-4 text-center font-display text-[20px] font-extrabold">
-                  Contracts deploying soon
+                <div className="mt-6 rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-5 text-center">
+                  <div className="font-display text-[20px] font-extrabold">Launching soon on BNB Smart Chain</div>
+                  <p className="mt-1 text-sm font-bold text-navy/70">Protocol contracts are not deployed yet. Nothing to sign or send.</p>
+                  <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </div>
               )}
             </NeedsWallet>
