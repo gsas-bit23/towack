@@ -22,7 +22,9 @@ import {TowackToken} from "./TowackToken.sol";
 ///     assigns it to that minter (event `PrizeAssigned`). Prizes are mutually exclusive: a BNB refund
 ///     tier, a TWAK bonus tier, or "better luck next time".
 ///  3. claim(): pull-based, any time after the minter's prize is assigned.
-///  4. closeMint(): anyone, after `mintEnd` or at sellout. Burns unsold mint tokens.
+///  4. closeMint(): anyone, after `mintEnd` or at sellout. Burns unsold mint tokens. If the immutable
+///     `instantClose` flag is set (testnet rehearsal stacks only), it may also run before `mintEnd` as soon as
+///     at least one mint exists. Production deploys pass `instantClose = false`.
 ///  5. finalizeListing(): anyone, once closed AND every mint has an assigned prize. Burns the unused bonus
 ///     reserve, keeps the still-unclaimed BNB prizes in escrow, lists the remaining BNB at the mint price
 ///     (800,000 TWAK/BNB, capped at 250 BNB / 200M TWAK) with the LP burned, sends the rest to DrawV2 and
@@ -86,6 +88,9 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     address public immutable drawV2Treasury;
     uint256 public immutable mintStart;
     uint256 public immutable mintEnd;
+    /// @notice Rehearsal-only: when true, `closeMint()` may run before `mintEnd` once `mintCount >= 1`.
+    /// False on production stacks (close only at/after `mintEnd` or at sellout).
+    bool public immutable instantClose;
 
     // ---------------------------------------------------------------- state
     enum Phase {
@@ -163,7 +168,8 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         address drawV2Treasury_,
         uint256 mintStart_,
         uint256 mintEnd_,
-        VRFConfig memory vrf
+        VRFConfig memory vrf,
+        bool instantClose_
     ) VRFConsumerV25(vrf) {
         require(agentId_ != address(0) && wbnb_ != address(0) && drawV2Treasury_ != address(0), "zero addr");
         require(mintEnd_ > mintStart_, "bad window");
@@ -172,6 +178,7 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         drawV2Treasury = drawV2Treasury_;
         mintStart = mintStart_;
         mintEnd = mintEnd_;
+        instantClose = instantClose_;
     }
 
     function _expectedAllocation() internal pure override returns (uint256) {
@@ -294,7 +301,9 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     // ================================================================= 4. close
     function closeMint() external nonReentrant whenBound {
         if (phase != Phase.Minting) revert WrongPhase(phase);
-        if (block.timestamp < mintEnd && mintCount < MAX_MINTS) revert MintStillOpen();
+        if (block.timestamp < mintEnd && mintCount < MAX_MINTS && !(instantClose && mintCount >= 1)) {
+            revert MintStillOpen();
+        }
 
         uint256 unsold = (MAX_MINTS - mintCount) * TOKENS_PER_MINT;
         if (unsold > 0) TowackToken(address(token)).burn(unsold);

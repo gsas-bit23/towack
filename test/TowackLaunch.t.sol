@@ -10,7 +10,7 @@ import {MockPancakePair} from "../src/mocks/MockPancake.sol";
 /// Exposes the deck draw so the deck can be exercised without minting.
 contract DeckHarness is TowackLaunch {
     constructor(VRFConfig memory cfg)
-        TowackLaunch(address(1), address(2), address(3), block.timestamp, block.timestamp + 1, cfg)
+        TowackLaunch(address(1), address(2), address(3), block.timestamp, block.timestamp + 1, cfg, false)
     {}
 
     function draw(uint256 word) external returns (uint8) {
@@ -90,6 +90,7 @@ contract TowackLaunchTest is Fixture {
 
     // ------------------------------------------------------------ close / burn
     function test_CloseBeforeEndReverts() public {
+        assertFalse(launch.instantClose());
         mintN(3);
         vm.expectRevert(TowackLaunch.MintStillOpen.selector);
         launch.closeMint();
@@ -556,5 +557,100 @@ contract TowackLaunchTest is Fixture {
         vm.prank(u);
         launch.claim();
         return (paidB + b, paidT + t);
+    }
+}
+
+/// Same fixture, but Launch deployed with `instantClose = true` (testnet rehearsal stack).
+contract TowackLaunchInstantCloseTest is Fixture {
+    function launchInstantClose() internal pure override returns (bool) {
+        return true;
+    }
+
+    /// Deck slot 1900 (full deck) is prize 3: 0.025 BNB refund, no bonus.
+    uint256 constant WORD_PRIZE3 = 1900;
+
+    function test_FlagSet() public view {
+        assertTrue(launch.instantClose());
+        assertEq(launch.mintEnd(), mintEnd);
+    }
+
+    function test_OneMint_CloseAndListBeforeMintEnd() public {
+        mintN(1);
+        fulfillTo(address(launch), requestOf(user(0)), WORD_PRIZE3);
+        (,, uint8 id,,,) = launch.prizeOf(user(0));
+        assertEq(id, 3);
+        assertLt(block.timestamp, mintEnd);
+
+        uint256 supply0 = token.totalSupply();
+        launch.closeMint();
+        assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Closed));
+        assertEq(supply0 - token.totalSupply(), 4999 * 80_000e18, "unsold burned");
+
+        launch.finalizeListing();
+        assertLt(block.timestamp, mintEnd);
+        assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Finalized));
+        assertTrue(token.tradingOpen());
+        // leftover = 0.1 - 0.025 reserved refund = 0.075 BNB, all to LP at 800,000 TWAK/BNB
+        assertEq(launch.lpBnb(), 0.075 ether);
+        assertEq(launch.lpTokens(), 0.075 ether * 800_000);
+        assertEq(launch.sentToDrawV2(), 0);
+        (uint112 r0, uint112 r1,) = MockPancakePair(token.pair()).getReserves();
+        assertGt(r0, 0);
+        assertGt(r1, 0);
+        assertEq(wbnb.balanceOf(token.pair()), 0.075 ether);
+        assertEq(token.balanceOf(token.pair()), 60_000e18);
+        // the refund is still claimable from escrow
+        assertEq(address(launch).balance, 0.025 ether);
+        uint256 b0 = user(0).balance;
+        vm.prank(user(0));
+        launch.claim();
+        assertEq(user(0).balance - b0, 0.025 ether);
+    }
+
+    function test_CloseBeforeVrf_FinalizeWaitsForPrize() public {
+        mintN(1);
+        launch.closeMint(); // allowed: mintCount >= 1
+        vm.expectRevert(abi.encodeWithSelector(TowackLaunch.PrizesPending.selector, 1));
+        launch.finalizeListing();
+        assertFalse(token.tradingOpen());
+        // callback still lands after close, then listing works
+        fulfillTo(address(launch), requestOf(user(0)), WORD_PRIZE3);
+        launch.finalizeListing();
+        assertTrue(token.tradingOpen());
+    }
+
+    function test_NoMintAfterInstantClose() public {
+        mintN(1);
+        launch.closeMint();
+        address late = newAgent("late");
+        vm.deal(late, PRICE + launchFee);
+        vm.prank(late);
+        vm.expectRevert(abi.encodeWithSelector(TowackLaunch.WrongPhase.selector, TowackLaunch.Phase.Closed));
+        launch.mint{value: PRICE + launchFee}();
+    }
+
+    /// Full refund (prize 0): no leftover BNB, LP skipped, trading still opens (unchanged behaviour).
+    function test_FullRefund_NoLpButTradingOpens() public {
+        mintN(1);
+        fulfillTo(address(launch), requestOf(user(0)), 0);
+        launch.closeMint();
+        launch.finalizeListing();
+        assertEq(launch.lpBnb(), 0);
+        assertTrue(token.tradingOpen());
+        (uint112 r0, uint112 r1,) = MockPancakePair(token.pair()).getReserves();
+        assertEq(uint256(r0) + r1, 0);
+    }
+
+    /// Zero mints: no instant path. closeMint still needs mintEnd, then takes the existing burn-everything route.
+    function test_ZeroMints_NoInstantClose() public {
+        vm.expectRevert(TowackLaunch.MintStillOpen.selector);
+        launch.closeMint();
+        vm.warp(mintEnd);
+        launch.closeMint();
+        assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Finalized));
+        assertEq(token.balanceOf(address(launch)), 0);
+        assertFalse(token.tradingOpen());
+        vm.expectRevert(abi.encodeWithSelector(TowackLaunch.WrongPhase.selector, TowackLaunch.Phase.Finalized));
+        launch.finalizeListing();
     }
 }

@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
+import {VmSafe} from "forge-std/Vm.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {TowackToken} from "../src/TowackToken.sol";
 import {TowackLaunch} from "../src/TowackLaunch.sol";
@@ -26,8 +27,20 @@ import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interface
 ///   MINT_DURATION=604800 forge script script/DeployFullStackTestnet.s.sol \
 ///     --rpc-url bsc_testnet --broadcast --legacy --with-gas-price 1gwei --slow
 ///
+/// Instant-list REHEARSAL stack (a SEPARATE stack; leaves the live web/src/config/addresses.json stack alone and
+/// this script never writes that file). Same 7-day window, but Launch is deployed with `instantClose = true`, so
+/// right after one paid mint + its VRF callback anyone can call closeMint() + finalizeListing() and trading opens:
+///   INSTANT_CLOSE=true forge script script/DeployFullStackTestnet.s.sol --sig "dryRun()" \
+///     --rpc-url bsc_testnet --legacy --with-gas-price 1gwei
+///   INSTANT_CLOSE=true forge script script/DeployFullStackTestnet.s.sol \
+///     --rpc-url bsc_testnet --broadcast --legacy --with-gas-price 1gwei --slow
+/// (or script/DeployRehearsalStackTestnet.s.sol, which forces instantClose = true). Keep MINT_DURATION at its
+/// 7-day default: instant close is what makes the stack listable at once, and a very short window could expire
+/// during the remaining deploy txs (mint() would then revert MintNotOpen).
+///
 /// Required env (broadcast): PRIVATE_KEY.
-/// Optional: VRF_WRAPPER (default: official BSC testnet wrapper), MINT_DURATION (default 7 days),
+/// Optional: INSTANT_CLOSE (default false; rehearsal only), VRF_WRAPPER (default: official BSC testnet wrapper),
+///           MINT_DURATION (default 7 days),
 ///           TIMELOCK_DELAY (default 48h), AGENT_ID (default existing MockAgentId),
 ///           AGENT_ID_NFT (default existing MockAgentIdNFT).
 /// Precheck: deployer balance >= GAS_RESERVE (deploy gas at 1 gwei is ~0.016 tBNB; no VRF deposit of any kind).
@@ -64,9 +77,19 @@ contract DeployFullStackTestnet is Script {
         address pair;
         address router;
         address genesis;
+        bool instantClose;
+    }
+
+    /// Instant-close flag for Launch. Default false (production-shaped). The rehearsal alias overrides this.
+    function _instantClose() internal view virtual returns (bool) {
+        return vm.envOr("INSTANT_CLOSE", false);
     }
 
     function dryRun() external returns (Out memory o) {
+        require(
+            !vm.isContext(VmSafe.ForgeContext.ScriptBroadcast) && !vm.isContext(VmSafe.ForgeContext.ScriptResume),
+            "DRY RUN ONLY: refusing --broadcast/--resume"
+        );
         require(block.chainid == 97, "BSC testnet only");
         address w = _wrapper();
         vm.startBroadcast(DEPLOYER);
@@ -115,8 +138,11 @@ contract DeployFullStackTestnet is Script {
         o.drawV2 = address(new DrawV2(o.timelock, address(0), _cfg(wrapper, DRAW_CALLBACK_GAS)));
         o.mintStart = block.timestamp;
         o.mintEnd = block.timestamp + mintDuration;
+        o.instantClose = _instantClose();
         o.launch = address(
-            new TowackLaunch(o.agentId, WBNB, o.drawV2, o.mintStart, o.mintEnd, _cfg(wrapper, LAUNCH_CALLBACK_GAS))
+            new TowackLaunch(
+                o.agentId, WBNB, o.drawV2, o.mintStart, o.mintEnd, _cfg(wrapper, LAUNCH_CALLBACK_GAS), o.instantClose
+            )
         );
         o.rebates = address(new RebateDistributor());
         o.team = address(new TeamVesting(DEPLOYER));
@@ -166,6 +192,8 @@ contract DeployFullStackTestnet is Script {
         console2.log("genesis", o.genesis);
         console2.log("mintStart", o.mintStart);
         console2.log("mintEnd", o.mintEnd);
+        console2.log("instantClose", TowackLaunch(payable(o.launch)).instantClose());
+        if (o.instantClose) console2.log("REHEARSAL stack: separate from addresses.json; do NOT write it there");
         console2.log("deployer tBNB left (wei)", DEPLOYER.balance);
         console2.log("Launch callback", VRFConsumerV25(o.launch).vrfCallbackGasLimit());
         console2.log("Genesis callback", VRFConsumerV25(o.genesis).vrfCallbackGasLimit());

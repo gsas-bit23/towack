@@ -42,7 +42,7 @@ contract ForkPancakeTest is Test {
         VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(address(vrf), 3, 165_000);
         DrawV2 drawV2 = new DrawV2(address(this), address(0), cfg);
         TowackLaunch launch =
-            new TowackLaunch(address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg);
+            new TowackLaunch(address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg, false);
         RebateDistributor rebates = new RebateDistributor();
         TeamVesting team = new TeamVesting(address(1));
         TowackToken token = new TowackToken(

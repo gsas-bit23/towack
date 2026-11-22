@@ -73,7 +73,13 @@ contract Fixture is Test {
 
         drawV2 = new DrawV2(address(timelock), address(0), vrfCfg(DRAW_CALLBACK_GAS));
         launch = new TowackLaunch(
-            address(agentId), address(wbnb), address(drawV2), mintStart, mintEnd, vrfCfg(LAUNCH_CALLBACK_GAS)
+            address(agentId),
+            address(wbnb),
+            address(drawV2),
+            mintStart,
+            mintEnd,
+            vrfCfg(LAUNCH_CALLBACK_GAS),
+            launchInstantClose()
         );
         rebates = new RebateDistributor();
         team = new TeamVesting(teamWallet);
@@ -100,6 +106,11 @@ contract Fixture is Test {
         rebates.bind(address(token), address(router));
         launchFee = launch.vrfFeeAt(TEST_GAS_PRICE);
         drawFee = drawV2.vrfFeeAt(TEST_GAS_PRICE);
+    }
+
+    /// Launch `instantClose` flag for this fixture. False (production default); rehearsal tests override it.
+    function launchInstantClose() internal pure virtual returns (bool) {
+        return false;
     }
 
     // ---------------------------------------------------------------- VRF helpers
