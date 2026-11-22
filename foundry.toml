@@ -14,7 +14,7 @@ remappings = [
 ]
 # Sellout tests mint and claim 5000 times in one test; lift the 1B default.
 gas_limit = "18446744073709551615"
-fs_permissions = [{ access = "read", path = "./" }]
+fs_permissions = [{ access = "read", path = "./" }, { access = "read-write", path = "./deployments/out" }]
 
 [profile.default.fuzz]
 runs = 256

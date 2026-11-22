@@ -259,6 +259,19 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
+    "name": "MIN_LP_BNB",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MIN_REQUEST_CONFIRMATIONS",
     "inputs": [],
     "outputs": [

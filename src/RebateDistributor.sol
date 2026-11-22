@@ -20,8 +20,11 @@ import {TokenBound} from "./TokenBound.sol";
 /// `depositBoost` instead, which adds BNB to the current epoch pot without any fee credit, so
 /// non-Agent volume never dilutes Agent TWAK rebates.
 ///
-/// Trust assumption: `deployer` can repoint `router` (`setRouter`) - i.e. choose which contract may
-/// record fees and deposit boosts. It cannot move tokens or BNB, and has no other power.
+/// Trust assumption: `routerAdmin` (the deployer at first) can repoint `router` (`setRouter`) - i.e. choose
+/// which contract may record fees and deposit boosts. It cannot move tokens or BNB directly, but a malicious
+/// router could record fake fees and so steer an epoch's budget, so on mainnet the deploy script hands
+/// `routerAdmin` to the TimelockController (`setRouterAdmin`): every router change is then public and
+/// delayed. `setRouterAdmin(address(0))` freezes the router for good.
 ///
 /// Epoch 0 starts at deploy. Epochs with zero fees (e.g. before listing) roll their TWAK and BNB
 /// budgets into the next epoch, so nothing is stranded. No owner; parameters are constants (except the
@@ -35,6 +38,8 @@ contract RebateDistributor is TokenBound, ReentrancyGuard {
 
     uint256 public immutable startTime;
     address public router;
+    /// @notice May call setRouter / setRouterAdmin. Starts as the deployer; address(0) = frozen.
+    address public routerAdmin;
 
     // per-epoch accounting
     mapping(uint256 => uint256) public totalFees;
@@ -49,15 +54,18 @@ contract RebateDistributor is TokenBound, ReentrancyGuard {
     uint256 public carryBnb;
 
     error OnlyRouter();
+    error NotRouterAdmin();
     error EpochNotFinished(uint256 epoch);
 
     event FeeRecorded(uint256 indexed epoch, address indexed trader, uint256 fee, uint256 bnbBoost);
     event BoostDeposited(uint256 indexed epoch, uint256 bnb);
     event RouterSet(address indexed router);
+    event RouterAdminSet(address indexed admin);
     event Claimed(address indexed trader, uint256 indexed epoch, uint256 tokens, uint256 bnb);
 
     constructor() {
         startTime = block.timestamp;
+        routerAdmin = msg.sender;
     }
 
     function _expectedAllocation() internal pure override returns (uint256) {
@@ -71,14 +79,21 @@ contract RebateDistributor is TokenBound, ReentrancyGuard {
         emit RouterSet(router_);
     }
 
-    /// @notice Point the distributor at a (new) router. Deployer only; works before or after `bind`,
+    /// @notice Point the distributor at a (new) router. `routerAdmin` only; works before or after `bind`,
     /// so a fresh distributor can be wired before funding and a bound one can migrate routers
     /// without stranding the allocation.
     function setRouter(address newRouter) external {
-        if (msg.sender != deployer) revert NotDeployer();
+        if (msg.sender != routerAdmin) revert NotRouterAdmin();
         require(newRouter != address(0), "router");
         router = newRouter;
         emit RouterSet(newRouter);
+    }
+
+    /// @notice Hand router control to `newAdmin` (e.g. the TimelockController). address(0) freezes it.
+    function setRouterAdmin(address newAdmin) external {
+        if (msg.sender != routerAdmin) revert NotRouterAdmin();
+        routerAdmin = newAdmin;
+        emit RouterAdminSet(newAdmin);
     }
 
     function currentEpoch() public view returns (uint256) {

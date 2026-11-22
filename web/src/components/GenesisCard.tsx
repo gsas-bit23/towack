@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
+import { keccak256, toBytes } from "viem";
 import { useReadContract, useWriteContract } from "wagmi";
 import { towackGenesisAbi } from "@/abi";
 import { useTowack } from "@/lib/chain";
@@ -186,7 +187,18 @@ function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: num
   );
 }
 
-/** Mint CTA: finds (or takes) the Agent ID token id, checks it, and calls mint(tokenId). */
+/** Parse numeric token id, 0x hex id, or SPACE ID handle (e.g. "alice" / "alice.ai" -> keccak256(bytes("alice"))). */
+function parseTokenOrHandle(raw: string): { id?: bigint; handle?: string } {
+  const t = raw.trim();
+  if (!t) return {};
+  if (/^\d+$/.test(t)) return { id: BigInt(t) };
+  if (/^0x[0-9a-fA-F]{1,64}$/.test(t)) return { id: BigInt(t) };
+  const bare = t.toLowerCase().replace(/^@+/, "").replace(/\.ai$/, "");
+  if (/^[a-z0-9]{1,64}$/.test(bare)) return { id: BigInt(keccak256(toBytes(bare))), handle: bare };
+  return {};
+}
+
+/** Mint CTA: finds (or takes) the Agent ID handle / token id, checks it, and calls mint(tokenId). */
 function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   const { chainId, addresses, account } = useTowack();
   const { genesis, isOpen, mintCount, cap, registry } = useGenesisState();
@@ -196,15 +208,40 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   const [typed, setTyped] = useState("");
   const reg = registry ?? addresses.agentId;
 
-  const { data: autoId } = useReadContract({
+  // Mainnet SPACE ID HandleRegistry exposes handleOf(address) where tokenId = keccak256(bytes(handle)).
+  const { data: autoHandle } = useReadContract({
+    address: reg,
+    abi: agentNftAbi,
+    functionName: "handleOf",
+    args: account ? [account] : undefined,
+    chainId,
+    query: { enabled: Boolean(reg && account && registry), retry: false },
+  });
+  // Testnet MockAgentIdNFT implements ERC721Enumerable (tokenOfOwnerByIndex).
+  const { data: enumAutoId } = useReadContract({
     address: reg,
     abi: agentNftAbi,
     functionName: "tokenOfOwnerByIndex",
     args: account ? [account, 0n] : undefined,
     chainId,
-    query: { enabled: Boolean(reg && account && registry), retry: false },
+    query: { enabled: Boolean(reg && account && registry && !autoHandle), retry: false },
   });
-  const tokenId = typed.trim() !== "" && /^\d+$/.test(typed.trim()) ? BigInt(typed.trim()) : autoId;
+  const handleAutoId = autoHandle && autoHandle.length > 0 ? BigInt(keccak256(toBytes(autoHandle))) : undefined;
+  const autoId = handleAutoId ?? enumAutoId;
+  const parsed = parseTokenOrHandle(typed);
+  const tokenId = typed.trim() !== "" ? parsed.id : autoId;
+  const displayId =
+    typed.trim() !== ""
+      ? parsed.handle
+        ? `${parsed.handle}.ai`
+        : tokenId !== undefined
+          ? `#${tokenId.toString().length > 12 ? `${tokenId.toString().slice(0, 8)}…` : tokenId.toString()}`
+          : undefined
+      : autoHandle
+        ? `${autoHandle}.ai`
+        : autoId !== undefined
+          ? `#${autoId.toString()}`
+          : undefined;
   const { data: owner, isError: ownerErr } = useReadContract({
     address: reg,
     abi: agentNftAbi,
@@ -255,19 +292,30 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   return (
     <div>
       <label className="block text-[13px] font-black uppercase tracking-[.15em] text-navy/60" htmlFor="genesis-token-id">
-        Agent ID token id
+        Agent ID handle or token id
       </label>
       <input
         id="genesis-token-id"
-        inputMode="numeric"
-        placeholder={autoId !== undefined ? `#${autoId.toString()} (found in your wallet)` : "e.g. 1234"}
+        placeholder={
+          autoHandle
+            ? `${autoHandle}.ai (found in your wallet)`
+            : autoId !== undefined
+              ? `#${autoId.toString()} (found in your wallet)`
+              : "e.g. yourname.ai or token id"
+        }
         value={typed}
         onChange={(e) => setTyped(e.target.value)}
         className="mt-2 h-12 w-full min-w-0 rounded-2xl border-[3px] border-navy bg-white px-4 font-display text-[18px] font-extrabold placeholder:font-bold placeholder:text-navy/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-sun"
       />
       <ul className="mt-4 space-y-2.5">
         <Check ok={tokenId === undefined ? false : owns}>
-          {tokenId === undefined ? "Enter your Agent ID token id" : owns ? `You own Agent ID #${tokenId}` : owns === false ? `This wallet does not own #${tokenId}` : "Checking owner…"}
+          {tokenId === undefined
+            ? "Enter your Agent ID handle or token id"
+            : owns
+              ? `You own Agent ID ${displayId}`
+              : owns === false
+                ? `This wallet does not own ${displayId}`
+                : "Checking owner…"}
         </Check>
         <Check ok={used === undefined ? undefined : !used}>{used ? "That Agent ID already claimed Genesis" : "Agent ID not used yet"}</Check>
         <Check ok={minted === undefined ? undefined : !minted}>{minted ? "This wallet already claimed — see your spin" : "Wallet not used yet"}</Check>
@@ -386,8 +434,10 @@ export function GenesisCard() {
             {genesis ? (
               <GenesisClaim onMinted={() => setFresh(true)} />
             ) : (
-              <div className="rounded-2xl border-4 border-dashed border-navy bg-white px-4 py-4 text-center font-display text-[20px] font-extrabold">
-                Genesis contract deploying soon
+              <div className="rounded-2xl border-4 border-dashed border-navy bg-white px-4 py-5 text-center">
+                <div className="font-display text-[20px] font-extrabold">Genesis 300 launching soon</div>
+                <p className="mt-1 text-sm font-bold text-navy/70">Not deployed on this network yet. Nothing to sign or send.</p>
+                <AgentPathToggle flow="genesis" className="mt-4" />
               </div>
             )}
           </div>

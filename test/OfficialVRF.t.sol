@@ -355,9 +355,10 @@ contract OfficialVRFTest is Fixture {
 
         vm.deal(address(drawV2), 10 ether); // BNB pot
         uint256 avail0 = drawV2.availableBnb();
+        uint256 amt = drawV2.maxEntry(); // max entry => the full 2% cap
         ab = alice.balance;
         vm.prank(alice);
-        (uint256 spinId,) = drawV2.enter{value: 5 ether}(1_000e18);
+        (uint256 spinId,) = drawV2.enter{value: 5 ether}(amt);
         (,,,,,, uint256 bnbCap,) = drawV2.spins(spinId);
         assertEq(bnbCap, 0.2 ether, "2% of the 10 BNB pot; msg.value is not pot money");
         assertEq(address(drawV2).balance, 10 ether, "price forwarded, excess refunded: pot unchanged");

@@ -348,6 +348,30 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
+    "name": "bnbBonusPreviewFor",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "jackpot",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bigWin",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "claim",
     "inputs": [],
     "outputs": [],

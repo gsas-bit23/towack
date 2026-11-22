@@ -221,14 +221,14 @@ export default function Home() {
               <div className="mt-8 min-h-[250px] rounded-[36px] border-4 border-navy bg-white p-7 text-left text-navy">
                 <div className="flex items-center justify-between">
                   <span className="font-display text-[24px] font-extrabold">Phase 1</span>
-                  <Pill tone="sky">BUILDING · TESTNET</Pill>
+                  <Pill tone="sky">CORE STACK</Pill>
                 </div>
                 <ul className="mt-4 space-y-2 font-bold text-navy/80">
-                  <li>★ Agent ID slot mint</li>
-                  <li>★ Draw V1 prize wheel (per-mint VRF)</li>
-                  <li>★ PancakeSwap v2 router</li>
-                  <li>★ Active-trader rebates</li>
-                  <li>★ All on BSC</li>
+                  <li>★ Agent ID slot mint + 5% referrals</li>
+                  <li>★ Genesis 300 free mint + Draw V1 wheel</li>
+                  <li>★ Draw V2 instant pool wheel</li>
+                  <li>★ Open PancakeSwap v2 router + rebates</li>
+                  <li>★ All on BNB Smart Chain</li>
                 </ul>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function Home() {
                   <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-black">COMING UP</span>
                 </div>
                 <div className="mt-4 font-display text-[22px] font-extrabold">Draw V2 pool wheel</div>
-                <p className="mt-2 font-bold text-white/85">Instant spins paid from a TWAK prize pool, 95% expected return. In testing on testnet.</p>
+                <p className="mt-2 font-bold text-white/85">Instant spins paid from a 70M TWAK prize pool, 95% expected return, open to any wallet.</p>
               </div>
             </div>
           </Reveal>

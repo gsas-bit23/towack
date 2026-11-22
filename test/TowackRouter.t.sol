@@ -265,4 +265,38 @@ contract TowackRouterTest is Fixture {
         assertEq(rebates.feesOf(e, who), agent ? fee : 0);
         assertEq(rebates.totalFees(e), agent ? fee : 0);
     }
+
+    /// Regression: if `dev` reverts on BNB receipt, `flushFees()` reverts, but `flushLottery()` still
+    /// delivers Draw V2's 30% share cleanly without being trapped.
+    function test_FlushLotteryIndependentOfRevertingDev() public {
+        RevertingReceiver badDev = new RevertingReceiver();
+        TowackRouter r2 = new TowackRouter(
+            address(token), address(pancake), address(agentId), address(rebates), address(drawV2), address(badDev)
+        );
+        rebates.setRouter(address(r2));
+
+        vm.prank(alice);
+        r2.buy{value: 1 ether}(0, block.timestamp);
+        uint256 expLottery = 0.01 ether * 30 / 100;
+        uint256 expDev = 0.01 ether * 20 / 100;
+        assertEq(r2.pendingLottery(), expLottery);
+        assertEq(r2.pendingDev(), expDev);
+
+        vm.expectRevert(bytes("dev"));
+        r2.flushFees();
+        vm.expectRevert(bytes("dev"));
+        r2.flushDev();
+
+        uint256 v2Before = address(drawV2).balance;
+        r2.flushLottery();
+        assertEq(address(drawV2).balance - v2Before, expLottery);
+        assertEq(r2.pendingLottery(), 0);
+        assertEq(r2.pendingDev(), expDev, "dev bucket untouched");
+    }
+}
+
+contract RevertingReceiver {
+    receive() external payable {
+        revert("nope");
+    }
 }

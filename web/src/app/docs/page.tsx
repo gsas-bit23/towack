@@ -9,7 +9,7 @@ const HOWTO = [
   {
     n: 1,
     title: "Get an Agent ID",
-    body: "Agent IDs are issued in the official Binance App on BNB Chain mainnet. Towack does not issue them. Testnet builds use a test registry.",
+    body: "Agent IDs are soulbound handles issued via SPACE ID / the official Binance App on BNB Smart Chain. Towack does not issue them.",
   },
   {
     n: 2,
@@ -49,7 +49,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How is the draw kept fair?",
-    a: "Every mint requests its own Chainlink VRF v2.5 random word. The contract uses it only as an index into the remaining fixed deck (word mod slots left) and removes that slot, so the deck counts are exact and nobody can change the word or who it belongs to. The launch contract has no owner. Each request is paid in BNB by the user who makes it, through Chainlink's official VRF v2.5 direct-funding wrapper (no subscription): the contract quotes the fee on-chain (vrfFeeAt), sends the wrapper exactly Chainlink's price for that request and refunds the rest in the same transaction. On BSC testnet, the currently deployed Genesis 300 and pool wheel still use the official Chainlink VRF v2.5 coordinator with a subscription, and the testnet paid-mint contract still uses a team-answered test coordinator, until the full testnet redeploy moves all three to the wrapper.",
+    a: "Every spin requests its own Chainlink VRF v2.5 random word through Chainlink's official direct-funding wrapper (no subscription). Paid mint and Genesis pop one slot from fixed decks (word mod slots left) so deck counts are exact; Draw V2 maps the word onto a fixed 10,000-slot table (95% expected return, with BNB bonus scaled by entry size up to 2% of the free BNB pot). Each request is paid in native BNB by the caller (vrfFeeAt): the contract forwards Chainlink's exact price and refunds any excess in the same transaction.",
   },
   {
     q: "Are rebates staking?",
@@ -69,7 +69,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Is the code open source?",
-    a: "Yes. The contracts and this site are open source. This is a testnet / work-in-progress build and details may change before any mainnet launch.",
+    a: "Yes. The contracts and this site are open source. Always verify the active network badge and published contract addresses before signing.",
   },
 ];
 

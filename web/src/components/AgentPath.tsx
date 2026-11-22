@@ -49,6 +49,7 @@ const ABI = [
 const CLAIM_HEX = encodeFunctionData({ abi: ABI, functionName: "claim" });
 const CLAIM_REFERRAL_HEX = encodeFunctionData({ abi: ABI, functionName: "claimReferral" });
 const SEL_MINT_REF = toFunctionSelector("mint(address)");
+const SEL_GENESIS_MINT_BY_HANDLE = toFunctionSelector("mintByHandle()");
 const SEL_GENESIS_MINT = toFunctionSelector("mint(uint256)");
 const SEL_APPROVE = toFunctionSelector("approve(address,uint256)");
 const SEL_ENTER = toFunctionSelector("enter(uint256)");
@@ -62,7 +63,7 @@ export function mintCalldata(referrer?: Address): `0x${string}` {
   return encodeFunctionData({ abi: ABI, functionName: "mint", args: [referrer ?? zeroAddress] });
 }
 
-type Key = "launch" | "genesis" | "drawV2" | "token" | "router" | "pancakeRouter" | "wbnb";
+type Key = "launch" | "genesis" | "drawV2" | "token" | "router" | "pancakeRouter" | "wbnb" | "agentId";
 
 function mainnet(key: Key, placeholder: string) {
   const a = ADDRESSES[56][key];
@@ -121,12 +122,15 @@ ${footer(`${BASE_RULES}\n${vrfRule("TowackLaunch")}`)}`;
       return { text, missing: missingList([["TowackLaunch", l.missing]]) };
     }
     case "genesis": {
+      const a = mainnet("agentId", "<AGENT_ID_REGISTRY>");
       const text = `Towack Genesis 300 free mint on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
 Contract: TowackGenesis ${g.addr}${g.missing ? PENDING : ""}
-Requirement: my wallet must own the Agent ID token I name (one Genesis per Agent ID and per wallet). Genesis has no referrals.
+Agent ID registry (HandleRegistry): ${a.addr}
+Requirement: my wallet must hold an Agent ID handle (one Genesis per Agent ID and per wallet). Genesis has no referrals.
 
 1) Quote fee = TowackGenesis.vrfFeeAt(currentGasPrice).
-2) mint(uint256 agentTokenId) (selector ${SEL_GENESIS_MINT}): ABI-encode my Agent ID token id as --inputData; --value = fee (no mint price, VRF fee only).
+2) Easiest on mainnet: mintByHandle() (selector ${SEL_GENESIS_MINT_BY_HANDLE}): --inputData ${SEL_GENESIS_MINT_BY_HANDLE}  --value = fee (resolves handleOf(my wallet) automatically; no mint price, VRF fee only).
+   Or mint(uint256 agentTokenId) (selector ${SEL_GENESIS_MINT}): where agentTokenId = uint256(keccak256(bytes(handle))), --value = fee.
 3) After the spin lands, when I ask: claim(): --inputData ${CLAIM_HEX}  --value 0.
 
 ${footer(`${BASE_RULES}\n${vrfRule("TowackGenesis")}`)}`;

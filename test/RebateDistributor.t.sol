@@ -59,7 +59,7 @@ contract RebateDistributorTest is Fixture {
         address newRouter = makeAddr("newRouter");
         // non-deployer
         vm.prank(alice);
-        vm.expectRevert(bytes4(keccak256("NotDeployer()")));
+        vm.expectRevert(RebateDistributor.NotRouterAdmin.selector);
         rebates.setRouter(newRouter);
         // zero
         vm.expectRevert(bytes("router"));
@@ -95,7 +95,7 @@ contract RebateDistributorTest is Fixture {
         RebateDistributor fresh = new RebateDistributor();
         address r = makeAddr("r");
         vm.prank(bob);
-        vm.expectRevert(bytes4(keccak256("NotDeployer()")));
+        vm.expectRevert(RebateDistributor.NotRouterAdmin.selector);
         fresh.setRouter(r);
         vm.prank(alice);
         fresh.setRouter(r);
@@ -111,6 +111,32 @@ contract RebateDistributorTest is Fixture {
         vm.prank(alice);
         vm.expectRevert();
         fresh.bind(address(token), r);
+    }
+
+    function test_RouterAdminHandoffAndFreeze() public {
+        address tl = makeAddr("timelock");
+        address r2 = makeAddr("r2");
+        assertEq(rebates.routerAdmin(), address(this), "deployer starts as admin");
+        vm.prank(alice);
+        vm.expectRevert(RebateDistributor.NotRouterAdmin.selector);
+        rebates.setRouterAdmin(alice);
+        rebates.setRouterAdmin(tl);
+        assertEq(rebates.routerAdmin(), tl);
+        // the deployer lost the power once handed off
+        vm.expectRevert(RebateDistributor.NotRouterAdmin.selector);
+        rebates.setRouter(r2);
+        vm.expectRevert(RebateDistributor.NotRouterAdmin.selector);
+        rebates.setRouterAdmin(address(this));
+        vm.prank(tl);
+        rebates.setRouter(r2);
+        assertEq(rebates.router(), r2);
+        // freeze
+        vm.prank(tl);
+        rebates.setRouterAdmin(address(0));
+        vm.prank(tl);
+        vm.expectRevert(RebateDistributor.NotRouterAdmin.selector);
+        rebates.setRouter(makeAddr("r3"));
+        assertEq(rebates.router(), r2);
     }
 
     function test_EmissionsSumToAllocation() public view {

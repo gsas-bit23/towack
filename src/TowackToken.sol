@@ -58,7 +58,11 @@ contract TowackToken is ERC20, ERC20Burnable {
         ) revert ZeroAddress();
 
         launch = r.launch;
-        pair = IPancakeFactory(pancakeFactory).createPair(address(this), wbnb);
+        // Our address is predictable (deployer nonce), so anyone could pre-create the pair to make
+        // createPair revert (PAIR_EXISTS) and grief the deploy. A pre-created pair is harmless: it is
+        // empty and TWAK cannot enter it until the launch lists (pair guard below), so just reuse it.
+        address existing = IPancakeFactory(pancakeFactory).getPair(address(this), wbnb);
+        pair = existing != address(0) ? existing : IPancakeFactory(pancakeFactory).createPair(address(this), wbnb);
 
         _mint(r.launch, LAUNCH_ALLOCATION);
         _mint(r.rebates, TRADER_REBATES);

@@ -236,6 +236,29 @@ contract TowackRouter is ReentrancyGuard {
         emit FeesFlushed(l, d);
     }
 
+    /// @notice Push only accrued Draw V2 / lottery fees (isolated from `dev` so a reverting dev wallet
+    /// can never trap lottery funds). Permissionless.
+    function flushLottery() external nonReentrant {
+        uint256 l = pendingLottery;
+        pendingLottery = 0;
+        if (l > 0) {
+            (bool ok,) = lotteryTreasury.call{value: l}("");
+            require(ok, "lottery");
+        }
+        emit FeesFlushed(l, 0);
+    }
+
+    /// @notice Push only accrued dev fees (isolated from `lotteryTreasury`). Permissionless.
+    function flushDev() external nonReentrant {
+        uint256 d = pendingDev;
+        pendingDev = 0;
+        if (d > 0) {
+            (bool ok,) = dev.call{value: d}("");
+            require(ok, "dev");
+        }
+        emit FeesFlushed(0, d);
+    }
+
     /// @dev Accept BNB only from Pancake (sell proceeds).
     receive() external payable {
         require(msg.sender == address(pancake), "only pancake");

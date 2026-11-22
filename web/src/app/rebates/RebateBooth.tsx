@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useReadContracts, useWriteContract } from "wagmi";
 import { rebateDistributorAbi } from "@/abi";
-import { ChainNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
+import { ChainNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
 import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
@@ -50,7 +50,7 @@ function EpochTable() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const c = { address: dist, abi: rebateDistributorAbi, chainId } as const;
-  const { data: meta } = useReadContracts({
+  const { data: meta, isError: metaErr, refetch: refetchMeta } = useReadContracts({
     contracts: [
       { ...c, functionName: "currentEpoch" },
       { ...c, functionName: "finalizedEpochs" },
@@ -130,6 +130,7 @@ function EpochTable() {
         <h2 className="font-display text-[28px] font-extrabold">Epochs</h2>
         <ChainNote />
       </div>
+      {metaErr ? <RpcErrorNotice onRetry={() => void refetchMeta()} label="Could not load rebate epochs." /> : null}
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <Stat label="Current epoch" value={curN !== undefined ? `#${curN}` : "—"} sub={nextEnd && now ? `ends in ${fmtDuration(nextEnd - now)}` : undefined} />
         <Stat label="Finalized up to" value={finalized !== undefined ? (finN > 0 ? `#${finN - 1}` : "none yet") : "—"} />

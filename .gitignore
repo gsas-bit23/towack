@@ -23,3 +23,6 @@ web/.env
 web/.env.local
 web/.vercel/
 web/*.tsbuildinfo
+
+# Deploy manifests written by forge scripts (fork runs are FORK-ONLY, never live)
+deployments/out/

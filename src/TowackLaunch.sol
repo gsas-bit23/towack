@@ -70,6 +70,10 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
 
     uint256 public constant LP_TOKENS_PER_BNB = 800_000; // listing price == mint price
     uint256 public constant MAX_LP_BNB = 250 ether; // 250 BNB * 800k = 200M TWAK
+    /// @dev Floor for seeding PancakeSwap v2 LP so force-sent dust BNB (e.g. 1 wei via selfdestruct when
+    /// real leftover is 0) cannot make `pair.mint` revert on `MINIMUM_LIQUIDITY` (1000). Any genuine non-zero
+    /// mint leftover is a multiple of 0.00125 BNB = 1.25e15 wei, well above this threshold.
+    uint256 public constant MIN_LP_BNB = 1e12;
     uint256 public constant LP_TOKEN_ALLOCATION = 200_000_000e18;
     uint256 public constant BONUS_RESERVE = 50_000_000e18;
 
@@ -381,17 +385,19 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         }
 
         uint256 unsold = (MAX_MINTS - mintCount) * TOKENS_PER_MINT;
-        if (unsold > 0) TowackToken(address(token)).burn(unsold);
-        emit MintClosed(mintCount, unsold);
-
         if (mintCount == 0) {
             // Nothing sold: burn the bonus reserve and LP allocation, nothing to list.
-            TowackToken(address(token)).burn(token.balanceOf(address(this)));
             phase = Phase.Finalized;
             claimDeadline = block.timestamp;
+            if (unsold > 0) TowackToken(address(token)).burn(unsold);
+            emit MintClosed(0, unsold);
+            uint256 rem = token.balanceOf(address(this));
+            if (rem > 0) TowackToken(address(token)).burn(rem);
             return;
         }
         phase = Phase.Closed;
+        if (unsold > 0) TowackToken(address(token)).burn(unsold);
+        emit MintClosed(mintCount, unsold);
     }
 
     // ================================================================= 5. finalize + list
@@ -412,7 +418,7 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         // LP / DrawV2. Non-negative: per mint, prize BNB (<= 0.095) + referral fee (0.005) <= MINT_PRICE.
         uint256 reserved = bnbOutstanding + referralUnclaimedTotal;
         uint256 leftover = address(this).balance - reserved;
-        uint256 bnbForLp = leftover < MAX_LP_BNB ? leftover : MAX_LP_BNB;
+        uint256 bnbForLp = leftover < MIN_LP_BNB ? 0 : (leftover < MAX_LP_BNB ? leftover : MAX_LP_BNB);
         uint256 tokensForLp = bnbForLp * LP_TOKENS_PER_BNB; // <= 200M by the 250 BNB cap
         lpBnb = bnbForLp;
         lpTokens = tokensForLp;
@@ -425,7 +431,7 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
             wbnb.deposit{value: bnbForLp}();
             require(wbnb.transfer(pair, bnbForLp), "wbnb transfer");
             token.safeTransfer(pair, tokensForLp);
-            IPancakePair(pair).mint(LP_RECIPIENT);
+            require(IPancakePair(pair).mint(LP_RECIPIENT) > 0, "lp");
         }
         twak.openTrading();
 

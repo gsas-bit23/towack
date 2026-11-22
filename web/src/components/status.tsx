@@ -38,21 +38,67 @@ export function DeployingSoon({ keys, children }: { keys: ContractKey[]; childre
   return (
     <div className="relative overflow-hidden rounded-[40px] border-4 border-dashed border-navy bg-sun-pale p-8 text-center">
       <LabelTicket label="SOON" className="wiggle mx-auto w-[180px]" fill="#FFCD2E" fontSize={40} />
-      <h3 className="mt-4 font-display text-[34px] font-extrabold leading-tight">Contracts deploying soon</h3>
+      <h3 className="mt-4 font-display text-[34px] font-extrabold leading-tight">
+        {meta.testnet ? "Contracts deploying soon" : "Launching soon on BNB Smart Chain"}
+      </h3>
       <p className="mx-auto mt-2 max-w-[560px] font-bold text-navy/75">
-        The Towack contracts are not live on {meta.name} yet, so this machine is switched off. Nothing to sign, nothing to
-        send. Check back after the testnet deploy.
+        {meta.testnet
+          ? `The Towack contracts are not live on ${meta.name} yet, so this machine is switched off. Nothing to sign, nothing to send.`
+          : `Towack contracts are not live on ${meta.name} yet, so this machine is switched off. Nothing to sign, nothing to send — official addresses will appear here once deployed and verified.`}
       </p>
       {missing.length > 0 ? (
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           {missing.map((k) => (
             <span key={k} className="rounded-full border-[3px] border-navy bg-white px-3 py-1 text-xs font-black">
-              {KEY_LABEL[k]}: not set
+              {KEY_LABEL[k]}: pending deploy
             </span>
           ))}
         </div>
       ) : null}
       {children ? <div className="mt-6">{children}</div> : null}
+    </div>
+  );
+}
+
+/** Global wrong-network and mainnet-launching-soon banner rendered directly below the nav bar. */
+export function SiteNetworkBanner() {
+  const { wrongNetwork, meta, addresses, selectChain, isSwitching, chainId } = useTowack();
+  if (wrongNetwork) {
+    return (
+      <div role="alert" className="border-b-4 border-navy bg-candy px-4 py-2.5 text-white">
+        <div className="mx-auto flex max-w-[1220px] flex-wrap items-center justify-between gap-3 text-sm font-extrabold">
+          <span>Your wallet is on an unsupported network. Switch to {meta.name} to use Towack.</span>
+          <Button tone="sun" size="sm" disabled={isSwitching} onClick={() => selectChain(chainId)}>
+            Switch to {meta.name}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  if (!meta.testnet && !addresses.launch) {
+    return (
+      <div role="status" className="border-b-4 border-navy bg-sun-pale px-4 py-2 text-navy">
+        <div className="mx-auto flex max-w-[1220px] flex-wrap items-center justify-between gap-2 text-sm font-bold">
+          <span>
+            <b className="font-black">BNB Smart Chain:</b> Launching soon — protocol contracts are not deployed yet. Nothing to sign or send.
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+/** Inline RPC read error notice with optional retry action. */
+export function RpcErrorNotice({ onRetry, label = "Could not load on-chain data right now." }: { onRetry?: () => void; label?: string }) {
+  return (
+    <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
+      <span>{label} Check your connection or try again.</span>
+      {onRetry ? (
+        <Button tone="white" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -66,7 +112,7 @@ export function NeedsContracts({ keys, children, soon }: { keys: ContractKey[]; 
 
 /** `agent`: also offer the "Give this to your AI agent" (Binance Agentic Wallet, mainnet-only) copy-paste path. */
 export function NeedsWallet({ children, why, agent, referral }: { children: ReactNode; why?: string; agent?: AgentFlow; referral?: AgentReferral }) {
-  const { isConnected, wrongNetwork, selectChain, chainId } = useTowack();
+  const { isConnected, wrongNetwork, selectChain, chainId, meta } = useTowack();
   if (!isConnected) {
     return (
       <div className="rounded-[32px] border-4 border-navy bg-ice p-7 text-center">
@@ -83,10 +129,10 @@ export function NeedsWallet({ children, why, agent, referral }: { children: Reac
     return (
       <div className="rounded-[32px] border-4 border-navy bg-candy-pale p-7 text-center">
         <p className="font-display text-[22px] font-extrabold">Wrong network</p>
-        <p className="mt-1 font-bold text-navy/70">Towack runs on BNB Smart Chain. Switch in your wallet to continue.</p>
+        <p className="mt-1 font-bold text-navy/70">Towack runs on {meta.name}. Switch in your wallet to continue.</p>
         <div className="mt-5 flex justify-center">
           <Button tone="sun" size="sm" onClick={() => selectChain(chainId)}>
-            Switch network
+            Switch to {meta.name}
           </Button>
         </div>
       </div>

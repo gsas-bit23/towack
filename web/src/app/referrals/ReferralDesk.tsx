@@ -5,21 +5,31 @@ import type { Address } from "viem";
 import { useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { agentIdAbi, towackLaunchAbi } from "@/abi";
 import { AgentPathPanel, AgentPathToggle } from "@/components/AgentPath";
-import { AddressLink, ChainNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
+import { AddressLink, ChainNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
 import { Button, Field, Panel, Pill, Stat, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18 } from "@/lib/format";
+import { agentNftAbi } from "@/lib/genesis";
 import { normalizeHandle, referralLink } from "@/lib/referral";
 import { useTx } from "@/lib/tx";
 
 const HANDLE_KEY = "towack.referralHandle";
 
 export function ReferralDesk() {
-  const { account } = useTowack();
+  const { account, addresses, chainId } = useTowack();
   const [typed, setTyped] = useState("");
   const [origin, setOrigin] = useState("");
 
-  // Handle is a display label only (no on-chain resolver); remembered locally for convenience.
+  // On mainnet, SPACE ID HandleRegistry exposes handleOf(address) on-chain; on testnet mocks this fails gracefully.
+  const { data: onchainHandle } = useReadContract({
+    address: addresses.agentId,
+    abi: agentNftAbi,
+    functionName: "handleOf",
+    args: account ? [account] : undefined,
+    chainId,
+    query: { enabled: Boolean(addresses.agentId && account), retry: false },
+  });
+
   useEffect(() => {
     const read = () => {
       setOrigin(window.location.origin);
@@ -30,10 +40,11 @@ export function ReferralDesk() {
     window.addEventListener("pageshow", read);
     return () => window.removeEventListener("pageshow", read);
   }, []);
-  const handle = normalizeHandle(typed);
+  const effectiveRaw = typed.trim() || (onchainHandle ? `${onchainHandle}.ai` : "");
+  const handle = normalizeHandle(effectiveRaw);
   useEffect(() => {
-    if (handle) window.localStorage.setItem(HANDLE_KEY, handle);
-  }, [handle]);
+    if (typed.trim() && handle) window.localStorage.setItem(HANDLE_KEY, handle);
+  }, [typed, handle]);
 
   return (
     <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
@@ -44,10 +55,17 @@ export function ReferralDesk() {
             <ChainNote />
           </div>
           <div className="mt-5">
-            <Field label="Your .ai handle (optional)" hint="Just a label on your link. The referrer is always the wallet address in the link.">
+            <Field
+              label="Your .ai handle (optional)"
+              hint={
+                onchainHandle
+                  ? `Detected ${onchainHandle}.ai on-chain for this wallet. The referrer is always your wallet address.`
+                  : "Optional label on your link (auto-detected on mainnet). The referrer is always the wallet address in the link."
+              }
+            >
               <input
                 className={inputClass}
-                placeholder="yourname.ai"
+                placeholder={onchainHandle ? `${onchainHandle}.ai` : "yourname.ai"}
                 value={typed}
                 autoComplete="off"
                 spellCheck={false}
@@ -145,7 +163,7 @@ function Dashboard({ account }: { account: Address }) {
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
 
-  const { data, refetch } = useReadContracts({
+  const { data, isError: dashErr, refetch } = useReadContracts({
     contracts: [
       { address: launch, abi: towackLaunchAbi, functionName: "referralCount", args: [account], chainId },
       { address: launch, abi: towackLaunchAbi, functionName: "referralEarned", args: [account], chainId },
@@ -180,6 +198,7 @@ function Dashboard({ account }: { account: Address }) {
 
   return (
     <div>
+      {dashErr ? <RpcErrorNotice onRetry={() => void refetch()} label="Could not load referral stats." /> : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <Stat label="Friends minted" value={count !== undefined ? count.toString() : "—"} />
         <Stat label="Lifetime earned" value={earned !== undefined ? `${fmt18(earned, 4)} BNB` : "—"} />
