@@ -4,6 +4,7 @@ import { useState } from "react";
 import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } from "viem";
 import { ADDRESSES } from "@/config/addresses";
 import { useTowack } from "@/lib/chain";
+import { buildPerpsInstruction, type PerpsAgentIntent } from "@/lib/aster/instruction";
 import { Button, Pill } from "./ui";
 
 /**
@@ -24,7 +25,8 @@ export type AgentFlow =
   | "lotteryClaim"
   | "referralClaim" // TowackLaunch.claimReferral()
   | "buy" // TowackRouter.buy
-  | "sell"; // TWAK.approve(exact) + TowackRouter.sell
+  | "sell" // TWAK.approve(exact) + TowackRouter.sell
+  | "perps"; // Aster perps: NOT a contract-call. BAW sign-message approves a trade-only API wallet; it signs orders.
 
 /** Referrer baked into a paid-mint instruction (from `?ref=` / `/r/<handle>`). */
 export type AgentReferral = { address?: Address; handle?: string };
@@ -81,7 +83,9 @@ function missingList(items: [string, boolean][]) {
   return items.filter(([, m]) => m).map(([n]) => n);
 }
 
-export function buildInstruction(flow: AgentFlow, referral?: AgentReferral): { text: string; missing: string[] } {
+const DEFAULT_PERPS: PerpsAgentIntent = { kind: "order", symbol: "BTCUSDT", side: "BUY", type: "LIMIT", quantity: "", base: "BTC" };
+
+export function buildInstruction(flow: AgentFlow, referral?: AgentReferral, perps?: PerpsAgentIntent): { text: string; missing: string[] } {
   const l = mainnet("launch", "<TOWACK_LAUNCH>");
   const g = mainnet("genesis", "<TOWACK_GENESIS>");
   const d = mainnet("drawV2", "<TOWACK_DRAWV2>");
@@ -89,6 +93,8 @@ export function buildInstruction(flow: AgentFlow, referral?: AgentReferral): { t
   const r = mainnet("router", "<TOWACK_ROUTER>");
 
   switch (flow) {
+    case "perps":
+      return { text: buildPerpsInstruction(perps ?? DEFAULT_PERPS), missing: [] };
     case "launch": {
       const ref = referral?.address;
       const who = ref ? `${referral?.handle ? `${referral.handle} (${ref})` : ref}` : undefined;
@@ -190,7 +196,17 @@ ${footer(BASE_RULES)}`;
 }
 
 /** Toggle button meant to sit next to the normal wallet action. */
-export function AgentPathToggle({ flow, referral, className = "" }: { flow: AgentFlow; referral?: AgentReferral; className?: string }) {
+export function AgentPathToggle({
+  flow,
+  referral,
+  perps,
+  className = "",
+}: {
+  flow: AgentFlow;
+  referral?: AgentReferral;
+  perps?: PerpsAgentIntent;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className={className}>
@@ -199,14 +215,25 @@ export function AgentPathToggle({ flow, referral, className = "" }: { flow: Agen
           <span aria-hidden="true">🤖</span> {open ? "Hide AI agent steps" : "Give this to your AI agent"}
         </Button>
       </div>
-      {open ? <AgentPathPanel flow={flow} referral={referral} className="mt-4 text-left" /> : null}
+      {open ? <AgentPathPanel flow={flow} referral={referral} perps={perps} className="mt-4 text-left" /> : null}
     </div>
   );
 }
 
-export function AgentPathPanel({ flow, referral, className = "" }: { flow: AgentFlow; referral?: AgentReferral; className?: string }) {
+export function AgentPathPanel({
+  flow,
+  referral,
+  perps,
+  className = "",
+}: {
+  flow: AgentFlow;
+  referral?: AgentReferral;
+  perps?: PerpsAgentIntent;
+  className?: string;
+}) {
   const { meta } = useTowack();
-  const { text, missing } = buildInstruction(flow, referral);
+  const { text, missing } = buildInstruction(flow, referral, perps);
+  const isPerps = flow === "perps";
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
 
   async function copy() {
@@ -241,8 +268,20 @@ export function AgentPathPanel({ flow, referral, className = "" }: { flow: Agent
         <a className="underline" href={BAW_SKILL_URL} target="_blank" rel="noreferrer">
           binance-agentic-wallet
         </a>{" "}
-        skill. It runs <code className="rounded bg-white px-1">baw contract-call preview</code> first and waits for your explicit OK before{" "}
-        <code className="rounded bg-white px-1">execute</code>. This site only shows text: it never signs, never sends, and never asks for keys.
+        skill.{" "}
+        {isPerps ? (
+          <>
+            Aster orders are <b>not</b> a BSC contract call, so BAW can&apos;t place them directly. BAW signs one{" "}
+            <code className="rounded bg-white px-1">sign-message</code> (preview, your OK, then execute) that approves a trade-only Aster API wallet your
+            agent keeps locally; that wallet signs each order after you say yes.
+          </>
+        ) : (
+          <>
+            It runs <code className="rounded bg-white px-1">baw contract-call preview</code> first and waits for your explicit OK before{" "}
+            <code className="rounded bg-white px-1">execute</code>.
+          </>
+        )}{" "}
+        This site only shows text: it never signs, never sends, and never asks for keys.
       </p>
 
       {missing.length > 0 ? (
