@@ -135,7 +135,7 @@ export function AddressLink({ address, label }: { address?: string; label?: stri
   const { meta } = useTowack();
   if (!address) return <span className="text-navy/50">not set</span>;
   return (
-    <a href={`${meta.explorer}/address/${address}`} target="_blank" rel="noreferrer" className="font-mono text-sm underline decoration-2 underline-offset-2 hover:text-candy">
+    <a href={`${meta.explorer}/address/${address}`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center font-mono text-sm underline decoration-2 underline-offset-2 hover:text-candy">
       {label ?? `${address.slice(0, 6)}…${address.slice(-4)}`}
     </a>
   );

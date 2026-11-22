@@ -84,20 +84,21 @@ export function BonusBars() {
   const reduce = useReducedMotion();
   return (
     <>
-      <div className="mt-6 flex h-[190px] items-end gap-3">
+      <div className="mt-6 grid min-w-0 grid-cols-3 items-end gap-x-3 gap-y-5 sm:grid-cols-6">
         {BONUS.map((b, i) => (
-          <div key={b.id} className="flex h-full flex-1 flex-col items-center justify-end">
-            <div className="font-display text-[22px] font-extrabold lg:text-[26px]">{b.wheel}</div>
+          <div key={b.id} className="flex h-[150px] min-w-0 flex-col items-center justify-end sm:h-[190px]">
+            <div className="whitespace-nowrap font-display text-[22px] font-extrabold lg:text-[26px]">{b.wheel}</div>
             <motion.div
               className={`w-full origin-bottom rounded-t-2xl border-[3px] border-navy ${BONUS_COLOR[i]}`}
               style={{ height: `${BONUS_H[i]}%` }}
-              initial={reduce ? false : { scaleY: 0 }}
+              // Never scaleY 0: bars stay readable even if the observer never fires (see CoinColumn).
+              initial={reduce ? false : { scaleY: 0.85 }}
               whileInView={{ scaleY: 1 }}
-              viewport={{ once: true, amount: 0.4 }}
+              viewport={{ once: true, amount: 0.2 }}
               transition={{ type: "spring", stiffness: 160, damping: 16, delay: i * 0.08 }}
             />
-            <div className="mt-2 text-sm font-black">{b.slots.toLocaleString("en-US")}</div>
-            <div className="text-[11px] font-extrabold text-navy/60">{b.amount.replace(" TWAK", "")}</div>
+            <div className="mt-2 whitespace-nowrap text-sm font-black">{b.slots.toLocaleString("en-US")}</div>
+            <div className="whitespace-nowrap text-[11px] font-extrabold text-navy/60">{b.amount.replace(" TWAK", "")}</div>
           </div>
         ))}
       </div>
