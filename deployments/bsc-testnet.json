@@ -355,5 +355,60 @@
         }
       }
     }
+  },
+  "e2eRehearsal": {
+    "ranAtPkt": "2026-11-22 17:43\u201317:49 PKT",
+    "script": "script/E2ERehearsal.s.sol",
+    "flags": "--legacy --with-gas-price 1gwei --slow",
+    "deployer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "balances": {
+      "bnbBefore": "0.172487133",
+      "bnbAfter": "0.071230003",
+      "twakBefore": "117000000000000000000000000",
+      "twakAfter": "117121000000000000000000000",
+      "twakDeltaHuman": "+121,000 TWAK (80k V1 base + 20k V1 1.25\u00d7 bonus + 20k Genesis base + 2k Genesis 1.1\u00d7 extra \u2212 1k DrawV2 0\u00d7 entry)"
+    },
+    "paidV1": {
+      "prizeId": 8,
+      "label": "1.25\u00d7 TWAK",
+      "baseTwak": "80000",
+      "bonusTwak": "20000",
+      "bnb": "0",
+      "claimed": true,
+      "txs": {
+        "mint": "0x0763398fc30d2cb3625bc7dc832fecfcf88e7cb94801d8a3a7c6b72bd7fa86be",
+        "fulfillPseudo": "0x771353a8cc3a05a15ef951a1b1c7ea6f528ebf8b1b3f03ae1ff88d4a2e659a4e",
+        "claim": "0xc11c209be4f675c0a43eabf43140962b2208dfeb9348793a7c93b284272c1509"
+      }
+    },
+    "genesis300": {
+      "prizeId": 5,
+      "label": "1.1\u00d7",
+      "baseTwak": "20000",
+      "extraTwak": "2000",
+      "agentTokenId": 1,
+      "claimed": true,
+      "mintCountAfter": 1,
+      "txs": {
+        "mint": "0x99743d6a14a22fc76f4aac7ca1c65ba5854fd3224e87a5cd403c555d485eeec0",
+        "fulfillPseudo": "0x49972ab6bd4072dff857e9fe617c54b324399676390d459c2a0fb7df97f70e20",
+        "claim": "0xeae633b7bd2ad52c61fe5cb90448b9f982f7cd68ade79a858eb7836d993be20e"
+      }
+    },
+    "drawV2": {
+      "spinId": 1,
+      "prizeId": 0,
+      "label": "0\u00d7",
+      "entryTwak": "1000",
+      "payoutTwak": "0",
+      "payoutBnb": "0",
+      "availableTwakAfter": "5001000000000000000000000",
+      "claim": "not sent (nothing owed)",
+      "txs": {
+        "approve": "0xd7725a76a382a185cb6a11857c4e33d27778b16839ac48d90c9fec1a7bee811f",
+        "enter": "0xd8c9ca3ae283ee668d2673a28b074553c00e43395f37d1bc8b0c125b994c7c51",
+        "fulfillPseudo": "0x361a11e20df18473debd2624007122567c374a1a2960dcfa5242657577fe9cc2"
+      }
+    }
   }
 }
