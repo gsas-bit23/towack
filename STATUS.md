@@ -58,13 +58,13 @@ New preview (not production, SSO on): https://towack-235s5xz7h-abcd-532d.vercel.
 2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
 3. End-to-end testnet rehearsal once funded: mint, owner-fulfil MockVRF, watch the wheel land, claim, then later close / finalize / router / rebates.
 
-## Vercel preview (2026-11-22, 05:33:14 PKT)
+## Vercel preview (2026-11-22, 06:50:24 PKT)
 Preview only (not production), project `abcd-532d/towack`, Node 24.x, framework Next.js. Deployment protection remains `vercel_authentication`.
-- Preview: https://towack-235s5xz7h-abcd-532d.vercel.app
-- Inspector: https://vercel.com/abcd-532d/towack/DjnMMMw5yxpL3KkRLqS1bfhoppqz
-- Deployment id: `dpl_DjnMMMw5yxpL3KkRLqS1bfhoppqz`, target `None`.
-- Previous previews: https://towack-bmrfdbzop-abcd-532d.vercel.app (pre-layout-fix), https://towack-788t1xqg4-abcd-532d.vercel.app (old addresses).
-- `?demo=wheel` is off on this preview because a live per-mint launch is configured. Local demo screenshots used `NEXT_PUBLIC_DEMO_WHEEL=1`.
+- Preview: https://towack-czg2h9vg8-abcd-532d.vercel.app
+- Inspector: https://vercel.com/abcd-532d/towack/BHVvt7wH47tmH3kcTeZkCR6XRqbk
+- Deployment id: `dpl_BHVvt7wH47tmH3kcTeZkCR6XRqbk`, target `None`.
+- `NEXT_PUBLIC_DEMO_WHEEL=1` is set on the **Preview** environment only (not Production), so `?demo=wheel`, `?demo=genesis` and `?demo=pool` work on this preview.
+- Previous previews: https://towack-235s5xz7h-abcd-532d.vercel.app (responsive layout), https://towack-bmrfdbzop-abcd-532d.vercel.app (pre-layout-fix), https://towack-788t1xqg4-abcd-532d.vercel.app (old addresses).
 
 ## Wheel screenshots (1280×800, 2026-11-22, ~04:09 AM PKT)
 Taken against a local `next dev` with `NEXT_PUBLIC_DEMO_WHEEL=1` and `?demo=wheel` (first demo prize is 3× TWAK). Not committed.
