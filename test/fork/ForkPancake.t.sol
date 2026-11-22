@@ -30,7 +30,7 @@ contract ForkPancakeTest is Test {
         MockAgentId agentId = new MockAgentId();
         MockVRFCoordinator vrf = new MockVRFCoordinator();
         VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(address(vrf), bytes32(0), 0, 3, 300_000, false);
-        DrawV2 drawV2 = new DrawV2(address(this), cfg);
+        DrawV2 drawV2 = new DrawV2(address(this), address(0), cfg);
         TowackLaunch launch =
             new TowackLaunch(address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg);
         RebateDistributor rebates = new RebateDistributor();

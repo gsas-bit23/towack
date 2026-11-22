@@ -1,5 +1,6 @@
 export { towackTokenAbi } from "./TowackToken";
 export { towackLaunchAbi } from "./TowackLaunch";
+export { towackGenesisAbi } from "./TowackGenesis";
 export { towackRouterAbi } from "./TowackRouter";
 export { rebateDistributorAbi } from "./RebateDistributor";
 export { teamVestingAbi } from "./TeamVesting";

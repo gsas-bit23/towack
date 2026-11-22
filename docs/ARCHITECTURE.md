@@ -59,6 +59,27 @@ A standard ERC-20 with burn, no tax, no owner, and no mint after the constructor
 - Views: `prizeOf(minter) → (minted, assigned, prizeId, bnb, bonus, claimed)`, `tickets(minter)`, `remaining(id)`, `remainingCounts()`, `remainingTotal`, `pendingCount()`, `prizeSlots/prizeBnb/prizeBonus(id)`.
 - `libraries/SwapOrNot` (the old single-seed shuffle) is no longer used by TowackLaunch. It is kept only with its own tests.
 
+## TowackGenesis ("Genesis 300", free mint, `src/TowackGenesis.sol`)
+Separate from TowackLaunch: it does not touch the paid 5,000 mints, the paid deck, LP, DrawV2 or the bonus reserve. TWAK only: there are no payable functions and no BNB refunds.
+- **Gate:** `mint(agentTokenId)` requires `IERC721(agentId).ownerOf(agentTokenId) == msg.sender`. Both the token id and the wallet are marked used. A used id moved to a new wallet is still blocked, and a wallet that already minted cannot use a second id.
+- **Numbers:** cap 300; base **20,000 TWAK** sent at mint; one VRF v2.5 request per mint; the callback pops one slot from a fixed 300-slot deck (`word % remainingTotal`, 7 packed counts). The multiplier applies to the 20k base, so extra = (mult − 1) × 20k:
+
+  | id | tier | slots | extra each | extra total |
+  |---|---|---:|---:|---:|
+  | 0 | 5× | 5 | 80,000 | 400,000 |
+  | 1 | 3× | 10 | 40,000 | 400,000 |
+  | 2 | 2× | 20 | 20,000 | 400,000 |
+  | 3 | 1.5× | 40 | 10,000 | 400,000 |
+  | 4 | 1.25× | 50 | 5,000 | 250,000 |
+  | 5 | 1.1× | 75 | 2,000 | 150,000 |
+  | 6 | no bonus | 100 | 0 | 0 |
+
+  At sellout: base 6,000,000 + extra 2,000,000 = **8,000,000 TWAK budget**, which is **16%** of the 50M (5%) ecosystem allocation.
+- **Funding / solvency:** the ecosystem wallet pre-funds the contract with `fund(8M)` (approve + `transferFrom`). `committed()` is everything the contract may still owe. While open, that is unminted base + extra of undrawn slots + assigned-but-unclaimed extra. Once closed, it is unclaimed extra + worst-case extra for pending VRF draws. `open()` and `mint()` require `balance ≥ committed()`. Total assigned can never exceed 8M.
+- **Owner** (Ownable2Step; deployer first, can hand over to the timelock): `open()`, `close()` (the window also auto-closes at 300), and `sweepSurplus()`, which sends only `balance − committed()` to the immutable ecosystem wallet. `renounceOwnership` is disabled.
+- `retryPrize(minter)` (anyone, after 1h) re-requests a stalled draw and invalidates the old request. `claim()` pulls the extra once it is assigned.
+- **Testnet Agent ID:** the existing MockAgentId is balance-only (no token ids), so Genesis on testnet uses a separate ERC-721 `MockAgentIdNFT` deployed by `script/DeployGenesisTestnet.s.sol`.
+
 ## TowackRouter
 - Agent ID-gated `buy` / `sell` via Pancake v2, with a 1% fee on the BNB leg. Fee split: 50% to RebateDistributor (forwarded immediately), 30% to DrawV2 and 20% to dev. The last two accrue in the router and are pushed by the permissionless `flushFees()`.
 - Approvals are exact per swap and reset to 0. There is no unlimited-approval helper.
@@ -70,17 +91,38 @@ A standard ERC-20 with burn, no tax, no owner, and no mint after the constructor
 ## TeamVesting
 - 50M TWAK. **Start = deploy timestamp.** Nothing vests during the 365-day cliff, then it vests linearly in daily steps over 1460 days. No listing unlock, no revocation.
 
-## DrawV2 (MVP)
-- Weekly rounds. Players burn TWAK for tickets, at $1 of TWAK = 1 ticket. The price comes from `priceSource` (TWAP/oracle) or a manual `usdPerTwak`. Both setters are `onlyOwner`, and the owner is the 48h timelock.
-- One VRF request per round. The winner is picked weighted by tickets, using a binary search over cumulative entries. The prize is 700k TWAK plus 20% of the free BNB pot.
-- The owner has no withdraw function.
+## DrawV2 — instant pool wheel
+Replaced the weekly burn raffle (no rounds, tickets, burns or USD price source any more).
+- `enter(amount)`: the TWAK goes **into** the pool (not burned) and one VRF v2.5 word is requested immediately. The callback lands a 10,000-slot wheel paying a multiplier of that entry from the pool:
+
+| id | multiplier | slots | p | p × m |
+|---|---|---:|---:|---:|
+| 0 | 0× | 2,100 | 21% | 0 |
+| 1 | 0.5× | 3,200 | 32% | 0.16 |
+| 2 | 1× | 2,200 | 22% | 0.22 |
+| 3 | 1.5× | 1,400 | 14% | 0.21 |
+| 4 | 2× | 800 | 8% | 0.16 |
+| 5 | 5× | 200 | 2% | 0.10 |
+| 6 | 10× jackpot | 100 | 1% | 0.10 |
+| | | 10,000 | 100% | **0.95** |
+
+  Expected TWAK return is exactly **95%**; the ~5% edge stays in the pool. 53% of spins pay less than the entry, 22% pay it back, 25% pay more.
+- **Pool accounting:** `availableTwak = token.balanceOf(this) − reservedTwak − outstandingTwak`. `reservedTwak` = Σ 10 × entry over spins still waiting for VRF, and `outstandingTwak` = assigned but unclaimed prizes. Availability is measured before the entry is added.
+- **Limits:** `MIN_ENTRY` = 100 TWAK. `MAX_PAYOUT_BPS` = 500, so a 10× win is at most 5% of `availableTwak`, and `maxEntry = availableTwak × 500 / 100,000` (0.5%). `enter` reverts with `PoolTooSmall` if `availableTwak < 10 × entry`, and with `EntryTooLarge` above `maxEntry`.
+- **Fulfil:** the callback pays `entry × m` into `owedTwak[player]` and releases the whole 10× reservation (the unused part goes back to available). Unknown or stale requests are ignored. `retrySpin(spinId)` (anyone, after 1h) keeps the reservation, re-requests, and invalidates the old request id. The callback costs about 143k gas cold (limit 300k).
+- **BNB pot** (router 30% fee share, 75 BNB at a paid-mint sellout, unclaimed V1 refunds via `receive()`): `availableBnb = balance − reservedBnb − outstandingBnb`. On entry, 2% of `availableBnb` is reserved as that spin's `bnbCap`. A 10× pays the full `bnbCap` (2% of the pot at entry), a 5× pays half (1%), and lower tiers pay no BNB. An empty pot gives a TWAK-only spin; it never reverts.
+- **Claim:** pull-based `claim()` pays all owed TWAK + BNB. Events: `Entered`, `SpinRequested`, `SpinRetried`, `SpinAssigned`, `Claimed`, `PoolSeeded`.
+- **Seed:** the intended seed is the 7% allocation (`PRIZE_ALLOCATION` = 70M, still bound via `TokenBound` on a full stack deploy, with constructor `presetToken_ = 0`). A stand-alone deploy passes `presetToken_` and is filled with `seed(amount)` (anyone may add; nobody can take out).
+- **Owner (timelock):** `setEntriesPaused` only. Pending spins and claims keep working. There is no withdraw of TWAK or BNB.
+- **Testnet lock:** the skeleton DrawV2 `0x5B3028454a628F73A5fe9198DE4fddefCC43c73A` holds the live 70M and has no withdraw, and `TowackLaunch.drawV2Treasury` is immutable, so sellout BNB still goes there. The new pool wheel is a separate deploy seeded with a **5M TWAK testnet stand-in** from the ecosystem/deployer wallet (`script/DeployGenesisTestnet.s.sol`) until a future full stack redeploy.
 
 ## Admin surface
 | Contract | Admin | Power |
 |---|---|---|
 | TowackToken | none | — |
 | TowackLaunch | none | — |
+| TowackGenesis | Ownable2Step owner (deployer → timelock) | open/close window, sweep surplus above `committed()` to the ecosystem wallet |
 | TowackRouter | none | — |
 | RebateDistributor | deployer, set-once bind | none after bind |
 | TeamVesting | deployer, set-once bind | none after bind |
-| DrawV2 | TimelockController (48h) | ticket price / price source only |
+| DrawV2 | TimelockController (48h) | pause / unpause new entries only (no withdraw) |

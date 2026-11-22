@@ -15,11 +15,13 @@ const KEY_LABEL: Record<ContractKey, string> = {
   router: "Towack router",
   rebateDistributor: "Rebate distributor",
   teamVesting: "Team vesting",
-  drawV2: "Draw V2",
+  drawV2: "Draw V2 pool wheel",
+  drawV2Legacy: "Draw V2 treasury (old)",
   timelock: "Timelock",
   wbnb: "WBNB",
   pancakeRouter: "PancakeSwap router",
   pancakeFactory: "PancakeSwap factory",
+  genesis: "Genesis 300",
 };
 
 export function DeployingSoon({ keys, children }: { keys: ContractKey[]; children?: ReactNode }) {

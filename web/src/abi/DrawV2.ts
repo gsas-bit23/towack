@@ -9,6 +9,11 @@ export const drawV2Abi = [
         "internalType": "address"
       },
       {
+        "name": "presetToken_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "vrf",
         "type": "tuple",
         "internalType": "struct VRFConsumerV25.VRFConfig",
@@ -54,7 +59,111 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "BNB_POT_BPS",
+    "name": "BIG_WIN_ID",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "BNB_BONUS_BPS_10X",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "BNB_BONUS_BPS_5X",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "EXPECTED_RETURN_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "JACKPOT_ID",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_MULT_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_PAYOUT_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_ENTRY",
     "inputs": [],
     "outputs": [
       {
@@ -80,20 +189,7 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "ROUND_LENGTH",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "TOKEN_PRIZE_PER_ROUND",
+    "name": "PRIZE_COUNT",
     "inputs": [],
     "outputs": [
       {
@@ -119,6 +215,45 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
+    "name": "WHEEL_SLOTS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "availableBnb",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "availableTwak",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "bindToken",
     "inputs": [
       {
@@ -132,29 +267,28 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "claimPrize",
-    "inputs": [
-      {
-        "name": "r",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "currentRound",
+    "name": "bnbBonusPreview",
     "inputs": [],
     "outputs": [
       {
-        "name": "",
+        "name": "jackpot",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bigWin",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claim",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -174,14 +308,19 @@ export const drawV2Abi = [
     "name": "enter",
     "inputs": [
       {
-        "name": "twakAmount",
+        "name": "amount",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "tickets",
+        "name": "spinId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "requestId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -190,14 +329,85 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "entriesLength",
+    "name": "entriesPaused",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "lastSpinOf",
     "inputs": [
       {
-        "name": "r",
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxEntry",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "multiplierBps",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "outstandingBnb",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "outstandingTwak",
+    "inputs": [],
     "outputs": [
       {
         "name": "",
@@ -210,7 +420,13 @@ export const drawV2Abi = [
   {
     "type": "function",
     "name": "owedBnb",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
@@ -222,8 +438,14 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "owedTokens",
-    "inputs": [],
+    "name": "owedTwak",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
@@ -248,16 +470,59 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "priceSource",
+    "name": "payoutTable",
     "inputs": [],
     "outputs": [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract ITwakPriceSource"
+        "name": "mults",
+        "type": "uint256[7]",
+        "internalType": "uint256[7]"
+      },
+      {
+        "name": "slots",
+        "type": "uint256[7]",
+        "internalType": "uint256[7]"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "prizeForWord",
+    "inputs": [
+      {
+        "name": "word",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "prizeSlots",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -286,142 +551,7 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "requestDraw",
-    "inputs": [
-      {
-        "name": "r",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "roundOfRequest",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "rounds",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "totalTickets",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "requestedAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "random",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "seeded",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "settled",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "winner",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "tokenPrize",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "bnbPrize",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "claimed",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "setPriceSource",
-    "inputs": [
-      {
-        "name": "source",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setUsdPerTwak",
-    "inputs": [
-      {
-        "name": "price",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "settle",
-    "inputs": [
-      {
-        "name": "r",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "startTime",
+    "name": "reservedBnb",
     "inputs": [],
     "outputs": [
       {
@@ -434,10 +564,81 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "ticketsFor",
+    "name": "reservedTwak",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "retrySpin",
     "inputs": [
       {
-        "name": "twakAmount",
+        "name": "spinId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "seed",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setEntriesPaused",
+    "inputs": [
+      {
+        "name": "paused",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "spinCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "spinOfRequest",
+    "inputs": [
+      {
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -453,22 +654,76 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
-    "name": "ticketsOf",
+    "name": "spinPrize",
+    "inputs": [
+      {
+        "name": "spinId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "twak",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bnb",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "spins",
     "inputs": [
       {
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [
       {
-        "name": "",
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "status",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "prizeId",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "requestedAt",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxTwak",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bnbCap",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "requestId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -490,6 +745,84 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
+    "name": "totalAssignedBnb",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalAssignedTwak",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalClaimedBnb",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalClaimedTwak",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalEntered",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalSeeded",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
@@ -500,32 +833,6 @@ export const drawV2Abi = [
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "twakUsdPrice",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "p",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "usdPerTwak",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -607,16 +914,22 @@ export const drawV2Abi = [
   },
   {
     "type": "event",
-    "name": "DrawRequested",
+    "name": "Claimed",
     "inputs": [
       {
-        "name": "round",
-        "type": "uint256",
+        "name": "player",
+        "type": "address",
         "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "twak",
+        "type": "uint256",
+        "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "requestId",
+        "name": "bnb",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -629,7 +942,7 @@ export const drawV2Abi = [
     "name": "Entered",
     "inputs": [
       {
-        "name": "round",
+        "name": "spinId",
         "type": "uint256",
         "indexed": true,
         "internalType": "uint256"
@@ -641,16 +954,35 @@ export const drawV2Abi = [
         "internalType": "address"
       },
       {
-        "name": "twakBurned",
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "tickets",
+        "name": "maxTwak",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "bnbCap",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EntriesPausedSet",
+    "inputs": [
+      {
+        "name": "paused",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
       }
     ],
     "anonymous": false
@@ -676,10 +1008,16 @@ export const drawV2Abi = [
   },
   {
     "type": "event",
-    "name": "PriceSet",
+    "name": "PoolSeeded",
     "inputs": [
       {
-        "name": "usdPerTwak",
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -689,60 +1027,78 @@ export const drawV2Abi = [
   },
   {
     "type": "event",
-    "name": "PriceSourceSet",
+    "name": "SpinAssigned",
     "inputs": [
       {
-        "name": "source",
+        "name": "spinId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
         "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "prizeId",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "PrizeClaimed",
-    "inputs": [
-      {
-        "name": "round",
-        "type": "uint256",
-        "indexed": true,
         "internalType": "uint256"
       },
       {
-        "name": "winner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Settled",
-    "inputs": [
-      {
-        "name": "round",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "winner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "tokenPrize",
+        "name": "twakPrize",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
         "name": "bnbPrize",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SpinRequested",
+    "inputs": [
+      {
+        "name": "spinId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SpinRetried",
+    "inputs": [
+      {
+        "name": "spinId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "oldRequestId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newRequestId",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -770,21 +1126,6 @@ export const drawV2Abi = [
   },
   {
     "type": "error",
-    "name": "AlreadyClaimed",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "AlreadyRequested",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "AlreadySettled",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "BadAllocation",
     "inputs": [
       {
@@ -801,13 +1142,45 @@ export const drawV2Abi = [
   },
   {
     "type": "error",
-    "name": "NoPrice",
+    "name": "BnbTransferFailed",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "NoTickets",
+    "name": "EntriesPaused",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EntryTooLarge",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "EntryTooSmall",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "min",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -821,12 +1194,12 @@ export const drawV2Abi = [
   },
   {
     "type": "error",
-    "name": "NotSeeded",
+    "name": "NotPending",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "NotWinner",
+    "name": "NothingToClaim",
     "inputs": []
   },
   {
@@ -869,12 +1242,23 @@ export const drawV2Abi = [
   },
   {
     "type": "error",
-    "name": "ReentrancyGuardReentrantCall",
-    "inputs": []
+    "name": "PoolTooSmall",
+    "inputs": [
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "available",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
-    "name": "RoundNotOver",
+    "name": "ReentrancyGuardReentrantCall",
     "inputs": []
   },
   {
@@ -895,7 +1279,7 @@ export const drawV2Abi = [
   },
   {
     "type": "error",
-    "name": "ZeroTickets",
+    "name": "ZeroAmount",
     "inputs": []
   }
 ] as const;

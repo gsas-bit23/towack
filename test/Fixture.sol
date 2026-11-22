@@ -63,7 +63,7 @@ contract Fixture is Test {
         mintStart = block.timestamp;
         mintEnd = block.timestamp + 7 days;
 
-        drawV2 = new DrawV2(address(timelock), cfg);
+        drawV2 = new DrawV2(address(timelock), address(0), cfg);
         launch = new TowackLaunch(address(agentId), address(wbnb), address(drawV2), mintStart, mintEnd, cfg);
         rebates = new RebateDistributor();
         team = new TeamVesting(teamWallet);

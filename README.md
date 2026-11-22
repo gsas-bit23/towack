@@ -12,7 +12,7 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 - `src/TowackRouter.sol`: Agent ID-gated swaps, 1% BNB-leg fee, Leash-style daily limits
 - `src/RebateDistributor.sol`: fee-weighted weekly TWAK + BNB rebates
 - `src/TeamVesting.sol`: 1-year cliff, then 4 years linear daily
-- `src/DrawV2.sol`: ticket draw MVP (timelocked price input)
+- `src/DrawV2.sol`: instant pool wheel (TWAK into the pool, VRF multiplier 0×–10×, 95% expected return)
 - `src/mocks/`: test/testnet mocks (Agent ID, VRF, Pancake)
 - `script/DeployTestnet.s.sol`: BSC testnet deploy (chainid 97 only)
 

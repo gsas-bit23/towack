@@ -3,6 +3,9 @@
 
 Usage:
   python3 web/scripts/responsive-audit.py --base http://127.0.0.1:3126 --out web/shots/responsive/before
+  # Genesis 300 preset: 4 viewports (360x740, 768x1024, 1440x900, 1920x1080), home + mint + Genesis demo,
+  # lottery + pool demo, plus element shots of the Genesis card / wheel and the pool wheel.
+  python3 web/scripts/responsive-audit.py --genesis --out web/shots/responsive/genesis
 """
 from __future__ import annotations
 
@@ -39,6 +42,15 @@ ROUTES = [
     ("tokenomics", "/tokenomics"),
     ("lottery", "/lottery"),
     ("docs", "/docs"),
+]
+
+GENESIS_DEVICES = {"android-sm", "ipad-portrait", "mac-1440", "desktop-1920"}
+GENESIS_ROUTES = [
+    ("home", "/"),
+    ("mint", "/mint"),
+    ("mint-genesis-demo", "/mint?demo=genesis#genesis"),
+    ("lottery", "/lottery"),
+    ("lottery-pool-demo", "/lottery?demo=pool#pool"),
 ]
 
 CHECK_JS = r"""
@@ -231,7 +243,10 @@ def main() -> None:
     ap.add_argument("--base", default="http://127.0.0.1:3126")
     ap.add_argument("--out", required=True)
     ap.add_argument("--label", default="before")
+    ap.add_argument("--genesis", action="store_true", help="Genesis 300 + pool wheel preset: 4 viewports + home, mint, Genesis demo, lottery, pool demo")
     args = ap.parse_args()
+    viewports = [v for v in VIEWPORTS if v[0] in GENESIS_DEVICES] if args.genesis else VIEWPORTS
+    routes = GENESIS_ROUTES if args.genesis else ROUTES
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -248,7 +263,7 @@ def main() -> None:
             executable_path="/usr/bin/google-chrome",
             args=["--no-sandbox", "--disable-gpu"],
         )
-        for name, w, h, mobile in VIEWPORTS:
+        for name, w, h, mobile in viewports:
             print(f"== {name} {w}x{h} mobile={mobile} ==", flush=True)
             ctx = browser.new_context(
                 viewport={"width": w, "height": h},
@@ -270,7 +285,7 @@ def main() -> None:
                   document.head.appendChild(s);
                 });"""
             )
-            for route_name, path in ROUTES:
+            for route_name, path in routes:
                 url = args.base + path
                 entry = {
                     "device": name,
@@ -283,7 +298,46 @@ def main() -> None:
                 try:
                     page.goto(url, wait_until="networkidle", timeout=30_000)
                     page.wait_for_timeout(700)
-                    if route_name == "mint-demo":
+                    if route_name == "mint-genesis-demo":
+                        mid = out / f"{name}__genesis-demo-spin.png"
+                        page.locator("#genesis").screenshot(path=str(mid))
+                        entry["shots"].append(str(mid))
+                        try:
+                            page.locator("#genesis").get_by_text("Demo landed on").wait_for(timeout=15_000)
+                            page.wait_for_timeout(1800)  # let the result-card spring settle
+                        except Exception as e:
+                            entry["issues"].append({"type": "demo-land-timeout", "detail": str(e)})
+                            page.wait_for_timeout(8000)
+                        for sel, tag in (("#genesis", "genesis-landed-card"), ("[data-genesis-wheel]", "genesis-landed-wheel")):
+                            el_shot = out / f"{name}__{tag}.png"
+                            page.locator(sel).screenshot(path=str(el_shot))
+                            entry["shots"].append(str(el_shot))
+                        shot = out / f"{name}__mint-genesis-demo-landed.png"
+                        page.screenshot(path=str(shot), full_page=True)
+                        entry["shots"].append(str(shot))
+                    elif route_name == "lottery-pool-demo":
+                        mid = out / f"{name}__pool-demo-spin.png"
+                        page.locator("#pool").screenshot(path=str(mid))
+                        entry["shots"].append(str(mid))
+                        try:
+                            page.locator("#pool").get_by_text("Demo landed on").wait_for(timeout=15_000)
+                            page.wait_for_timeout(1800)
+                        except Exception as e:
+                            entry["issues"].append({"type": "demo-land-timeout", "detail": str(e)})
+                            page.wait_for_timeout(8000)
+                        for sel, tag in (("#pool", "pool-landed-card"), ("[data-pool-wheel]", "pool-landed-wheel")):
+                            el_shot = out / f"{name}__{tag}.png"
+                            page.locator(sel).screenshot(path=str(el_shot))
+                            entry["shots"].append(str(el_shot))
+                        view = out / f"{name}__lottery-pool-viewport.png"
+                        page.evaluate("document.querySelector('#pool').scrollIntoView({block: 'start'})")
+                        page.wait_for_timeout(300)
+                        page.screenshot(path=str(view), full_page=False)
+                        entry["shots"].append(str(view))
+                        shot = out / f"{name}__lottery-pool-demo-landed.png"
+                        page.screenshot(path=str(shot), full_page=True)
+                        entry["shots"].append(str(shot))
+                    elif route_name == "mint-demo":
                         mid = out / f"{name}__mint-demo-spin.png"
                         page.screenshot(path=str(mid), full_page=True)
                         entry["shots"].append(str(mid))
@@ -301,6 +355,17 @@ def main() -> None:
                         page.screenshot(path=str(shot), full_page=True)
                         entry["shots"].append(str(shot))
                     entry["issues"].extend(run_checks(page, mobile))
+                    if args.genesis and route_name == "mint":
+                        card = out / f"{name}__genesis-card.png"
+                        page.locator("#genesis").scroll_into_view_if_needed()
+                        page.wait_for_timeout(300)
+                        page.locator("#genesis").screenshot(path=str(card))
+                        entry["shots"].append(str(card))
+                        view = out / f"{name}__mint-genesis-viewport.png"
+                        page.evaluate("document.querySelector('#genesis').scrollIntoView({block: 'start'})")
+                        page.wait_for_timeout(300)
+                        page.screenshot(path=str(view), full_page=False)
+                        entry["shots"].append(str(view))
 
                     # Header close-up on home (nav + connect).
                     if route_name == "home":

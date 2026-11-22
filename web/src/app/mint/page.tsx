@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LabelTicket, TwCoin } from "@/components/art";
 import { PageHeader } from "@/components/ui";
+import { GenesisCard } from "@/components/GenesisCard";
 import { MintPanel } from "./MintPanel";
 
 export const metadata: Metadata = { title: "Mint" };
@@ -21,7 +22,10 @@ export default function MintPage() {
         One mint per Agent ID wallet. Exactly 0.1 BNB gets you 80,000 TWAK on the spot plus one spin of the Draw V1 prize wheel, drawn by Chainlink
         VRF. 5,000 slots, then the booth closes.
       </PageHeader>
-      <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">
+      <div className="mx-auto max-w-[1220px] px-6 pt-6">
+        <GenesisCard />
+      </div>
+      <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-10">
         <MintPanel />
       </section>
     </>

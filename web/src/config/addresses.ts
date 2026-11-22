@@ -8,11 +8,13 @@ export const CONTRACT_KEYS = [
   "router",
   "rebateDistributor",
   "teamVesting",
-  "drawV2",
+  "drawV2", // DrawV2 instant pool wheel (new stand-alone deploy)
+  "drawV2Legacy", // old skeleton DrawV2: holds the 70M + TowackLaunch's immutable BNB treasury
   "timelock",
   "wbnb",
   "pancakeRouter",
   "pancakeFactory",
+  "genesis",
 ] as const;
 
 export type ContractKey = (typeof CONTRACT_KEYS)[number];
@@ -29,7 +31,9 @@ const ENV_OVERRIDES: Record<SupportedChainId, Partial<Record<ContractKey, string
     rebateDistributor: process.env.NEXT_PUBLIC_TOWACK_97_REBATE_DISTRIBUTOR,
     teamVesting: process.env.NEXT_PUBLIC_TOWACK_97_TEAM_VESTING,
     drawV2: process.env.NEXT_PUBLIC_TOWACK_97_DRAW_V2,
+    drawV2Legacy: process.env.NEXT_PUBLIC_TOWACK_97_DRAW_V2_LEGACY,
     timelock: process.env.NEXT_PUBLIC_TOWACK_97_TIMELOCK,
+    genesis: process.env.NEXT_PUBLIC_TOWACK_97_GENESIS,
   },
   56: {
     agentId: process.env.NEXT_PUBLIC_TOWACK_56_AGENT_ID,
@@ -39,7 +43,9 @@ const ENV_OVERRIDES: Record<SupportedChainId, Partial<Record<ContractKey, string
     rebateDistributor: process.env.NEXT_PUBLIC_TOWACK_56_REBATE_DISTRIBUTOR,
     teamVesting: process.env.NEXT_PUBLIC_TOWACK_56_TEAM_VESTING,
     drawV2: process.env.NEXT_PUBLIC_TOWACK_56_DRAW_V2,
+    drawV2Legacy: process.env.NEXT_PUBLIC_TOWACK_56_DRAW_V2_LEGACY,
     timelock: process.env.NEXT_PUBLIC_TOWACK_56_TIMELOCK,
+    genesis: process.env.NEXT_PUBLIC_TOWACK_56_GENESIS,
   },
 };
 

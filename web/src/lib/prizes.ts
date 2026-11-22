@@ -55,31 +55,42 @@ const MIN_DEG = 13;
 
 export type Slice = { id: number; start: number; end: number; mid: number };
 
-export const SLICES: readonly Slice[] = (() => {
-  const raw = WHEEL_ORDER.map((id) => (PRIZES[id].slots / DECK_SIZE) * 360);
-  const small = raw.map((d) => d < MIN_DEG);
-  const fixed = small.reduce((a, s) => a + (s ? MIN_DEG : 0), 0);
+/** Odds-sized slices in rim order, with a minimum width for rare tiers. Shared by the paid and Genesis wheels. */
+export function buildSlices(order: readonly number[], prizes: readonly { slots: number }[], deckSize: number, minDeg = MIN_DEG): Slice[] {
+  const raw = order.map((id) => (prizes[id].slots / deckSize) * 360);
+  const small = raw.map((d) => d < minDeg);
+  const fixed = small.reduce((a, s) => a + (s ? minDeg : 0), 0);
   const bigTotal = raw.reduce((a, d, i) => a + (small[i] ? 0 : d), 0);
   const scale = (360 - fixed) / bigTotal;
   let at = 0;
-  return WHEEL_ORDER.map((id, i) => {
-    const w = small[i] ? MIN_DEG : raw[i] * scale;
+  return order.map((id, i) => {
+    const w = small[i] ? minDeg : raw[i] * scale;
     const s = { id, start: at, end: at + w, mid: at + w / 2 };
     at += w;
     return s;
   });
-})();
+}
+
+export const SLICES: readonly Slice[] = buildSlices(WHEEL_ORDER, PRIZES, DECK_SIZE);
+
+export function sliceIn(slices: readonly Slice[], id: number): Slice {
+  return slices.find((s) => s.id === id) ?? slices[0];
+}
 
 export function sliceOf(id: number): Slice {
-  return SLICES.find((s) => s.id === id) ?? SLICES[0];
+  return sliceIn(SLICES, id);
 }
 
 /** Deterministic in-slice jitter (−0.3..0.3 of half-width) so landings don't always hit dead centre. */
-export function landingAngle(prizeId: number, salt: number): number {
-  const s = sliceOf(prizeId);
+export function landingAngleIn(slices: readonly Slice[], prizeId: number, salt: number): number {
+  const s = sliceIn(slices, prizeId);
   const half = (s.end - s.start) / 2;
   const h = Math.abs(Math.sin((salt + 1) * 12.9898 + prizeId * 78.233) * 43758.5453) % 1;
   return s.mid + (h - 0.5) * 0.6 * half;
+}
+
+export function landingAngle(prizeId: number, salt: number): number {
+  return landingAngleIn(SLICES, prizeId, salt);
 }
 
 export function shareText(prizeId: number): string {

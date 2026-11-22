@@ -61,7 +61,6 @@ export default function TokenomicsPage() {
                 <li>★ Draw V1 bonus reserve not assigned to any spin (14.8M at a full sellout, more if undersold).</li>
                 <li>★ Unused LP allocation if under 250 BNB is listed (e.g. an undersold mint).</li>
                 <li>★ Unclaimed Draw V1 bonuses after 180 days.</li>
-                <li>★ Every TWAK spent on Draw V2 lottery tickets.</li>
               </ul>
             </Panel>
           </div>

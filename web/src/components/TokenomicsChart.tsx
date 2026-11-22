@@ -5,7 +5,7 @@ export const SPLIT = [
   { pct: 40, color: "#FF4FA3", label: "Public mint", note: "400M · 80k per mint" },
   { pct: 20, color: "#1FC6F2", label: "Initial LP", note: "200M · at mint price" },
   { pct: 10, color: "#FFCD2E", label: "Trader rebates", note: "100M · 104 weeks" },
-  { pct: 7, color: "#FF4FA3", label: "Draw V2 prizes", note: "70M · weekly rounds" },
+  { pct: 7, color: "#FF4FA3", label: "Draw V2 prizes", note: "70M · pool wheel seed" },
   { pct: 5, color: "#1FC6F2", label: "Draw V1 bonus reserve", note: "50M · unused burned" },
   { pct: 5, color: "#13204A", label: "Team vesting", note: "1-yr cliff, 4-yr daily" },
   { pct: 5, color: "#FFCD2E", label: "Seasons & referrals", note: "50M" },

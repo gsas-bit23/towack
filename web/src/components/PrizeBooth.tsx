@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { Spin } from "@/lib/draw";
 import { shortAddr } from "@/lib/format";
-import { DECK_SIZE, PRIZES, prizeById, shareText } from "@/lib/prizes";
+import { DECK_SIZE, NO_WIN_ID, PRIZES, prizeById, shareText } from "@/lib/prizes";
 import { useNow } from "@/lib/useNow";
 import { Confetti } from "./motion";
 import { SpinWheel, type WheelMode } from "./SpinWheel";
@@ -38,36 +38,7 @@ export function WheelStage({
   idleNote?: ReactNode;
   size?: number;
 }) {
-  const [mode, setMode] = useState<WheelMode>(status === "none" ? "attract" : status === "waiting" || fresh ? "spinning" : "landed");
-  const [landed, setLanded] = useState(false);
-  const [burst, setBurst] = useState(0);
-  const [prevStatus, setPrevStatus] = useState(status);
-
-  // Status transitions (adjusting state during render on prop change, per React docs).
-  if (status !== prevStatus) {
-    setPrevStatus(status);
-    if (status === "waiting") {
-      setLanded(false);
-      setMode("spinning");
-    } else if (status === "assigned") {
-      if (mode !== "spinning") setMode(fresh ? "spinning" : "landed");
-    } else {
-      setLanded(false);
-      setMode("attract");
-    }
-  }
-
-  // Prize known while spinning: let the anticipation breathe briefly, then ease out onto it.
-  useEffect(() => {
-    if (status !== "assigned" || mode !== "spinning") return;
-    const t = setTimeout(() => setMode("land"), 1200);
-    return () => clearTimeout(t);
-  }, [status, mode]);
-
-  const onLanded = useCallback(() => {
-    setLanded(true);
-    if (mode === "land" && prizeId !== undefined && prizeId !== 10) setBurst((b) => b + 1);
-  }, [mode, prizeId]);
+  const { mode, landed, burst, onLanded } = useWheelMachine(status, fresh, prizeId, NO_WIN_ID);
 
   const prize = prizeById(prizeId);
   const showResult = landed && prize !== undefined && status === "assigned";
@@ -116,14 +87,55 @@ export function WheelStage({
   );
 }
 
-export function ShareButton({ prizeId }: { prizeId: number }) {
+/**
+ * Wheel mode state machine shared by the paid and Genesis stages:
+ *  waiting  -> anticipation spin until the prize shows up
+ *  assigned -> ease out and stop exactly on prizeId (or snap there if the visitor arrives later)
+ * Confetti fires on a live landing unless the prize is `noWinId`.
+ */
+export function useWheelMachine(status: WheelStatus, fresh: boolean, prizeId: number | undefined, noWinId: number) {
+  const [mode, setMode] = useState<WheelMode>(status === "none" ? "attract" : status === "waiting" || fresh ? "spinning" : "landed");
+  const [landed, setLanded] = useState(false);
+  const [burst, setBurst] = useState(0);
+  const [prevStatus, setPrevStatus] = useState(status);
+
+  // Status transitions (adjusting state during render on prop change, per React docs).
+  if (status !== prevStatus) {
+    setPrevStatus(status);
+    if (status === "waiting") {
+      setLanded(false);
+      setMode("spinning");
+    } else if (status === "assigned") {
+      if (mode !== "spinning") setMode(fresh ? "spinning" : "landed");
+    } else {
+      setLanded(false);
+      setMode("attract");
+    }
+  }
+
+  // Prize known while spinning: let the anticipation breathe briefly, then ease out onto it.
+  useEffect(() => {
+    if (status !== "assigned" || mode !== "spinning") return;
+    const t = setTimeout(() => setMode("land"), 1200);
+    return () => clearTimeout(t);
+  }, [status, mode]);
+
+  const onLanded = useCallback(() => {
+    setLanded(true);
+    if (mode === "land" && prizeId !== undefined && prizeId !== noWinId) setBurst((b) => b + 1);
+  }, [mode, prizeId, noWinId]);
+
+  return { mode, landed, burst, onLanded };
+}
+
+export function ShareButton({ prizeId, text, path = "/draw" }: { prizeId: number; text?: string; path?: string }) {
   return (
     <Button
       tone="white"
       size="sm"
       onClick={() => {
-        const url = `${window.location.origin}/draw`;
-        const href = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText(prizeId))}&url=${encodeURIComponent(url)}`;
+        const url = `${window.location.origin}${path}`;
+        const href = `https://x.com/intent/tweet?text=${encodeURIComponent(text ?? shareText(prizeId))}&url=${encodeURIComponent(url)}`;
         window.open(href, "_blank", "noopener,noreferrer");
       }}
     >

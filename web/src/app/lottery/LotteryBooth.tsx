@@ -1,314 +1,549 @@
 "use client";
 
-import { useState } from "react";
+import { motion } from "motion/react";
+import { useEffect, useState, type ReactNode } from "react";
 import { formatEther, parseEther, zeroAddress } from "viem";
-import { useBalance, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { useReadContract, useReadContracts, useWatchContractEvent, useWriteContract } from "wagmi";
 import { drawV2Abi, towackTokenAbi } from "@/abi";
-import { AddressLink, ChainNote, DeployingSoon, NeedsWallet, TxNotice } from "@/components/status";
-import { Button, Field, Panel, Pill, Stat, inputClass } from "@/components/ui";
+import { Confetti } from "@/components/motion";
+import { ShareButton, useWheelMachine, type WheelStatus } from "@/components/PrizeBooth";
+import { SpinWheel } from "@/components/SpinWheel";
+import { AddressLink, ChainNote, NeedsWallet, TxNotice } from "@/components/status";
+import { Button, Panel, Pill, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
-import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
+import { fmt18, fmtDuration } from "@/lib/format";
+import {
+  POOL_EV_PCT,
+  POOL_INTENDED_SEED,
+  POOL_MAX_ENTRY_PCT,
+  POOL_MAX_PAYOUT_PCT,
+  POOL_MIN_ENTRY,
+  POOL_NO_WIN_ID,
+  POOL_PRIZES,
+  POOL_SLICES,
+  POOL_SPLIT,
+  POOL_TESTNET_SEED,
+  oddsPct,
+  payoutFor,
+  poolPrizeById,
+  poolShareText,
+} from "@/lib/poolPrizes";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
 
-type RoundTuple = readonly [bigint, bigint, bigint, bigint, boolean, boolean, `0x${string}`, bigint, bigint, boolean];
+const WHEEL_SIZE = 400;
+const E18 = 10n ** 18n;
+const MIN_WEI = BigInt(POOL_MIN_ENTRY) * E18;
+const DEMO_ENTRY = 1_000n * E18;
 
-function HowItWorks() {
+type SpinTuple = readonly [`0x${string}`, number, number, bigint, bigint, bigint, bigint, bigint];
+
+// ---------------------------------------------------------------- wheel stage
+
+function PoolWheelStage({
+  status,
+  prizeId,
+  entry,
+  bnb,
+  salt = 0,
+  fresh = false,
+  demo = false,
+  waitingNote,
+  actions,
+  idleNote,
+}: {
+  status: WheelStatus;
+  prizeId?: number;
+  entry?: bigint;
+  bnb?: bigint;
+  salt?: number;
+  fresh?: boolean;
+  demo?: boolean;
+  waitingNote?: ReactNode;
+  actions?: ReactNode;
+  idleNote?: ReactNode;
+}) {
+  const { mode, landed, burst, onLanded } = useWheelMachine(status, fresh, prizeId, POOL_NO_WIN_ID);
+  const prize = poolPrizeById(prizeId);
+  const showResult = landed && prize !== undefined && status === "assigned";
+  const paid = prize && entry !== undefined ? payoutFor(entry, prize) : undefined;
+  const vsEntry = prize ? (prize.multBps < 10_000 ? "less than you put in" : prize.multBps === 10_000 ? "your entry back" : "more than you put in") : "";
+
   return (
-    <Panel tone="skyPale" shadow={false}>
-      <h2 className="font-display text-[24px] font-extrabold">How a round works</h2>
-      <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
-        <li>Rounds last 7 days. Enter by burning TWAK: tickets = floor(TWAK × USD price), 1 ticket per $1.</li>
-        <li>The TWAK price comes from a price source or a manual setting, both behind a 48-hour timelock. Never a raw spot price.</li>
-        <li>After the round ends, anyone can request the Chainlink VRF draw, then anyone can settle it.</li>
-        <li>One winner per round: up to 700,000 TWAK + 20% of the free BNB pot at settle time.</li>
-        <li>The winner pulls the prize. The owner cannot withdraw prize funds.</li>
-      </ol>
-      <p className="mt-3 text-sm font-semibold text-navy/70">MVP contract. Odds depend on how many tickets everyone buys. Nothing is promised.</p>
+    <div className="relative">
+      {demo ? (
+        <div className="mb-4 flex justify-center">
+          <Pill tone="sun" className="border-[3px] border-navy text-[13px]">
+            DEMO SPIN · not a real entry or prize
+          </Pill>
+        </div>
+      ) : null}
+      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-[28px]" aria-hidden="true">
+        <Confetti fire={burst} big={Boolean(prize?.jackpot)} />
+      </div>
+      <SpinWheel mode={mode} prizeId={prizeId} salt={salt} onLanded={onLanded} size={WHEEL_SIZE} prizes={POOL_PRIZES} slices={POOL_SLICES} />
+
+      <div className="mt-6 min-h-[110px]" aria-live="polite">
+        {status === "waiting" || (status === "assigned" && !landed) ? (
+          <div className="text-center">
+            <div className="font-display text-[22px] font-extrabold sm:text-[26px]">{status === "waiting" ? "Spinning… waiting for VRF" : "Here it comes…"}</div>
+            {waitingNote ? <div className="mt-2 font-bold text-navy/70">{waitingNote}</div> : null}
+          </div>
+        ) : showResult ? (
+          <motion.div
+            initial={{ y: 18, scale: 0.9 }}
+            animate={{ y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 18 }}
+            className={`stub rounded-[28px] px-5 py-5 text-center ${prize.multBps === 0 ? "bg-ice" : prize.jackpot ? "bg-sun" : "bg-sky-pale"}`}
+          >
+            <div className="text-[13px] font-black uppercase tracking-[.2em] text-navy/60">{demo ? "Demo landed on" : "The wheel says"}</div>
+            <div className="mt-1 font-display text-[30px] font-extrabold leading-tight sm:text-[34px]">{prize.label}</div>
+            {paid !== undefined && entry !== undefined ? (
+              <>
+                <div className="mt-1 text-[18px] font-black">
+                  {prize.multBps === 0 ? "0 TWAK — the entry stays in the pool" : `${fmt18(paid, 2)} TWAK`}
+                  {bnb && bnb > 0n ? ` + ${fmt18(bnb, 5)} BNB bonus` : ""}
+                </div>
+                <div className="mt-1 text-sm font-bold text-navy/60">
+                  From a {fmt18(entry, 2)} TWAK entry{prize.multBps === 0 ? "." : ` — ${vsEntry}.`}
+                </div>
+              </>
+            ) : null}
+            {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
+          </motion.div>
+        ) : (
+          <div className="text-center font-bold text-navy/70">{idleNote}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const DEMO_PRIZES = [3, 0, 1, 6, 2, 4];
+
+function DemoWheel() {
+  const [round, setRound] = useState(1);
+  const [status, setStatus] = useState<WheelStatus>("waiting");
+  useEffect(() => {
+    const t = setTimeout(() => setStatus("assigned"), 2800);
+    return () => clearTimeout(t);
+  }, [round]);
+  const prizeId = DEMO_PRIZES[(round - 1) % DEMO_PRIZES.length];
+  return (
+    <PoolWheelStage
+      key={round}
+      status={status}
+      prizeId={prizeId}
+      entry={DEMO_ENTRY}
+      salt={round}
+      fresh
+      demo
+      waitingNote="Demo only — no transaction, no VRF."
+      actions={
+        <Button
+          tone="white"
+          size="sm"
+          className="min-h-11"
+          onClick={() => {
+            setStatus("waiting");
+            setRound((r) => r + 1);
+          }}
+        >
+          Spin the demo again
+        </Button>
+      }
+    />
+  );
+}
+
+/** `?demo=pool`: allowed only when no Draw V2 pool is configured or NEXT_PUBLIC_DEMO_WHEEL=1. Always labelled. */
+function usePoolDemo() {
+  const { addresses } = useTowack();
+  const allowed = !addresses.drawV2 || process.env.NEXT_PUBLIC_DEMO_WHEEL === "1";
+  const [fromUrl, setFromUrl] = useState(false);
+  useEffect(() => {
+    const read = () => setFromUrl(new URLSearchParams(window.location.search).get("demo") === "pool");
+    read();
+    window.addEventListener("popstate", read);
+    return () => window.removeEventListener("popstate", read);
+  }, []);
+  return { allowed, active: allowed && fromUrl };
+}
+
+// ---------------------------------------------------------------- payout table
+
+function PayoutTable({ entry }: { entry?: bigint }) {
+  const e = entry && entry >= MIN_WEI ? entry : DEMO_ENTRY;
+  return (
+    <Panel tone="white" shadow={false}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display text-[24px] font-extrabold">Payout table</h2>
+        <span className="text-sm font-black text-navy/60">10,000 slots · per {fmt18(e, 0)} TWAK</span>
+      </div>
+      <div className="mt-3 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2" role="table" aria-label="Pool wheel payout table">
+        <div role="row" className="contents text-[11px] font-black uppercase tracking-[.15em] text-navy/50">
+          <span role="columnheader">Tier</span>
+          <span role="columnheader">Odds</span>
+          <span role="columnheader" className="text-right">
+            Pays
+          </span>
+        </div>
+        {POOL_PRIZES.map((p) => (
+          <div role="row" key={p.id} className="contents">
+            <span role="cell" className="grid h-10 min-w-[52px] place-items-center rounded-full border-[3px] border-navy px-2 font-display text-[14px] font-extrabold" style={{ background: p.fill, color: p.ink }}>
+              {p.wheel}
+            </span>
+            <span role="cell" className="min-w-0">
+              <span className="block font-display text-[16px] font-extrabold leading-tight">{oddsPct(p).toFixed(0)}%</span>
+              <span className="block text-[12px] font-bold text-navy/55">
+                {p.slots.toLocaleString("en-US")} slots{p.bnbBonusBps ? ` · +${p.bnbBonusBps / 100}% BNB pot` : ""}
+              </span>
+            </span>
+            <span role="cell" className="whitespace-nowrap text-right font-display text-[15px] font-extrabold">
+              {p.multBps === 0 ? "0" : fmt18(payoutFor(e, p), 0)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3">
+        <div className="font-display text-[20px] font-extrabold">Expected return: {POOL_EV_PCT}%</div>
+        <p className="mt-1 text-sm font-bold text-navy/70">
+          On average a spin pays back 95 of every 100 TWAK entered; the 5% edge stays in the pool. {POOL_SPLIT.less}% of spins pay less than the
+          entry, {POOL_SPLIT.even}% pay it back, {POOL_SPLIT.more}% pay more. This is a game of chance, not an investment.
+        </p>
+      </div>
     </Panel>
   );
 }
 
-export function LotteryBooth() {
-  const { has } = useTowack();
-  if (!has("drawV2")) {
-    return (
-      <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
-        <div className="col-span-12 lg:col-span-7">
-          <DeployingSoon keys={["drawV2"]}>
-            <p className="font-bold text-navy/70">No rounds yet. There is no live jackpot until the contract is deployed and a round has tickets.</p>
-          </DeployingSoon>
-        </div>
-        <div className="col-span-12 lg:col-span-5">
-          <HowItWorks />
-        </div>
-      </div>
-    );
-  }
-  return <LiveBooth />;
+function HowItWorks() {
+  return (
+    <Panel tone="skyPale" shadow={false}>
+      <h2 className="font-display text-[24px] font-extrabold">How the pool wheel works</h2>
+      <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
+        <li>Your TWAK goes into the prize pool (nothing is burned). Each entry asks Chainlink VRF for one random number and spins right away.</li>
+        <li>The wheel pays a multiplier of your entry from the pool: 0× to 10×. Prizes are pulled with Claim.</li>
+        <li>
+          Min {POOL_MIN_ENTRY} TWAK. Max {POOL_MAX_ENTRY_PCT}% of the free pool, so a 10× win is at most {POOL_MAX_PAYOUT_PCT}% of it.
+        </li>
+        <li>Every pending spin locks 10× its entry, so many spins at once can never overdraw the pool.</li>
+        <li>5× and 10× also win 1% / 2% of the free BNB pot (locked on entry). Empty pot = TWAK only.</li>
+        <li>The owner (a timelock) can only pause new entries. It cannot withdraw TWAK or BNB.</li>
+      </ol>
+    </Panel>
+  );
 }
 
-function LiveBooth() {
+function TreasuryNote() {
+  const { addresses } = useTowack();
+  return (
+    <Panel tone="navy" shadow={false}>
+      <Pill tone="sun">TESTNET NOTE</Pill>
+      <p className="mt-3 font-bold text-white/85">
+        The intended seed is the {POOL_INTENDED_SEED} Draw V2 allocation. On testnet that allocation is locked in the old Draw V2 skeleton, which is also
+        the launch&apos;s fixed BNB destination. The new pool wheel is seeded with a {POOL_TESTNET_SEED} testnet stand-in until a full stack redeploy.
+      </p>
+      {addresses.drawV2Legacy ? (
+        <p className="mt-3 break-all text-sm font-bold text-white/70">
+          Old treasury: <AddressLink address={addresses.drawV2Legacy} />
+        </p>
+      ) : null}
+    </Panel>
+  );
+}
+
+// ---------------------------------------------------------------- live booth
+
+function parseAmount(v: string): bigint | undefined {
+  try {
+    return v.trim() ? parseEther(v.trim() as `${number}`) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function PoolStat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-2xl border-[3px] border-navy bg-ice px-3 py-2.5 sm:px-4 sm:py-3">
+      <div className="text-[11px] font-black uppercase tracking-[.15em] text-navy/60">{label}</div>
+      <div className="mt-0.5 break-words font-display text-[19px] font-extrabold leading-tight sm:text-[22px]">{value}</div>
+      {sub ? <div className="text-[12px] font-bold text-navy/60">{sub}</div> : null}
+    </div>
+  );
+}
+
+function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: string) => void }) {
   const { chainId, addresses, account } = useTowack();
   const draw = addresses.drawV2!;
-  const now = useNow(10_000);
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
-  const [amount, setAmount] = useState("");
-  const [lookup, setLookup] = useState("");
+  const now = useNow(5_000);
+  const [fresh, setFresh] = useState(false);
 
   const c = { address: draw, abi: drawV2Abi, chainId } as const;
-  const { data } = useReadContracts({
+  const { data, refetch } = useReadContracts({
     contracts: [
-      { ...c, functionName: "currentRound" },
-      { ...c, functionName: "startTime" },
-      { ...c, functionName: "ROUND_LENGTH" },
-      { ...c, functionName: "twakUsdPrice" },
-      { ...c, functionName: "priceSource" },
+      { ...c, functionName: "availableTwak" },
+      { ...c, functionName: "availableBnb" },
+      { ...c, functionName: "maxEntry" },
+      { ...c, functionName: "entriesPaused" },
       { ...c, functionName: "token" },
-      { ...c, functionName: "owedBnb" },
-      { ...c, functionName: "owedTokens" },
-      { ...c, functionName: "TOKEN_PRIZE_PER_ROUND" },
+      { ...c, functionName: "bnbBonusPreview" },
       { ...c, functionName: "VRF_RETRY_DELAY" },
+      { ...c, functionName: "spinCount" },
     ],
-    query: { refetchInterval: 20_000 },
+    query: { refetchInterval: 15_000 },
   });
-  const round = data?.[0]?.result as bigint | undefined;
-  const start = data?.[1]?.result as bigint | undefined;
-  const roundLen = (data?.[2]?.result as bigint | undefined) ?? 604800n;
-  const price = data?.[3]?.result as bigint | undefined; // reverts NoPrice when unset → undefined
-  const priceSource = data?.[4]?.result as `0x${string}` | undefined;
-  const boundToken = data?.[5]?.result as `0x${string}` | undefined;
-  const owedBnb = (data?.[6]?.result as bigint | undefined) ?? 0n;
-  const owedTokens = (data?.[7]?.result as bigint | undefined) ?? 0n;
-  const tokenPrize = (data?.[8]?.result as bigint | undefined) ?? 700_000n * 10n ** 18n;
-  const retryDelay = (data?.[9]?.result as bigint | undefined) ?? 86400n;
+  const r = <T,>(i: number) => data?.[i]?.result as T | undefined;
+  const freeTwak = r<bigint>(0);
+  const freeBnb = r<bigint>(1);
+  const maxEntry = r<bigint>(2);
+  const paused = r<boolean>(3);
+  const boundToken = r<`0x${string}`>(4);
+  const bonus = r<readonly [bigint, bigint]>(5);
+  const retryDelay = Number(r<bigint>(6) ?? 3600n);
+  const spinCount = r<bigint>(7);
   const token = boundToken && boundToken !== zeroAddress ? boundToken : addresses.token;
   const bound = boundToken ? boundToken !== zeroAddress : undefined;
 
-  const prev = round !== undefined && round > 0n ? round - 1n : undefined;
-  const lookupN = lookup.trim() && /^\d+$/.test(lookup.trim()) ? BigInt(lookup.trim()) : prev;
-
-  const { data: rd } = useReadContracts({
+  const { data: me, refetch: refetchMe } = useReadContracts({
     contracts: [
-      { ...c, functionName: "rounds", args: round !== undefined ? [round] : undefined },
-      { ...c, functionName: "ticketsOf", args: round !== undefined && account ? [round, account] : undefined },
-      { ...c, functionName: "rounds", args: lookupN !== undefined ? [lookupN] : undefined },
-      { ...c, functionName: "ticketsOf", args: lookupN !== undefined && account ? [lookupN, account] : undefined },
-    ],
-    query: { enabled: round !== undefined, refetchInterval: 20_000 },
-  });
-  const cur = rd?.[0]?.result as RoundTuple | undefined;
-  const myCur = rd?.[1]?.result as bigint | undefined;
-  const past = rd?.[2]?.result as RoundTuple | undefined;
-  const myPast = rd?.[3]?.result as bigint | undefined;
-
-  const { data: potBal } = useBalance({ address: draw, chainId });
-  const { data: tokData } = useReadContracts({
-    contracts: [
-      { address: token, abi: towackTokenAbi, functionName: "balanceOf", args: [draw], chainId },
+      { ...c, functionName: "lastSpinOf", args: account ? [account] : undefined },
+      { ...c, functionName: "owedTwak", args: account ? [account] : undefined },
+      { ...c, functionName: "owedBnb", args: account ? [account] : undefined },
       { address: token, abi: towackTokenAbi, functionName: "balanceOf", args: account ? [account] : undefined, chainId },
       { address: token, abi: towackTokenAbi, functionName: "allowance", args: account ? [account, draw] : undefined, chainId },
     ],
-    query: { enabled: Boolean(token), refetchInterval: 20_000 },
+    query: { enabled: Boolean(account && token), refetchInterval: 15_000 },
   });
-  const drawTwak = tokData?.[0]?.result as bigint | undefined;
-  const myTwak = tokData?.[1]?.result as bigint | undefined;
-  const allowance = tokData?.[2]?.result as bigint | undefined;
+  const lastSpin = me?.[0]?.result as bigint | undefined;
+  const owedTwak = (me?.[1]?.result as bigint | undefined) ?? 0n;
+  const owedBnb = (me?.[2]?.result as bigint | undefined) ?? 0n;
+  const myTwak = me?.[3]?.result as bigint | undefined;
+  const allowance = me?.[4]?.result as bigint | undefined;
 
-  const { data: hasPrevPending } = useReadContract({
+  const { data: spin, refetch: refetchSpin } = useReadContract({
     ...c,
-    functionName: "entriesLength",
-    args: prev !== undefined ? [prev] : undefined,
-    query: { enabled: prev !== undefined },
+    functionName: "spins",
+    args: lastSpin ? [lastSpin] : undefined,
+    query: {
+      enabled: Boolean(lastSpin),
+      refetchInterval: (q) => ((q.state.data as SpinTuple | undefined)?.[1] === 1 ? 4_000 : 20_000),
+    },
+  });
+  const s = spin as SpinTuple | undefined;
+  const { data: spinPrize } = useReadContract({
+    ...c,
+    functionName: "spinPrize",
+    args: lastSpin ? [lastSpin] : undefined,
+    query: { enabled: Boolean(lastSpin && s?.[1] === 2) },
   });
 
-  let amountIn: bigint | undefined;
-  try {
-    amountIn = amount.trim() ? parseEther(amount.trim() as `${number}`) : undefined;
-  } catch {
-    amountIn = undefined;
-  }
-  const tickets = amountIn && price ? (amountIn * price) / 10n ** 36n : 0n;
-  const freeBnb = potBal ? (potBal.value > owedBnb ? potBal.value - owedBnb : 0n) : undefined;
-  const freeTwak = drawTwak !== undefined ? (drawTwak > owedTokens ? drawTwak - owedTokens : 0n) : undefined;
-  const estTwakPrize = freeTwak !== undefined ? (freeTwak < tokenPrize ? freeTwak : tokenPrize) : undefined;
-  const endsAt = start !== undefined && round !== undefined ? Number(start + (round + 1n) * roundLen) : undefined;
-  const needsApproval = amountIn !== undefined && (allowance ?? 0n) < amountIn;
+  useWatchContractEvent({
+    ...c,
+    eventName: "SpinAssigned",
+    args: account ? { player: account } : undefined,
+    enabled: Boolean(account),
+    onLogs: () => {
+      void refetchSpin();
+      void refetchMe();
+      void refetch();
+    },
+  });
+
+  const status: WheelStatus = !s || s[1] === 0 ? "none" : s[1] === 1 ? "waiting" : "assigned";
+  const requestedAt = s ? Number(s[3]) : undefined;
+  const canRetry = status === "waiting" && now > 0 && requestedAt !== undefined && now >= requestedAt + retryDelay;
+
+  const amountIn = parseAmount(amount);
+  const poolOpen = maxEntry !== undefined ? maxEntry >= MIN_WEI : undefined;
+  const tooSmall = amountIn !== undefined && amountIn < MIN_WEI;
+  const tooBig = amountIn !== undefined && maxEntry !== undefined && amountIn > maxEntry;
   const tooMuch = amountIn !== undefined && myTwak !== undefined && amountIn > myTwak;
-  const canEnter = Boolean(account && bound && price && tickets > 0n && !tooMuch);
+  const needsApproval = amountIn !== undefined && (allowance ?? 0n) < amountIn;
+  const canEnter = Boolean(account && bound && !paused && poolOpen && amountIn && !tooSmall && !tooBig && !tooMuch && status !== "waiting");
+  const hasOwed = owedTwak > 0n || owedBnb > 0n;
 
   async function enter() {
     if (!canEnter || !amountIn || !token) return;
     if (needsApproval) {
       const ok = await tx.run("Approve exact amount", () =>
-        writeContractAsync({ address: token, abi: towackTokenAbi, functionName: "approve", args: [draw, amountIn!], chainId }),
+        writeContractAsync({ address: token, abi: towackTokenAbi, functionName: "approve", args: [draw, amountIn], chainId }),
       );
       if (!ok) return;
     }
-    const ok = await tx.run("Burn TWAK for tickets", () =>
-      writeContractAsync({ address: draw, abi: drawV2Abi, functionName: "enter", args: [amountIn!], chainId }),
-    );
-    if (ok) setAmount("");
+    const ok = await tx.run("Enter + spin", () => writeContractAsync({ ...c, functionName: "enter", args: [amountIn] }));
+    if (ok) {
+      setFresh(true);
+      void refetchMe();
+      void refetchSpin();
+      void refetch();
+    }
   }
+  const claim = () => tx.run("Claim prizes", () => writeContractAsync({ ...c, functionName: "claim" })).then(() => void refetchMe());
+  const retry = () => lastSpin && tx.run("Retry VRF", () => writeContractAsync({ ...c, functionName: "retrySpin", args: [lastSpin] }));
 
-  const pastStatus = past
-    ? past[0] === 0n
-      ? "No tickets"
-      : past[5]
-        ? past[9]
-          ? "Prize claimed"
-          : "Settled"
-        : past[4]
-          ? "Seed in — ready to settle"
-          : past[1] > 0n
-            ? "VRF requested"
-            : "Waiting for draw request"
-    : "—";
-  const isWinner = Boolean(account && past && past[5] && past[6].toLowerCase() === account.toLowerCase());
-  const pastOver = lookupN !== undefined && round !== undefined && lookupN < round;
-  const canRequest =
-    pastOver && past && past[0] > 0n && !past[4] && (past[1] === 0n || (now > 0 && BigInt(now) >= past[2] + retryDelay));
-  const canSettle = past && past[4] && !past[5];
+  const chips: { label: string; v: bigint | undefined }[] = [
+    { label: "100", v: MIN_WEI },
+    { label: "1K", v: 1_000n * E18 },
+    { label: "10K", v: 10_000n * E18 },
+    { label: "Max", v: maxEntry !== undefined && myTwak !== undefined ? (myTwak < maxEntry ? myTwak : maxEntry) : maxEntry },
+  ];
+
+  const warn = tooSmall
+    ? `Minimum entry is ${POOL_MIN_ENTRY} TWAK.`
+    : tooBig
+      ? `Max entry right now is ${fmt18(maxEntry, 2)} TWAK (${POOL_MAX_ENTRY_PCT}% of the free pool).`
+      : tooMuch
+        ? "Not enough TWAK in this wallet."
+        : undefined;
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 [&>*]:min-w-0">
+        <PoolStat label="Free pool" value={`${fmt18(freeTwak, 0)}`} sub="TWAK" />
+        <PoolStat label="BNB pot" value={fmt18(freeBnb, 4)} sub={bonus ? `10× wins +${fmt18(bonus[0], 4)}` : "BNB"} />
+        <PoolStat label="Entry" value={`${POOL_MIN_ENTRY} – ${maxEntry !== undefined ? fmt18(maxEntry, 0) : "—"}`} sub="TWAK min – max" />
+        <PoolStat label="Expected return" value={`${POOL_EV_PCT}%`} sub={spinCount !== undefined ? `${spinCount.toString()} spins so far` : "per spin, on average"} />
+      </div>
+
+      <div className="mt-6" data-pool-wheel>
+        <PoolWheelStage
+          status={status}
+          prizeId={status === "assigned" && s ? s[2] : undefined}
+          entry={s?.[4]}
+          bnb={spinPrize?.[1]}
+          salt={lastSpin ? Number(lastSpin % 1000n) : 0}
+          fresh={fresh}
+          idleNote="Enter to spin. Each entry lands on its own Chainlink VRF number."
+          waitingNote={
+            <>
+              {lastSpin ? <Pill tone="sky">SPIN #{lastSpin.toString()}</Pill> : null} {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago.` : ""}
+              {canRetry ? (
+                <div className="mt-3 flex justify-center">
+                  <Button tone="white" size="sm" className="min-h-11" disabled={tx.busy} onClick={retry}>
+                    Retry VRF request
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          }
+          actions={
+            status === "assigned" && s ? (
+              <>
+                {hasOwed ? (
+                  <Button tone="candy" size="sm" className="min-h-11" disabled={tx.busy} onClick={claim}>
+                    {tx.busy ? "Check your wallet…" : "Claim prizes"}
+                  </Button>
+                ) : null}
+                <ShareButton prizeId={s[2]} text={poolShareText(s[2])} path="/lottery" />
+              </>
+            ) : undefined
+          }
+        />
+      </div>
+
+      <div className="mt-2 border-t-2 border-dashed border-navy/20 pt-6">
+        <NeedsWallet why="Connect to enter the pool wheel.">
+          {bound === false ? (
+            <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">The pool wheel is deployed but not wired to the token yet.</p>
+          ) : paused ? (
+            <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">New entries are paused. Pending spins still land and claims still work.</p>
+          ) : poolOpen === false ? (
+            <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">The free pool is too small for a {POOL_MIN_ENTRY} TWAK entry right now.</p>
+          ) : (
+            <>
+              <label className="block text-[13px] font-black uppercase tracking-[.15em] text-navy/60" htmlFor="pool-entry">
+                TWAK to enter
+              </label>
+              <input
+                id="pool-entry"
+                className={`${inputClass} mt-2 min-w-0`}
+                inputMode="decimal"
+                placeholder={`${POOL_MIN_ENTRY} or more`}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+              />
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {chips.map((ch) => (
+                  <button
+                    key={ch.label}
+                    type="button"
+                    disabled={ch.v === undefined}
+                    onClick={() => ch.v !== undefined && setAmount(formatEther(ch.v))}
+                    className="min-h-11 rounded-full border-[3px] border-navy bg-white font-display text-[15px] font-extrabold disabled:opacity-40"
+                  >
+                    {ch.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-sm font-bold text-navy/60">Balance: {fmt18(myTwak, 2)} TWAK</p>
+              {warn ? <p className="mt-1 font-bold text-candy-deep">{warn}</p> : null}
+              {status === "waiting" ? <p className="mt-1 font-bold text-navy/70">Your last spin is still landing.</p> : null}
+              <Button tone="candy" size="lg" className="mt-4 min-h-14 w-full" disabled={!canEnter || tx.busy} onClick={enter}>
+                {tx.busy ? "Check your wallet…" : needsApproval && amountIn ? "Approve exact amount, then spin" : "Enter + spin"}
+              </Button>
+              <p className="mt-2 text-center text-sm font-bold text-navy/60">Your entry joins the pool. Most spins pay back less than you put in.</p>
+            </>
+          )}
+          {hasOwed && status !== "assigned" ? (
+            <Button tone="sky" className="mt-4 w-full min-h-12" disabled={tx.busy} onClick={claim}>
+              Claim {fmt18(owedTwak, 2)} TWAK{owedBnb > 0n ? ` + ${fmt18(owedBnb, 5)} BNB` : ""}
+            </Button>
+          ) : null}
+        </NeedsWallet>
+      </div>
+      <TxNotice state={tx.state} onClose={tx.reset} />
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- page body
+
+export function LotteryBooth() {
+  const { has } = useTowack();
+  const demo = usePoolDemo();
+  const [amount, setAmount] = useState("");
+  const live = has("drawV2");
 
   return (
     <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
-      <div className="col-span-12 space-y-8 lg:col-span-7">
+      <div id="pool" className="col-span-12 scroll-mt-24 lg:col-span-7">
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[28px] font-extrabold">Round {round !== undefined ? `#${round}` : "—"}</h2>
+            <h2 className="font-display text-[26px] font-extrabold sm:text-[28px]">Pool wheel</h2>
             <ChainNote />
           </div>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <Stat label="Ends in" value={endsAt && now ? fmtDuration(endsAt - now) : "—"} sub={endsAt ? fmtDate(endsAt) : undefined} />
-            <Stat label="Tickets in round" value={cur ? cur[0].toLocaleString("en-US") : "0"} sub={account ? `yours: ${(myCur ?? 0n).toLocaleString("en-US")}` : undefined} />
-            <Stat
-              label="Ticket price"
-              value={price ? `$1 ≈ ${fmt18(10n ** 36n / price, 2)} TWAK` : "Not set yet"}
-              sub={priceSource && priceSource !== zeroAddress ? "from price source" : price ? "manual price (timelocked)" : "entries paused until set"}
-            />
-            <Stat
-              label="Next prize (if settled now)"
-              value={estTwakPrize !== undefined ? `${fmt18(estTwakPrize, 0)} TWAK` : "—"}
-              sub={freeBnb !== undefined ? `+ ${fmt18((freeBnb * 2000n) / 10000n, 4)} BNB (20% of free pot)` : undefined}
-            />
-          </div>
-          <p className="mt-3 text-sm font-semibold text-navy/60">Prize estimates read the contract&apos;s current balances and change until the round is settled.</p>
-
-          <div className="mt-6 border-t-2 border-dashed border-navy/20 pt-6">
-            <NeedsWallet why="Connect to burn TWAK for tickets.">
-              {bound === false ? (
-                <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">Draw V2 is deployed but not wired to the token yet.</p>
-              ) : !price ? (
-                <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
-                  The ticket price hasn&apos;t been set yet (it goes through a 48h timelock). Entries open once it is.
-                </p>
-              ) : (
-                <>
-                  <Field label="TWAK to burn" hint={`Balance: ${fmt18(myTwak, 2)} TWAK`}>
-                    <div className="flex gap-2">
-                      <input className={inputClass} inputMode="decimal" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
-                      {myTwak ? (
-                        <Button tone="white" size="sm" onClick={() => setAmount(formatEther(myTwak))}>
-                          Max
-                        </Button>
-                      ) : null}
-                    </div>
-                  </Field>
-                  <div className="mt-3 font-display text-[22px] font-extrabold">= {tickets.toLocaleString("en-US")} ticket{tickets === 1n ? "" : "s"}</div>
-                  {tooMuch ? <p className="mt-2 font-bold text-candy-deep">Not enough TWAK.</p> : null}
-                  <Button tone="candy" className="mt-4 w-full" disabled={!canEnter || tx.busy} onClick={enter}>
-                    {tx.busy ? "Check your wallet…" : needsApproval ? "Approve exact amount, then enter" : "Burn TWAK & enter"}
-                  </Button>
-                  <p className="mt-2 text-center text-sm font-bold text-navy/60">Burned TWAK is destroyed, win or lose. Approval is for this exact amount only.</p>
-                </>
-              )}
-            </NeedsWallet>
-          </div>
-          <TxNotice state={tx.state} onClose={tx.reset} />
-        </Panel>
-
-        <Panel tone="sunPale" shadow={false}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[24px] font-extrabold">Past round {lookupN !== undefined ? `#${lookupN}` : ""}</h2>
-            <label className="flex items-center gap-2 font-bold">
-              Round #
-              <input
-                className="w-24 rounded-xl border-[3px] border-navy bg-white px-3 py-1.5 font-display font-extrabold"
-                inputMode="numeric"
-                placeholder={prev !== undefined ? prev.toString() : "0"}
-                value={lookup}
-                onChange={(e) => setLookup(e.target.value.replace(/[^0-9]/g, ""))}
-              />
-            </label>
-          </div>
-          {lookupN === undefined ? (
-            <p className="mt-3 font-bold text-navy/70">No finished rounds yet.</p>
-          ) : (
-            <>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                <Stat label="Status" value={pastStatus} />
-                <Stat label="Tickets" value={past ? past[0].toLocaleString("en-US") : "—"} sub={account ? `yours: ${(myPast ?? 0n).toLocaleString("en-US")}` : undefined} />
-                <Stat
-                  label="Winner"
-                  value={past && past[5] ? <AddressLink address={past[6]} /> : "—"}
-                  sub={past && past[5] ? `${fmt18(past[7], 0)} TWAK + ${fmt18(past[8], 4)} BNB` : undefined}
-                />
+          <div className="mt-4">
+            {demo.active ? (
+              <div data-pool-wheel>
+                <DemoWheel />
               </div>
-              {isWinner && past && !past[9] ? (
-                <Button
-                  tone="candy"
-                  className="mt-5"
-                  disabled={tx.busy}
-                  onClick={() => tx.run("Claim prize", () => writeContractAsync({ address: draw, abi: drawV2Abi, functionName: "claimPrize", args: [lookupN], chainId }))}
-                >
-                  You won — claim prize
-                </Button>
-              ) : null}
-              {account && (canRequest || canSettle) ? (
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {canRequest ? (
-                    <Button
-                      tone="white"
-                      size="sm"
-                      disabled={tx.busy}
-                      onClick={() => tx.run("Request draw", () => writeContractAsync({ address: draw, abi: drawV2Abi, functionName: "requestDraw", args: [lookupN], chainId }))}
-                    >
-                      Request VRF draw
-                    </Button>
-                  ) : null}
-                  {canSettle ? (
-                    <Button
-                      tone="sky"
-                      size="sm"
-                      disabled={tx.busy}
-                      onClick={() => tx.run("Settle round", () => writeContractAsync({ address: draw, abi: drawV2Abi, functionName: "settle", args: [lookupN], chainId }))}
-                    >
-                      Settle round
-                    </Button>
-                  ) : null}
-                  <span className="self-center text-sm font-bold text-navy/60">Permissionless — anyone can move the round forward (gas only).</span>
+            ) : live ? (
+              <LiveBooth amount={amount} setAmount={setAmount} />
+            ) : (
+              <>
+                <PoolWheelStage status="none" idleNote="The pool wheel contract is deploying soon. Nothing to sign yet." />
+                <div className="rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-4 text-center font-display text-[20px] font-extrabold">
+                  Pool wheel deploying soon
                 </div>
-              ) : null}
-              {hasPrevPending !== undefined && prev !== undefined && lookupN === prev && hasPrevPending === 0n ? (
-                <p className="mt-3 text-sm font-bold text-navy/60">Nobody entered last round, so there was no draw.</p>
-              ) : null}
-            </>
-          )}
+              </>
+            )}
+            {demo.allowed && !demo.active ? (
+              <p className="mt-2 text-center text-xs font-bold text-navy/50">
+                Preview only:{" "}
+                <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=pool#pool">
+                  play a demo spin
+                </a>
+              </p>
+            ) : null}
+          </div>
         </Panel>
       </div>
       <div className="col-span-12 space-y-8 lg:col-span-5">
+        <PayoutTable entry={parseAmount(amount)} />
         <HowItWorks />
-        <Panel tone="navy" shadow={false}>
-          <Pill tone="sun">TREASURY</Pill>
-          <p className="mt-3 font-bold text-white/85">
-            Draw V2 holds the 70M TWAK prize allocation and receives BNB from Draw V1 leftovers, 30% of router fees, and unclaimed Draw V1 refunds.
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-navy">
-            <Stat label="Free BNB" value={fmt18(freeBnb, 4)} />
-            <Stat label="Free TWAK" value={fmt18(freeTwak, 0)} />
-          </div>
-        </Panel>
+        <TreasuryNote />
       </div>
     </div>
   );

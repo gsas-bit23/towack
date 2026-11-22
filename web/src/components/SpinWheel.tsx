@@ -2,7 +2,10 @@
 
 import { animate, motion, useAnimationFrame, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useRef } from "react";
-import { PRIZES, SLICES, landingAngle, sliceOf } from "@/lib/prizes";
+import { PRIZES, SLICES, landingAngleIn, sliceIn, type Slice } from "@/lib/prizes";
+
+/** What a slice needs to draw itself. Defaults to the paid Draw V1 deck. */
+export type WheelPrize = { wheel: string; fill: string; ink: string };
 
 /**
  * Carnival prize wheel.
@@ -47,6 +50,8 @@ export function SpinWheel({
   onLanded,
   className = "",
   size = 440,
+  prizes = PRIZES,
+  slices = SLICES,
 }: {
   mode: WheelMode;
   prizeId?: number;
@@ -54,6 +59,8 @@ export function SpinWheel({
   onLanded?: () => void;
   className?: string;
   size?: number;
+  prizes?: readonly WheelPrize[];
+  slices?: readonly Slice[];
 }) {
   const reduce = useReducedMotion();
   const rot = useMotionValue(0);
@@ -81,7 +88,7 @@ export function SpinWheel({
       return;
     }
     if (prizeId === undefined) return;
-    const landing = landingAngle(prizeId, salt);
+    const landing = landingAngleIn(slices, prizeId, salt);
     if (mode === "landed" || reduce) {
       rot.set(targetRotation(rot.get(), 0, landing));
       speed.current = 0;
@@ -95,7 +102,7 @@ export function SpinWheel({
     speed.current = 0;
     const controls = animate(rot, to, { duration: LAND_SECONDS, ease: LAND_EASE, onComplete: () => landedCb.current?.() });
     return () => controls.stop();
-  }, [mode, prizeId, salt, reduce, rot]);
+  }, [mode, prizeId, salt, reduce, rot, slices]);
 
   // Pointer flicks as each rim peg passes (pegs every 15°).
   const flick = useTransform(rot, (r) => {
@@ -105,7 +112,7 @@ export function SpinWheel({
   });
 
   const won = mode === "land" || mode === "landed" ? prizeId : undefined;
-  const winSlice = won !== undefined ? sliceOf(won) : undefined;
+  const winSlice = won !== undefined ? sliceIn(slices, won) : undefined;
 
   return (
     // pt-[6%]: room for the needle, which pokes above the wheel square.
@@ -118,8 +125,8 @@ export function SpinWheel({
           <motion.g style={{ rotate: rot, transformBox: "view-box", transformOrigin: "50% 50%" }}>
             <circle cx={C} cy={C} r={196} fill="#13204A" />
             <circle cx={C} cy={C} r={186} fill="#FF4FA3" stroke="#13204A" strokeWidth="4" />
-            {SLICES.map((s) => {
-              const p = PRIZES[s.id];
+            {slices.map((s) => {
+              const p = prizes[s.id];
               const width = s.end - s.start;
               const fs = width < 16 ? 17 : width < 30 ? 18 : p.wheel.length > 5 ? 15 : 24;
               return (

@@ -76,7 +76,7 @@ contract DeployTestnet is Script {
         admins[0] = deployer;
         d.timelock = address(new TimelockController(tlDelay, admins, admins, address(0)));
 
-        d.drawV2 = address(new DrawV2(d.timelock, cfg));
+        d.drawV2 = address(new DrawV2(d.timelock, address(0), cfg));
         d.launch =
             address(new TowackLaunch(d.agentId, WBNB, d.drawV2, block.timestamp, block.timestamp + mintDuration, cfg));
         d.rebates = address(new RebateDistributor());

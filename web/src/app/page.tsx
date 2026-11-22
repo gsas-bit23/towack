@@ -187,7 +187,7 @@ export default function Home() {
               Earned from your trading activity and claimed on-chain. Not sit-and-earn staking.
             </FeeCard>
             <FeeCard pct="30%" color="text-sky-deep" bubble="bg-sky-pale" icon="🎟" title="Lottery / Draw V2 treasury">
-              Stocks the prize pool for future ticket rounds.
+              Stocks the BNB pot. 5× and 10× pool-wheel wins take a capped 1–2% bonus from it.
             </FeeCard>
             <FeeCard pct="20%" color="text-sun-deep" bubble="bg-sun-pale" icon="🛠" title="Dev">
               Keeps the contracts, router, and site moving.
@@ -252,8 +252,8 @@ export default function Home() {
                   <span className="font-display text-[24px] font-extrabold">Later</span>
                   <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-black">COMING UP</span>
                 </div>
-                <div className="mt-4 font-display text-[22px] font-extrabold">Draw V2 ticket rounds</div>
-                <p className="mt-2 font-bold text-white/85">Recurring rounds stocked by the Draw V2 allocation and router treasury. MVP contract in testing.</p>
+                <div className="mt-4 font-display text-[22px] font-extrabold">Draw V2 pool wheel</div>
+                <p className="mt-2 font-bold text-white/85">Instant spins paid from a TWAK prize pool, 95% expected return. In testing on testnet.</p>
               </div>
             </div>
           </Reveal>

@@ -14,6 +14,7 @@ const abiDir = join(repo, "web", "src", "abi");
 const targets = [
   ["TowackToken.sol", "TowackToken", "towackTokenAbi"],
   ["TowackLaunch.sol", "TowackLaunch", "towackLaunchAbi"],
+  ["TowackGenesis.sol", "TowackGenesis", "towackGenesisAbi"],
   ["TowackRouter.sol", "TowackRouter", "towackRouterAbi"],
   ["RebateDistributor.sol", "RebateDistributor", "rebateDistributorAbi"],
   ["TeamVesting.sol", "TeamVesting", "teamVestingAbi"],
