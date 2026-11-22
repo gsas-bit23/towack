@@ -7,7 +7,7 @@ import { agentIdAbi, towackLaunchAbi } from "@/abi";
 import { AnimatedNumber, ProgressFill } from "@/components/motion";
 import { DemoWheel, MyWheel } from "@/components/MyWheel";
 import { SpinFeed, WheelStage } from "@/components/PrizeBooth";
-import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
+import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, TxNotice, VrfSource } from "@/components/status";
 import { Button, Check, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { DEMO_SPINS, LAUNCH_PHASES, useDemoWheel, useLaunchState, useRecentSpins } from "@/lib/draw";
@@ -134,6 +134,9 @@ export function MintPanel() {
             <ChainNote />
           </div>
           {legacy ? <LegacyLaunchNote /> : null}
+          <div className="mt-3">
+            <VrfSource consumer={launch} />
+          </div>
           <div className="mt-6">{wheel}</div>
           {demo.allowed && !demo.active ? (
             <p className="mt-2 text-center text-xs font-bold text-navy/50">

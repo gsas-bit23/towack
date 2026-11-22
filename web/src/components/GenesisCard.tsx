@@ -14,7 +14,7 @@ import { AnimatedNumber, Confetti, ProgressFill } from "./motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "./PrizeBooth";
 import { SpinWheel } from "./SpinWheel";
 import { ConnectPill } from "./ConnectPill";
-import { TxNotice } from "./status";
+import { TxNotice, VrfSource } from "./status";
 import { Button, Check, Kicker, Panel, Pill } from "./ui";
 
 const WHEEL_SIZE = 380;
@@ -322,6 +322,7 @@ export function GenesisCard() {
             <div className="flex flex-wrap items-center gap-2">
               <Kicker>Genesis 300 · free</Kicker>
               <Pill tone="sky" className="border-[3px] border-navy">TWAK ONLY</Pill>
+              <VrfSource consumer={genesis} />
             </div>
             <h2 className="mt-2 font-display text-[30px] font-extrabold leading-[1.05] sm:text-[40px]">300 free spins for Agent ID holders</h2>
             <p className="mt-3 font-bold text-navy/75">

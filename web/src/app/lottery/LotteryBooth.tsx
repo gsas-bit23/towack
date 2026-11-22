@@ -8,7 +8,7 @@ import { drawV2Abi, towackTokenAbi } from "@/abi";
 import { Confetti } from "@/components/motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "@/components/PrizeBooth";
 import { SpinWheel } from "@/components/SpinWheel";
-import { AddressLink, ChainNote, NeedsWallet, TxNotice } from "@/components/status";
+import { AddressLink, ChainNote, NeedsWallet, TxNotice, VrfSource } from "@/components/status";
 import { Button, Panel, Pill, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDuration } from "@/lib/format";
@@ -242,10 +242,16 @@ function TreasuryNote() {
       <p className="mt-3 font-bold text-white/85">
         The intended seed is the {POOL_INTENDED_SEED} Draw V2 allocation. On testnet that allocation is locked in the old Draw V2 skeleton, which is also
         the launch&apos;s fixed BNB destination. The new pool wheel is seeded with a {POOL_TESTNET_SEED} testnet stand-in until a full stack redeploy.
+        It draws with the official Chainlink VRF v2.5 coordinator; the earlier test pool (test randomness coordinator) is retired.
       </p>
       {addresses.drawV2Legacy ? (
         <p className="mt-3 break-all text-sm font-bold text-white/70">
           Old treasury: <AddressLink address={addresses.drawV2Legacy} />
+        </p>
+      ) : null}
+      {addresses.drawV2Mock ? (
+        <p className="mt-1 break-all text-sm font-bold text-white/70">
+          Retired test pool: <AddressLink address={addresses.drawV2Mock} />
         </p>
       ) : null}
     </Panel>
@@ -501,7 +507,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
 // ---------------------------------------------------------------- page body
 
 export function LotteryBooth() {
-  const { has } = useTowack();
+  const { has, addresses } = useTowack();
   const demo = usePoolDemo();
   const [amount, setAmount] = useState("");
   const live = has("drawV2");
@@ -513,6 +519,9 @@ export function LotteryBooth() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-[26px] font-extrabold sm:text-[28px]">Pool wheel</h2>
             <ChainNote />
+          </div>
+          <div className="mt-3">
+            <VrfSource consumer={addresses.drawV2} />
           </div>
           <div className="mt-4">
             {demo.active ? (

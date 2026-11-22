@@ -10,7 +10,7 @@ import {TeamVesting} from "../../src/TeamVesting.sol";
 import {DrawV2} from "../../src/DrawV2.sol";
 import {VRFConsumerV25} from "../../src/VRFConsumerV25.sol";
 import {MockAgentId} from "../../src/mocks/MockAgentId.sol";
-import {MockVRFCoordinator} from "../../src/mocks/MockVRFCoordinator.sol";
+import {IVRFCoordinatorV2Plus} from "../../src/interfaces/IVRFCoordinatorV2Plus.sol";
 import {IPancakePair} from "../../src/interfaces/IPancakeV2.sol";
 
 /// Runs only with BSC_FORK=1 (needs network): full listing + swaps against real PancakeSwap v2 testnet.
@@ -28,8 +28,14 @@ contract ForkPancakeTest is Test {
         vm.createSelectFork("bsc_testnet");
 
         MockAgentId agentId = new MockAgentId();
-        MockVRFCoordinator vrf = new MockVRFCoordinator();
-        VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(address(vrf), bytes32(0), 0, 3, 300_000, false);
+        // The REAL Chainlink VRF v2.5 coordinator on the fork: native sub, consumers added, real requests.
+        IVRFCoordinatorV2Plus vrf = IVRFCoordinatorV2Plus(0xDA3b641D438362C440Ac5458c57e00a712b66700);
+        uint256 sub = vrf.createSubscription();
+        vm.deal(address(this), 1 ether);
+        vrf.fundSubscriptionWithNative{value: 0.04 ether}(sub);
+        VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(
+            address(vrf), 0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26, sub, 3, 250_000, true
+        );
         DrawV2 drawV2 = new DrawV2(address(this), address(0), cfg);
         TowackLaunch launch =
             new TowackLaunch(address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg);
@@ -48,6 +54,12 @@ contract ForkPancakeTest is Test {
         TowackRouter router =
             new TowackRouter(address(token), ROUTER, address(agentId), address(rebates), address(drawV2), address(5));
         rebates.bind(address(token), address(router));
+        vrf.addConsumer(sub, address(launch));
+        vrf.addConsumer(sub, address(drawV2));
+        (, uint96 nb,, address subOwner, address[] memory consumers) = vrf.getSubscription(sub);
+        assertEq(nb, 0.04 ether);
+        assertEq(subOwner, address(this));
+        assertEq(consumers.length, 2);
 
         for (uint256 i; i < 20; ++i) {
             address u = address(uint160(0xA0000 + i));
@@ -58,8 +70,12 @@ contract ForkPancakeTest is Test {
         }
         for (uint256 i; i < 20; ++i) {
             (,,,,, uint256 rid) = launch.tickets(address(uint160(0xA0000 + i)));
-            vrf.fulfill(rid, uint256(keccak256(abi.encode(777, i))));
+            uint256[] memory w = new uint256[](1);
+            w[0] = uint256(keccak256(abi.encode(777, i)));
+            vm.prank(address(vrf)); // the coordinator's own callback path (no node on a fork)
+            launch.rawFulfillRandomWords(rid, w);
         }
+        assertTrue(vrf.pendingRequestExists(sub), "20 real requests are pending on the coordinator");
         vm.warp(block.timestamp + 1 days);
         launch.closeMint();
         launch.finalizeListing();

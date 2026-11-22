@@ -3,7 +3,22 @@
 **Repo:** https://github.com/gsas-bit23/towack
 **Milestone:** 1 — instant per-mint prize-wheel contracts redeployed on BSC testnet (97); Arcade Sky frontend wired to the new addresses.
 
-## Genesis 300 free mint (deployed 2026-11-22, 06:46:20 PKT)
+## Official Chainlink VRF v2.5 (deployed 2026-11-22, 18:30:04–18:30:55 PKT)
+Genesis 300 and the DrawV2 pool wheel now use the **official** Chainlink VRF v2.5 coordinator on BSC testnet with one **native-payment (tBNB) subscription**. Paid TowackLaunch stays on MockVRF (see below). Record: `deployments/bsc-testnet.json` → `officialVrf`. Script: `script/DeployOfficialVrfTestnet.s.sol`. All deploy + rehearsal txs `status=0x1`. `--legacy --with-gas-price 1gwei --slow`. Never mainnet; no secrets printed or committed.
+
+- **Config (97):** coordinator [`0xDA3b641D438362C440Ac5458c57e00a712b66700`](https://testnet.bscscan.com/address/0xDA3b641D438362C440Ac5458c57e00a712b66700), key hash `0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26` (50 gwei lane), `nativePayment: true`, 3 confirmations, `callbackGasLimit` **250k**. On-chain: min conf 3, max gas 2.5M, native premium 60%, flat fee 0, `gasAfterPaymentCalculation` 48.5k.
+- **Subscription id:** `108109298338446825657484225053166289400607095163447504257161866471831941368513` (owner = deployer). [create](https://testnet.bscscan.com/tx/0x50a1481829b12596b9616d03474748c8012723fd5a98e2373ba1ab087e0b60a2) · [fund 0.045 tBNB](https://testnet.bscscan.com/tx/0xd7f5b772a47d32390cecce5c81e7aa20c086befd8761851798eceaf6e7f00b77). After two fulfilments the sub holds **0.04440836 tBNB** (charged **0.00059164**).
+- **New Genesis** [`0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F`](https://testnet.bscscan.com/address/0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F) (create [tx](https://testnet.bscscan.com/tx/0x7fe454fb0dbf58dce2ba844a7a14b42296831b5dcfc982319f17cb21946deefa)), funded 8M, open. Sourcify **exact_match** (creation + runtime): [Genesis](https://repo.sourcify.dev/contracts/full_match/97/0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F/).
+- **New DrawV2 pool** [`0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd`](https://testnet.bscscan.com/address/0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd) (create [tx](https://testnet.bscscan.com/tx/0x91aa2586a3f329324f7ee3f249551b24774cf4f1594d48563144e9d985766f0a)), owner = timelock, seeded 5M. Sourcify **exact_match** (creation + runtime): [DrawV2](https://repo.sourcify.dev/contracts/full_match/97/0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd/).
+- **Old mock-VRF consumers:** Genesis `0x8da0…4E78` [closed](https://testnet.bscscan.com/tx/0x1bc19e00c70aa7d8ab1e80f515512ec8c9af13c7ec28a8115df9a30f8cfffd37) and [swept](https://testnet.bscscan.com/tx/0xb2f3563762b95b5d17d6ad0017939c85289fea7881390f357719d912963507b6) 7,978,000 TWAK to the deployer. Pool `0x66E8…0191` left in place (5M+ locked, no withdraw). MockAgentIdNFT reused; deployer registered **token id 2** ([tx](https://testnet.bscscan.com/tx/0x7273de1738d22ff46971fc83e017b616e1ce73ff299657d10f7e517aacb3d7c7)).
+- **Stays on mock VRF:** TowackLaunch [`0x37720d1a42E483fB36d09bc93596a2feF535FF8b`](https://testnet.bscscan.com/address/0x37720d1a42E483fB36d09bc93596a2feF535FF8b) (ownerless, 650M TWAK, immutable VRF → MockVRFCoordinator `0x09d2…3F61`). Paid V1 on testnet stays owner-fulfilled until Mateen approves a **full stack redeploy**.
+- **Funding:** deployer 0.071230003 → **0.020915098** tBNB. Spent **0.045** to the coordinator (credited to the sub) + **0.004575628** deploy gas + **0.000739277** rehearsal gas = **0.050314905**. Leftover sub balance can be recovered later with `cancelSubscription` once no requests are pending.
+- **Real VRF rehearsal (18:32:40–18:33:55 PKT):** callbacks landed in ~3 seconds (Chainlink node `0xa085…2b77`, 1 gwei). Genesis `mint(2)`: prizeId **5 (1.1×, +2,000 extra)**, claimed. [mint](https://testnet.bscscan.com/tx/0x6b380fa71e216d9caa5ed0c76ac93ada28fdc989634c3fa620fc803501210c02) · [VRF fulfill](https://testnet.bscscan.com/tx/0x7a37fdf8a6cb4fc24d15f749aada19456a3ba11aafff55a574f297182d9117d2) · [claim](https://testnet.bscscan.com/tx/0xb75036008ce6926ccc9ebc18028155e3929bd4a5ed680e7fa25d47899d2fce1a). DrawV2 `enter(1000 TWAK)`: prizeId **4 (2×, +2,000 TWAK)**, claimed; `availableTwak` 4,999,000. [approve](https://testnet.bscscan.com/tx/0x9490bcdd990ec85dc1162cc407f3ea83bc8865ddaf5381efa032f2a0afa21a46) · [enter](https://testnet.bscscan.com/tx/0xbe34f176f09527dd29dc7fe6d9443ccad3a4456345bf3990d33f30b146aaa27c) · [VRF fulfill](https://testnet.bscscan.com/tx/0x759cb0c43e8b4629f800ebf1ec5d800c4f8e357703fb08cb74d56b4a65e9b5b9) · [claim](https://testnet.bscscan.com/tx/0xf27df3d05f41d036a98787d20dc70733bdd0188de3b0fc58933d1b780652dcd2). Deployer TWAK after: **112,122,000**.
+- **Tests:** official `VRFCoordinatorV2_5Mock` in the fixture (`lib/chainlink-brownie-contracts` 1.3.0). New `test/OfficialVRF.t.sol` covers encoding/selector parity, constructor validation, unadded-consumer atomic reverts, native billing, worst-case cold callback gas at 250k (DrawV2 ≈158k, Genesis ≈136k, Launch ≈88k incl. mock overhead), OOG-safe state, coordinator-only callback, stale/wrong-consumer ids, retry, reentrancy, pending-reservation fuzz. Independent review: **`forge test` 130 passed, 0 failed, 1 skipped**. **`FOUNDRY_FUZZ_RUNS=2000` 12/12 passed.** `npm run lint` clean.
+- **Frontend:** `addresses.json` 97 filled (`genesis`, `drawV2`, `vrfSubId`). Old contracts at `genesisMock` / `drawV2Mock`. `VrfSource` badge reads `vrfCoordinator()` (“✓ Chainlink VRF v2.5” or a test-coordinator note for the live Launch). Wheels wait for `PrizeAssigned` / `SpinAssigned`; the app never calls `fulfillPseudo`. A new Vercel preview was not deployed in this round (current preview still points at the old mock-VRF Genesis/DrawV2 until one is cut).
+
+## Genesis 300 free mint (first deploy 2026-11-22, 06:46:20 PKT; closed and replaced at 18:30 PKT)
+The mock-VRF Genesis `0x8da04F92BC4E3AE985641D960039EE2Ead5F4E78` below is **closed** (surplus swept). The live official-VRF Genesis is `0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F` — see the section above.
 New contract `src/TowackGenesis.sol`. `TowackLaunch` and the paid 5,000-slot deck are **unchanged**. Details: `docs/ARCHITECTURE.md` → TowackGenesis.
 - **Design:** 300 free mints for Agent ID holders (ERC-721 `ownerOf(tokenId)` gate; token id *and* wallet single-use). **20,000 TWAK** base at mint plus one VRF spin of a TWAK-only 300-slot deck: 5× ×5, 3× ×10, 2× ×20, 1.5× ×40, 1.25× ×50, 1.1× ×75, no bonus ×100. Extra = (mult − 1) × 20k, pulled with `claim()`. Base 6M + extra 2M = **8,000,000 TWAK budget = 16% of the 50M ecosystem allocation**, pre-funded via `fund()`. No BNB anywhere. Owner (Ownable2Step, deployer → timelock later) can open/close and sweep only surplus above `committed()` to the ecosystem wallet. `retryPrize` after 1h.
 - **Tests (forge 1.10.0):** `forge test`: **89 passed, 0 failed, 1 skipped** (68 existing + 21 new in `test/TowackGenesis.t.sol`; skipped = gated fork test). `FOUNDRY_FUZZ_RUNS=2000 forge test --match-test testFuzz`: **8/8 passed**, including the new `testFuzz_DeckInvariants` (K ≤ 300) and `testFuzz_MintFlowSolvent`.
@@ -63,9 +78,10 @@ Resumed after the 5:00 AM PKT Claude Code reset. Foundry untouched. Lint + `NEXT
 New preview (not production, SSO on): https://towack-235s5xz7h-abcd-532d.vercel.app
 
 ## Next steps (product)
-1. Send more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` to run a real 0.1 tBNB mint (balance after the second deploy + MockAgentId registration is ~0.0776 tBNB). The deployer already holds a Mock Agent ID on the **new** mock (`0xfF5f224349e6aDB7754249d5e4352dB0910717B7`).
-2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
-3. End-to-end testnet rehearsal once funded: mint, owner-fulfil MockVRF, watch the wheel land, claim, then later close / finalize / router / rebates.
+1. **Needs Mateen:** a full token-stack redeploy if paid V1 (`TowackLaunch`) should also use official Chainlink VRF. The live Launch is ownerless with immutable VRF config and holds 650M TWAK plus one claimed paid mint.
+2. Cut a new Vercel preview (not production) so the UI points at official-VRF Genesis/DrawV2. The current preview still has the old mock-VRF addresses.
+3. More tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` for a real 0.1 paid mint (current balance **0.020915098** tBNB). Until the full redeploy, that mint would still use MockVRF `fulfillPseudo`.
+4. Optional: BscScan verification once a paid API plan covers chain 97. Genesis + DrawV2 (official VRF) are already Sourcify **exact_match**.
 
 ## Vercel preview (2026-11-22, 06:50:24 PKT)
 Preview only (not production), project `abcd-532d/towack`, Node 24.x, framework Next.js. Deployment protection remains `vercel_authentication`.
@@ -182,7 +198,7 @@ Design details: `docs/ARCHITECTURE.md`.
 - `incorrect-equality` (`== 0` checks), `uninitialized-local` (zero-initialised accumulators), `unused-return` (`pair.mint`): benign.
 
 ## Deploy status
-**Redeployed on BSC testnet (chain 97)** at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch). Addresses, txs, Sourcify links, and smoke-test hashes are in the section at the top of this file and in `deployments/bsc-testnet.json`. The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is ~0.0776 tBNB — not enough for a 0.1 mint. Default deploy used MockVRFCoordinator (testnet only). Official VRF v2.5 was not wired.
+**Redeployed on BSC testnet (chain 97)** at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch). Official Chainlink VRF v2.5 was wired for Genesis + DrawV2 at 18:30 PKT the same day (see the section at the top and `deployments/bsc-testnet.json` → `officialVrf`). The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is **0.020915098 tBNB** — not enough for a 0.1 mint. Paid Launch still uses MockVRFCoordinator.
 
 
 ## Known gaps / decisions to confirm
@@ -199,6 +215,6 @@ Design details: `docs/ARCHITECTURE.md`.
 - The mainnet deploy script is intentionally not written.
 
 ## Later
-1. End-to-end testnet rehearsal on the new contracts: mint (needs more tBNB), VRF fulfil, claim, close, finalize, router trades, rebate claim.
-2. Broadcast Genesis + the DrawV2 pool wheel; plan the full stack redeploy that seeds the pool with the real 70M. Review the rebate anti-wash parameters.
+1. Paid-V1 close / finalize / router trades / rebate claim on the existing mock-VRF Launch (needs more tBNB for further 0.1 mints). Official-VRF Genesis mint + DrawV2 spin already rehearsed 18:32–18:33 PKT.
+2. Plan the full stack redeploy that puts Launch on official VRF and seeds the pool with the real 70M. Review the rebate anti-wash parameters.
 3. No mainnet deploy and no hackathon form submit until Mateen asks.

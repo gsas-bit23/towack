@@ -112,19 +112,26 @@ contract TowackLaunchTest is Fixture {
 
     // ------------------------------------------------------------ per-mint VRF
     function test_EachMintRequestsVrfWithConfig() public {
-        mintN(3);
-        assertEq(vrf.nextRequestId(), 4); // one request per mint
+        mintN(2);
+        agentId.registerFor(user(2));
+        vm.deal(user(2), PRICE);
+        vm.recordLogs();
+        vm.prank(user(2));
+        launch.mint{value: PRICE}();
+        VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
         for (uint256 i; i < 3; ++i) {
             uint256 rid = requestOf(user(i));
-            assertEq(rid, i + 1);
+            assertEq(rid, i + 1); // one request per mint
             assertEq(launch.requestMinter(rid), user(i));
         }
-        (bytes32 kh, uint256 sub, uint16 conf, uint32 gasLim, uint32 words,) = vrf.lastRequest();
-        assertEq(kh, bytes32(uint256(1)));
-        assertEq(sub, 1);
-        assertEq(conf, 3);
-        assertEq(gasLim, 300_000);
-        assertEq(words, 1);
+        assertEq(r.requestId, 3);
+        assertEq(r.keyHash, KEY_HASH);
+        assertEq(r.subId, subId);
+        assertEq(r.confirmations, 3);
+        assertEq(r.callbackGasLimit, CALLBACK_GAS);
+        assertEq(r.numWords, 1);
+        assertEq(r.sender, address(launch));
+        assertEq(r.extraArgs, abi.encodeWithSelector(bytes4(0x92fd1338), true)); // nativePayment: true
         assertEq(launch.pendingCount(), 3);
     }
 
@@ -149,7 +156,7 @@ contract TowackLaunchTest is Fixture {
         // word 0 on a full deck -> slot 0 -> tier 0 (full refund)
         vm.expectEmit(true, true, false, true, address(launch));
         emit TowackLaunch.PrizeAssigned(user(0), 1, 0, 0.1 ether, 0);
-        vrf.fulfill(1, 0);
+        fulfillTo(address(launch), 1, 0);
         (bool minted, bool assigned, uint8 id, uint256 b, uint256 t, bool claimed) = launch.prizeOf(user(0));
         assertTrue(minted && assigned && !claimed);
         assertEq(id, 0);
@@ -168,7 +175,7 @@ contract TowackLaunchTest is Fixture {
         launch.rawFulfillRandomWords(999, w); // unknown id: no effect, no revert
         assertEq(launch.assignedCount(), 0);
 
-        vrf.fulfill(1, 0); // tier 0
+        fulfillTo(address(launch), 1, 0); // tier 0
         vm.prank(address(vrf));
         launch.rawFulfillRandomWords(1, w); // duplicate: ignored
         (,, uint8 id,,,) = launch.prizeOf(user(0));
@@ -198,12 +205,12 @@ contract TowackLaunchTest is Fixture {
         assertTrue(second != first);
         assertEq(launch.requestMinter(first), address(0));
 
-        vrf.fulfill(first, 0); // stale: ignored
+        fulfillTo(address(launch), first, 0); // stale: ignored
         (, bool assigned,,,,) = launch.prizeOf(user(0));
         assertFalse(assigned);
         assertEq(launch.remainingTotal(), 5000);
 
-        vrf.fulfill(second, 4999); // last slot -> tier 10 (no win)
+        fulfillTo(address(launch), second, 4999); // last slot -> tier 10 (no win)
         (, bool a2, uint8 id,,,) = launch.prizeOf(user(0));
         assertTrue(a2);
         assertEq(id, 10);
@@ -217,13 +224,13 @@ contract TowackLaunchTest is Fixture {
 
     function test_RetryWorksAfterClose() public {
         mintN(2);
-        vrf.fulfill(requestOf(user(0)), 1);
+        fulfillTo(address(launch), requestOf(user(0)), 1);
         close();
         vm.expectRevert(abi.encodeWithSelector(TowackLaunch.PrizesPending.selector, 1));
         launch.finalizeListing();
         vm.warp(block.timestamp + 1 hours);
         launch.retryPrize(user(1));
-        vrf.fulfill(requestOf(user(1)), 2);
+        fulfillTo(address(launch), requestOf(user(1)), 2);
         launch.finalizeListing();
         assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Finalized));
     }
@@ -248,7 +255,7 @@ contract TowackLaunchTest is Fixture {
 
     function test_CallbackGasWellUnderLimit() public {
         mintN(2);
-        vrf.fulfill(requestOf(user(0)), 3); // warm-up so the measured call is a typical non-first draw
+        fulfillTo(address(launch), requestOf(user(0)), 3); // warm-up so the measured call is a typical non-first draw
         uint256 rid = requestOf(user(1));
         uint256[] memory w = new uint256[](1);
         w[0] = 4_998; // 4999 slots remain: last slot = worst-case walk (tier 10)
@@ -273,9 +280,9 @@ contract TowackLaunchTest is Fixture {
 
     function test_ClaimImmediatelyAfterAssignment_DoubleClaimReverts() public {
         mintN(3);
-        vrf.fulfill(requestOf(user(0)), 0); // full refund
-        vrf.fulfill(requestOf(user(1)), 3499); // slot 3499 of 4999 remaining: tier 4 (5x) after the pop above
-        vrf.fulfill(requestOf(user(2)), 4997); // last slot of the 4998 remaining: no win
+        fulfillTo(address(launch), requestOf(user(0)), 0); // full refund
+        fulfillTo(address(launch), requestOf(user(1)), 3499); // slot 3499 of 4999 remaining: tier 4 (5x) after the pop above
+        fulfillTo(address(launch), requestOf(user(2)), 4997); // last slot of the 4998 remaining: no win
 
         (,, uint8 id1,,,) = launch.prizeOf(user(1));
         assertEq(id1, 4);
@@ -437,9 +444,7 @@ contract TowackLaunchTest is Fixture {
         assertEq(address(launch).balance, launch.bnbOutstanding());
         // Unassigned bonus reserve burned.
         assertEq(launch.bonusBurned(), 50_000_000e18 - assignedBonus);
-        assertEq(
-            supply0 - token.totalSupply(), launch.bonusBurned() + (200_000_000e18 - launch.lpTokens()), "burns"
-        );
+        assertEq(supply0 - token.totalSupply(), launch.bonusBurned() + (200_000_000e18 - launch.lpTokens()), "burns");
         assertEq(token.balanceOf(address(launch)), launch.bonusOutstanding());
         MockPancakePair pair = MockPancakePair(token.pair());
         assertEq(token.balanceOf(address(pair)), wbnb.balanceOf(address(pair)) * 800_000);
@@ -449,7 +454,7 @@ contract TowackLaunchTest is Fixture {
     /// N=1 and the sole minter wins (and claims) a full refund: nothing left to list.
     function test_Undersold_NothingToList() public {
         mintN(1);
-        vrf.fulfill(requestOf(user(0)), 0);
+        fulfillTo(address(launch), requestOf(user(0)), 0);
         vm.prank(user(0));
         launch.claim();
         close();
@@ -542,16 +547,7 @@ contract TowackLaunchTest is Fixture {
 
     // ------------------------------------------------------------ helpers
     function _harness() internal returns (DeckHarness) {
-        return new DeckHarness(
-            VRFConsumerV25.VRFConfig({
-                coordinator: address(vrf),
-                keyHash: bytes32(0),
-                subId: 0,
-                requestConfirmations: 3,
-                callbackGasLimit: 300_000,
-                nativePayment: false
-            })
-        );
+        return new DeckHarness(vrfCfg());
     }
 
     function _claimIfAny(address u, uint256 paidB, uint256 paidT) internal returns (uint256, uint256) {

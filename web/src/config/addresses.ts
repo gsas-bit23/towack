@@ -14,8 +14,23 @@ export const CONTRACT_KEYS = [
   "wbnb",
   "pancakeRouter",
   "pancakeFactory",
-  "genesis",
+  "genesis", // Genesis 300 on the OFFICIAL Chainlink VRF v2.5 coordinator
+  "genesisMock", // old Genesis on MockVRFCoordinator (closed; history only)
+  "drawV2Mock", // old pool wheel on MockVRFCoordinator (5M locked, no withdraw; history only)
+  "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (Genesis + DrawV2)
+  "launchVrfMock", // MockVRFCoordinator still used by the testnet TowackLaunch (owner-fulfilled)
 ] as const;
+
+/** Non-address VRF metadata kept next to the address book (vrfSubId, vrfKeyHash). */
+export const VRF_META: Record<SupportedChainId, { subId?: string; keyHash?: string }> = {
+  97: { subId: str(97, "vrfSubId"), keyHash: str(97, "vrfKeyHash") },
+  56: { subId: str(56, "vrfSubId"), keyHash: str(56, "vrfKeyHash") },
+};
+
+function str(chainId: SupportedChainId, key: string): string | undefined {
+  const v = (raw as Record<string, Record<string, string | undefined>>)[String(chainId)]?.[key];
+  return v ? v : undefined;
+}
 
 export type ContractKey = (typeof CONTRACT_KEYS)[number];
 export type SupportedChainId = 97 | 56;

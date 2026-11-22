@@ -28,18 +28,8 @@ contract TowackGenesisTest is Fixture {
     function setUp() public override {
         super.setUp();
         nft = new MockAgentIdNFT();
-        genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this), _cfg());
-    }
-
-    function _cfg() internal view returns (VRFConsumerV25.VRFConfig memory) {
-        return VRFConsumerV25.VRFConfig({
-            coordinator: address(vrf),
-            keyHash: bytes32(0),
-            subId: 0,
-            requestConfirmations: 3,
-            callbackGasLimit: 300_000,
-            nativePayment: false
-        });
+        genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this), vrfCfg());
+        vrf.addConsumer(subId, address(genesis));
     }
 
     // ---------------------------------------------------------------- helpers
@@ -82,7 +72,7 @@ contract TowackGenesisTest is Fixture {
 
     function _fulfillN(uint256 n, uint256 salt) internal {
         for (uint256 i; i < n; ++i) {
-            vrf.fulfill(_req(gUser(i)), wordFor(salt, i));
+            fulfillTo(address(genesis), _req(gUser(i)), wordFor(salt, i));
         }
     }
 
@@ -261,12 +251,17 @@ contract TowackGenesisTest is Fixture {
         (address u, uint256 id) = _newHolder(0);
         vm.expectEmit(true, true, true, true, address(genesis));
         emit TowackGenesis.GenesisMinted(u, 1, id, BASE);
+        vm.recordLogs();
         _mint(u, id);
+        VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
+        assertEq(r.callbackGasLimit, CALLBACK_GAS);
+        assertEq(r.subId, subId);
+        assertEq(r.keyHash, KEY_HASH);
+        assertEq(r.confirmations, 3);
+        assertEq(r.sender, address(genesis));
         assertEq(token.balanceOf(u), BASE);
         uint256 req = _req(u);
         assertEq(genesis.requestMinter(req), u);
-        (,,, uint32 cbGas,,) = vrf.lastRequest();
-        assertEq(cbGas, 300_000);
 
         // claim before assignment
         vm.prank(u);
@@ -276,7 +271,7 @@ contract TowackGenesisTest is Fixture {
         // word 0 -> pick 0 -> tier 0 (5x)
         vm.expectEmit(true, true, false, true, address(genesis));
         emit TowackGenesis.PrizeAssigned(u, 1, 0, 80_000e18);
-        vrf.fulfill(req, 0);
+        fulfillTo(address(genesis), req, 0);
         (bool minted, bool assigned, uint8 pid, uint256 extra, bool claimed) = genesis.prizeOf(u);
         assertTrue(minted && assigned && !claimed);
         assertEq(pid, 0);
@@ -295,7 +290,7 @@ contract TowackGenesisTest is Fixture {
         _fundAndOpen();
         (address u, uint256 id) = _newHolder(0);
         _mint(u, id);
-        vrf.fulfill(_req(u), 299); // last slot -> tier 6
+        fulfillTo(address(genesis), _req(u), 299); // last slot -> tier 6
         (,, uint8 pid,,) = genesis.prizeOf(u);
         assertEq(pid, 6);
         vm.prank(u);
@@ -314,9 +309,9 @@ contract TowackGenesisTest is Fixture {
         genesis.retryPrize(u);
         uint256 r2 = _req(u);
         assertTrue(r2 != r1);
-        vrf.fulfill(r1, 0); // stale: ignored
+        fulfillTo(address(genesis), r1, 0); // stale: ignored
         assertEq(genesis.assignedCount(), 0);
-        vrf.fulfill(r2, 0);
+        fulfillTo(address(genesis), r2, 0);
         assertEq(genesis.assignedCount(), 1);
         vm.expectRevert(TowackGenesis.AlreadyAssigned.selector);
         genesis.retryPrize(u);
@@ -390,8 +385,8 @@ contract TowackGenesisTest is Fixture {
         genesis.sweepSurplus();
 
         // pending draws and assigned prizes still pay out in full
-        vrf.fulfill(_req(gUser(8)), wordFor(7, 8));
-        vrf.fulfill(_req(gUser(9)), wordFor(7, 9));
+        fulfillTo(address(genesis), _req(gUser(8)), wordFor(7, 8));
+        fulfillTo(address(genesis), _req(gUser(9)), wordFor(7, 9));
         for (uint256 i; i < 10; ++i) {
             (,,, uint256 extra,) = genesis.prizeOf(gUser(i));
             if (extra > 0) {
@@ -426,16 +421,23 @@ contract TowackGenesisTest is Fixture {
         (address u, uint256 id) = _newHolder(0);
         _mint(u, id);
         uint256 req = _req(u);
+        uint256[] memory w = new uint256[](1);
+        w[0] = 199; // last 1.1x slot: longest walk that still books extra (3 extra SSTOREs)
+        vm.cool(address(genesis));
+        vm.prank(address(vrf));
         uint256 g = gasleft();
-        vrf.fulfill(req, 299);
+        genesis.rawFulfillRandomWords(req, w);
         uint256 used = g - gasleft();
+        emit log_named_uint("genesis callback gas (cold, worst walk with extra)", used);
         assertLt(used, 150_000);
+        (,, uint8 pid,,) = genesis.prizeOf(u);
+        assertEq(pid, 5);
     }
 
     // ---------------------------------------------------------------- fuzz
     function testFuzz_DeckInvariants(uint256 k, uint256 salt) public {
         k = bound(k, 1, 300);
-        GenesisDeckHarness h = new GenesisDeckHarness(address(token), address(nft), ecosystem, _cfg());
+        GenesisDeckHarness h = new GenesisDeckHarness(address(token), address(nft), ecosystem, vrfCfg());
         uint256[7] memory drawn;
         uint256 extra;
         for (uint256 i; i < k; ++i) {

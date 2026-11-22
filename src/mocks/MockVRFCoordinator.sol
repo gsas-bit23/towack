@@ -7,8 +7,10 @@ interface IVRFConsumer {
     function rawFulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external;
 }
 
-/// @notice TESTNET/TEST ONLY. NOT a source of secure randomness: the owner chooses/derives the word.
-/// Production must use the real Chainlink VRF v2.5 coordinator.
+/// @notice LEGACY, TESTNET ONLY. NOT a source of secure randomness: the owner chooses/derives the word.
+/// Kept only because the live BSC-testnet TowackLaunch (0x3772…8b, ownerless, immutable VRF config) was built
+/// against it at 0x09d2…3F61. No script or test deploys it any more; tests use Chainlink's official
+/// VRFCoordinatorV2_5Mock and production uses the official Chainlink VRF v2.5 coordinator.
 contract MockVRFCoordinator {
     address public immutable owner;
     uint256 public nextRequestId = 1;

@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { Address } from "viem";
+import { useReadContract } from "wagmi";
 import type { ContractKey } from "@/config/addresses";
 import { useTowack } from "@/lib/chain";
 import type { TxState } from "@/lib/tx";
@@ -22,6 +24,10 @@ const KEY_LABEL: Record<ContractKey, string> = {
   pancakeRouter: "PancakeSwap router",
   pancakeFactory: "PancakeSwap factory",
   genesis: "Genesis 300",
+  genesisMock: "Genesis 300 (old, mock VRF)",
+  drawV2Mock: "Draw V2 pool (old, mock VRF)",
+  vrfCoordinator: "Chainlink VRF v2.5 coordinator",
+  launchVrfMock: "Test VRF coordinator (Launch)",
 };
 
 export function DeployingSoon({ keys, children }: { keys: ContractKey[]; children?: ReactNode }) {
@@ -149,6 +155,45 @@ export function LegacyLaunchNote() {
     <p className="mt-4 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
       Heads up: the launch contract on this network is the previous single-seed version. The new per-mint prize wheel contract is being
       redeployed, so minting from this page is paused until the address is updated.
+    </p>
+  );
+}
+
+const VRF_COORDINATOR_ABI = [
+  { type: "function", name: "vrfCoordinator", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+] as const;
+
+/**
+ * Where a contract's randomness comes from, read on-chain (`vrfCoordinator()`): the official Chainlink VRF v2.5
+ * coordinator, or the owner-answered test coordinator that the testnet launch contract still uses.
+ */
+export function VrfSource({ consumer }: { consumer?: Address }) {
+  const { chainId, addresses, meta } = useTowack();
+  const { data } = useReadContract({
+    address: consumer,
+    abi: VRF_COORDINATOR_ABI,
+    functionName: "vrfCoordinator",
+    chainId,
+    query: { enabled: Boolean(consumer), staleTime: Infinity },
+  });
+  if (!consumer || !data) return null;
+  const official = addresses.vrfCoordinator && data.toLowerCase() === addresses.vrfCoordinator.toLowerCase();
+  if (official) {
+    return (
+      <a
+        href={`${meta.explorer}/address/${data}`}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex min-h-10 items-center gap-2 rounded-full border-[3px] border-navy bg-white px-3 text-xs font-black text-navy hover:text-candy"
+      >
+        ✓ Chainlink VRF v2.5
+      </a>
+    );
+  }
+  return (
+    <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-2 text-sm font-bold">
+      {meta.testnet ? "Testnet: " : ""}this contract uses a test randomness coordinator, answered by the Towack team, not Chainlink VRF. Spins land
+      once the team answers.
     </p>
   );
 }

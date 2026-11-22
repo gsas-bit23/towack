@@ -6,13 +6,19 @@
     "router": "0x46dafE460EEdb1FedEE844A56BF364c20252AA7d",
     "rebateDistributor": "0x26a71aEFD06290212d86130a4775dD1e98A84BA0",
     "teamVesting": "0x1680f43c8d44A4357D874d85F80F4EA582ea255a",
-    "drawV2": "0x66E84a08f770a137a0F1263881d0E12279450191",
+    "drawV2": "0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd",
     "drawV2Legacy": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
     "timelock": "0x66F42673E3d31Dd90eE3fDEdb75012F0d02A1d0e",
     "wbnb": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
     "pancakeRouter": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
     "pancakeFactory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17",
-    "genesis": "0x8da04F92BC4E3AE985641D960039EE2Ead5F4E78"
+    "genesis": "0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F",
+    "genesisMock": "0x8da04F92BC4E3AE985641D960039EE2Ead5F4E78",
+    "drawV2Mock": "0x66E84a08f770a137a0F1263881d0E12279450191",
+    "vrfCoordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+    "launchVrfMock": "0x09d282Fc69840BcF4047b89F884738f041f53F61",
+    "vrfSubId": "108109298338446825657484225053166289400607095163447504257161866471831941368513",
+    "vrfKeyHash": "0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26"
   },
   "56": {
     "agentId": "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
@@ -27,6 +33,12 @@
     "wbnb": "",
     "pancakeRouter": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
     "pancakeFactory": "",
-    "genesis": ""
+    "genesis": "",
+    "genesisMock": "",
+    "drawV2Mock": "",
+    "vrfCoordinator": "",
+    "launchVrfMock": "",
+    "vrfSubId": "",
+    "vrfKeyHash": ""
   }
 }

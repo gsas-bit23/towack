@@ -410,5 +410,119 @@
         "fulfillPseudo": "0x361a11e20df18473debd2624007122567c374a1a2960dcfa5242657577fe9cc2"
       }
     }
+  },
+  "officialVrf": {
+    "deployedAtPkt": "2026-11-22 18:30:04\u201318:30:55 PKT",
+    "rehearsedAtPkt": "2026-11-22 18:32:40\u201318:33:55 PKT",
+    "script": "script/DeployOfficialVrfTestnet.s.sol",
+    "flags": "--legacy --with-gas-price 1gwei --slow",
+    "chainId": 97,
+    "deployer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "note": "Genesis 300 and the DrawV2 pool wheel moved to official Chainlink VRF v2.5 with one native-payment (tBNB) subscription. TowackLaunch / Token / Router were not redeployed; paid V1 stays on MockVRFCoordinator until a full stack redeploy is approved. Old Genesis was closed and its 7,978,000 TWAK surplus swept. Old DrawV2 pool keeps its 5M (no withdraw).",
+    "vrf": {
+      "coordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+      "keyHash": "0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26",
+      "nativePayment": true,
+      "requestConfirmations": 3,
+      "callbackGasLimit": 250000,
+      "subId": "108109298338446825657484225053166289400607095163447504257161866471831941368513",
+      "subOwner": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+      "nativeFundedWei": "45000000000000000",
+      "nativeRemainingWei": "44408360000000000",
+      "fulfillmentCostWei": "591640000000000",
+      "reqCountAfterRehearsal": 2,
+      "consumers": [
+        "0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F",
+        "0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd"
+      ]
+    },
+    "contracts": {
+      "towackGenesis": "0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F",
+      "drawV2": "0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd",
+      "agentIdNft": "0x70BC7133E62427DAE709299454ed8c9015898036",
+      "agentTokenId": 2,
+      "oldGenesisClosed": "0x8da04F92BC4E3AE985641D960039EE2Ead5F4E78",
+      "oldGenesisSweptTwak": "7978000000000000000000000",
+      "drawV2MockLeft": "0x66E84a08f770a137a0F1263881d0E12279450191",
+      "drawV2Skeleton": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
+      "launchStaysOnMock": "0x37720d1a42E483fB36d09bc93596a2feF535FF8b",
+      "launchVrfMock": "0x09d282Fc69840BcF4047b89F884738f041f53F61",
+      "token": "0xD2A3eDD943d442af41e61c699F77e7E63ACff7dD",
+      "timelock": "0x66F42673E3d31Dd90eE3fDEdb75012F0d02A1d0e"
+    },
+    "funding": {
+      "deployerTbnbBefore": "0.071230003",
+      "deployerTbnbAfter": "0.020915098",
+      "subscriptionFundTbnb": "0.045",
+      "deployGasTbnb": "0.004575628",
+      "rehearsalGasTbnb": "0.000739277",
+      "totalDeployerSpentTbnb": "0.050314905",
+      "subscriptionChargedTbnb": "0.00059164",
+      "deployerTwakAfter": "112122000000000000000000000"
+    },
+    "transactions": {
+      "createSub": "0x50a1481829b12596b9616d03474748c8012723fd5a98e2373ba1ab087e0b60a2",
+      "fundSubscriptionWithNative": "0xd7f5b772a47d32390cecce5c81e7aa20c086befd8761851798eceaf6e7f00b77",
+      "oldGenesisClose": "0x1bc19e00c70aa7d8ab1e80f515512ec8c9af13c7ec28a8115df9a30f8cfffd37",
+      "oldGenesisSweep": "0xb2f3563762b95b5d17d6ad0017939c85289fea7881390f357719d912963507b6",
+      "genesisCreate": "0x7fe454fb0dbf58dce2ba844a7a14b42296831b5dcfc982319f17cb21946deefa",
+      "addConsumerGenesis": "0xbf04e8899a74931cc1d2f9352fd803b2bbd5c3c57a44d8d0b201fdeb84523864",
+      "approveGenesis": "0xb321c52791a4417608136929e56539809c9bbeceb8566674cf19912016abb4cd",
+      "genesisFund": "0x314aa8071d98060fd866396c511267eac35551bcff38a4196d743f93f19bc3ae",
+      "genesisOpen": "0x370ac3c006e027eb15a20b932faa050ba0733dc2e01826012bf69b77d8ee4de4",
+      "drawV2Create": "0x91aa2586a3f329324f7ee3f249551b24774cf4f1594d48563144e9d985766f0a",
+      "addConsumerDrawV2": "0x07bf118c9d885837792fa39716eae872aa7b940dc36a450667240e1eabe0f5b7",
+      "approveDrawV2": "0x69b579db99c8e8690b044edf88fb16f4cb1b127d48b78458872f66652b841bf1",
+      "drawV2Seed": "0x52800c572a3550237410b43bd3b97ca944ddb9fb9985f15ee58578023153aaa0",
+      "registerAgentTokenId2": "0x7273de1738d22ff46971fc83e017b616e1ce73ff299657d10f7e517aacb3d7c7"
+    },
+    "rehearsal": {
+      "genesis300": {
+        "agentTokenId": 2,
+        "prizeId": 5,
+        "label": "1.1\u00d7",
+        "baseTwak": "20000",
+        "extraTwak": "2000",
+        "claimed": true,
+        "mintCountAfter": 1,
+        "txs": {
+          "mint": "0x6b380fa71e216d9caa5ed0c76ac93ada28fdc989634c3fa620fc803501210c02",
+          "vrfFulfill": "0x7a37fdf8a6cb4fc24d15f749aada19456a3ba11aafff55a574f297182d9117d2",
+          "claim": "0xb75036008ce6926ccc9ebc18028155e3929bd4a5ed680e7fa25d47899d2fce1a"
+        }
+      },
+      "drawV2": {
+        "spinId": 1,
+        "prizeId": 4,
+        "label": "2\u00d7",
+        "entryTwak": "1000",
+        "payoutTwak": "2000",
+        "payoutBnb": "0",
+        "availableTwakAfter": "4999000000000000000000000",
+        "claimed": true,
+        "txs": {
+          "approve": "0x9490bcdd990ec85dc1162cc407f3ea83bc8865ddaf5381efa032f2a0afa21a46",
+          "enter": "0xbe34f176f09527dd29dc7fe6d9443ccad3a4456345bf3990d33f30b146aaa27c",
+          "vrfFulfill": "0x759cb0c43e8b4629f800ebf1ec5d800c4f8e357703fb08cb74d56b4a65e9b5b9",
+          "claim": "0xf27df3d05f41d036a98787d20dc70733bdd0188de3b0fc58933d1b780652dcd2"
+        }
+      }
+    },
+    "verification": {
+      "sourcify": {
+        "TowackGenesis": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F/"
+        },
+        "DrawV2": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd/"
+        }
+      }
+    }
   }
 }

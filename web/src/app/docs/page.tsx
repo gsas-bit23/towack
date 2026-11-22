@@ -49,7 +49,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How is the draw kept fair?",
-    a: "Every mint requests its own Chainlink VRF v2.5 random word. The contract uses it only as an index into the remaining fixed deck (word mod slots left) and removes that slot, so the deck counts are exact and nobody can change the word or who it belongs to. The launch contract has no owner.",
+    a: "Every mint requests its own Chainlink VRF v2.5 random word. The contract uses it only as an index into the remaining fixed deck (word mod slots left) and removes that slot, so the deck counts are exact and nobody can change the word or who it belongs to. The launch contract has no owner. On BSC testnet, Genesis 300 and the pool wheel use the official Chainlink VRF v2.5 coordinator (paid in test BNB); the testnet paid-mint contract still uses a team-answered test coordinator until the full testnet redeploy.",
   },
   {
     q: "Are rebates staking?",

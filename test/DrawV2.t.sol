@@ -6,7 +6,7 @@ import {Fixture} from "./Fixture.sol";
 import {DrawV2} from "../src/DrawV2.sol";
 import {TokenBound} from "../src/TokenBound.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
-import {MockVRFCoordinator} from "../src/mocks/MockVRFCoordinator.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -35,15 +35,17 @@ contract DrawV2Test is Fixture, WheelWords {
         token.approve(address(drawV2), type(uint256).max);
     }
 
-    function _cfg() internal view returns (VRFConsumerV25.VRFConfig memory) {
-        return VRFConsumerV25.VRFConfig({
-            coordinator: address(vrf),
-            keyHash: bytes32(0),
-            subId: 0,
-            requestConfirmations: 3,
-            callbackGasLimit: 300_000,
-            nativePayment: false
-        });
+    /// Stand-alone pool on the shared official-mock subscription (consumer added, like the deploy script).
+    function _newPool(address preset) internal returns (DrawV2 d) {
+        d = new DrawV2(address(timelock), preset, vrfCfg());
+        vrf.addConsumer(subId, address(d));
+    }
+
+    function _rawFulfil(DrawV2 d, uint256 req, uint256 word) internal {
+        uint256[] memory w = new uint256[](1);
+        w[0] = word;
+        vm.prank(address(vrf));
+        d.rawFulfillRandomWords(req, w);
     }
 
     function _enter(address who, uint256 amt) internal returns (uint256 spinId, uint256 req) {
@@ -132,7 +134,7 @@ contract DrawV2Test is Fixture, WheelWords {
     }
 
     function test_RevertWhenPoolCannotCoverTenX() public {
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfg());
+        DrawV2 d = _newPool(address(token));
         vm.startPrank(seasons);
         token.approve(address(d), type(uint256).max);
         d.seed(999e18); // 10 x 100 = 1,000 > 999
@@ -150,7 +152,7 @@ contract DrawV2Test is Fixture, WheelWords {
     }
 
     function test_EmptyPoolReverts() public {
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfg());
+        DrawV2 d = _newPool(address(token));
         vm.startPrank(alice);
         token.approve(address(d), 100e18);
         vm.expectRevert(abi.encodeWithSelector(DrawV2.PoolTooSmall.selector, 1_000e18, 0));
@@ -168,7 +170,7 @@ contract DrawV2Test is Fixture, WheelWords {
         // available = balance - reserved - outstanding = 70M + 10k - 100k
         assertEq(drawV2.availableTwak(), POOL + 10_000e18 - 100_000e18);
         // the 0x keeps the whole entry in the pool and frees the reservation
-        vrf.fulfill(1, WORD[0]);
+        fulfillTo(address(drawV2), 1, WORD[0]);
         assertEq(drawV2.availableTwak(), POOL + 10_000e18);
         assertEq(drawV2.reservedTwak(), 0);
     }
@@ -191,9 +193,9 @@ contract DrawV2Test is Fixture, WheelWords {
         _enter(alice, cap);
 
         // all three hit 10x, fulfilled out of order: everyone is paid in full
-        vrf.fulfill(3, WORD[6]);
-        vrf.fulfill(1, WORD[6]);
-        vrf.fulfill(2, WORD[6]);
+        fulfillTo(address(drawV2), 3, WORD[6]);
+        fulfillTo(address(drawV2), 1, WORD[6]);
+        fulfillTo(address(drawV2), 2, WORD[6]);
         assertEq(drawV2.reservedTwak(), 0);
         assertEq(drawV2.outstandingTwak(), 10 * (a + 330_000e18 + cap));
         _solvent(drawV2);
@@ -208,7 +210,7 @@ contract DrawV2Test is Fixture, WheelWords {
     }
 
     function test_ConcurrentMaxEntriesNeverOverdraw() public {
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfg());
+        DrawV2 d = _newPool(address(token));
         vm.startPrank(seasons);
         token.approve(address(d), type(uint256).max);
         d.seed(1_000_000e18);
@@ -221,7 +223,7 @@ contract DrawV2Test is Fixture, WheelWords {
         assertGt(n, 10);
         for (uint256 i = 1; i <= n; ++i) {
             (,,,,,,, uint256 req) = d.spins(i);
-            vrf.fulfill(req, WORD[6]);
+            fulfillTo(address(d), req, WORD[6]);
         }
         _solvent(d);
         vm.prank(seasons);
@@ -236,7 +238,7 @@ contract DrawV2Test is Fixture, WheelWords {
         for (uint256 i; i < 7; ++i) {
             (uint256 id, uint256 req) = _enter(alice, amt);
             uint256 owed0 = drawV2.owedTwak(alice);
-            vrf.fulfill(req, WORD[i]);
+            fulfillTo(address(drawV2), req, WORD[i]);
             (, uint8 status, uint8 pid,,,,,) = _spin(id);
             (uint256 tP,) = drawV2.spinPrize(id);
             assertEq(status, 2);
@@ -252,7 +254,7 @@ contract DrawV2Test is Fixture, WheelWords {
 
     function test_ZeroXPaysNothing() public {
         (uint256 id, uint256 req) = _enter(alice, 5_000e18);
-        vrf.fulfill(req, WORD[0]);
+        fulfillTo(address(drawV2), req, WORD[0]);
         (,, uint8 pid,,,,,) = _spin(id);
         (uint256 tP, uint256 bP) = drawV2.spinPrize(id);
         assertEq(pid, 0);
@@ -268,7 +270,7 @@ contract DrawV2Test is Fixture, WheelWords {
         (uint256 id, uint256 req) = _enter(alice, 100_000e18);
         assertEq(drawV2.reservedBnb(), 0.2 ether);
         assertEq(drawV2.availableBnb(), 9.8 ether);
-        vrf.fulfill(req, WORD[6]);
+        fulfillTo(address(drawV2), req, WORD[6]);
         (uint256 tP, uint256 bP) = drawV2.spinPrize(id);
         assertEq(tP, 1_000_000e18);
         assertEq(bP, 0.2 ether);
@@ -287,7 +289,7 @@ contract DrawV2Test is Fixture, WheelWords {
     function test_FiveXPaysOnePercentBnb() public {
         vm.deal(address(drawV2), 10 ether);
         (uint256 id, uint256 req) = _enter(alice, 100_000e18);
-        vrf.fulfill(req, WORD[5]);
+        fulfillTo(address(drawV2), req, WORD[5]);
         (uint256 tP, uint256 bP) = drawV2.spinPrize(id);
         assertEq(tP, 500_000e18);
         assertEq(bP, 0.1 ether);
@@ -299,7 +301,7 @@ contract DrawV2Test is Fixture, WheelWords {
         vm.deal(address(drawV2), 10 ether);
         for (uint256 i; i < 5; ++i) {
             (uint256 id, uint256 req) = _enter(alice, 1_000e18);
-            vrf.fulfill(req, WORD[i]);
+            fulfillTo(address(drawV2), req, WORD[i]);
             (, uint256 bP) = drawV2.spinPrize(id);
             assertEq(bP, 0);
         }
@@ -318,7 +320,7 @@ contract DrawV2Test is Fixture, WheelWords {
             assertEq(res, before * 200 / 10_000, "2% of available");
             sum += res;
         }
-        for (uint256 i = 1; i <= 20; ++i) vrf.fulfill(i, WORD[6]);
+        for (uint256 i = 1; i <= 20; ++i) fulfillTo(address(drawV2), i, WORD[6]);
         assertEq(drawV2.outstandingBnb(), sum);
         assertLe(sum, 10 ether);
         _solvent(drawV2);
@@ -333,7 +335,7 @@ contract DrawV2Test is Fixture, WheelWords {
         assertEq(address(drawV2).balance, 0);
         (uint256 id, uint256 req) = _enter(alice, 10_000e18);
         assertEq(drawV2.reservedBnb(), 0);
-        vrf.fulfill(req, WORD[6]);
+        fulfillTo(address(drawV2), req, WORD[6]);
         (uint256 tP, uint256 bP) = drawV2.spinPrize(id);
         assertEq(tP, 100_000e18);
         assertEq(bP, 0);
@@ -348,7 +350,7 @@ contract DrawV2Test is Fixture, WheelWords {
         vm.deal(address(this), 5 ether);
         (bool ok,) = address(drawV2).call{value: 5 ether}("");
         assertTrue(ok, "receive()");
-        vrf.fulfill(req, WORD[6]);
+        fulfillTo(address(drawV2), req, WORD[6]);
         (, uint256 bP) = drawV2.spinPrize(id);
         assertEq(bP, 0, "bonus snapshotted at entry");
         assertEq(drawV2.availableBnb(), 5 ether);
@@ -364,17 +366,17 @@ contract DrawV2Test is Fixture, WheelWords {
         uint256 newReq = drawV2.retrySpin(id);
         assertEq(drawV2.reservedTwak(), res, "reservation kept");
         assertEq(drawV2.spinOfRequest(oldReq), 0);
-        vrf.fulfill(oldReq, WORD[6]); // stale: ignored
+        fulfillTo(address(drawV2), oldReq, WORD[6]); // stale: ignored
         (, uint8 status,,,,,,) = _spin(id);
         assertEq(status, 1);
         assertEq(drawV2.reservedTwak(), res);
-        vrf.fulfill(newReq, WORD[2]);
+        fulfillTo(address(drawV2), newReq, WORD[2]);
         (, status,,,,,,) = _spin(id);
         (uint256 tP,) = drawV2.spinPrize(id);
         assertEq(status, 2);
         assertEq(tP, 10_000e18);
         assertEq(drawV2.reservedTwak(), 0);
-        vrf.fulfill(newReq, WORD[6]); // double fulfil: ignored
+        _rawFulfil(drawV2, newReq, WORD[6]); // double fulfil (mock already deleted it): ignored
         assertEq(drawV2.owedTwak(alice), 10_000e18);
         vm.expectRevert(DrawV2.NotPending.selector);
         drawV2.retrySpin(id);
@@ -392,6 +394,8 @@ contract DrawV2Test is Fixture, WheelWords {
         (, uint256 req) = _enter(alice, 1_000e18);
         uint256[] memory w = new uint256[](1);
         w[0] = WORD[6];
+        vm.cool(address(drawV2));
+        vm.cool(address(token));
         vm.prank(address(vrf));
         uint256 g = gasleft();
         drawV2.rawFulfillRandomWords(req, w);
@@ -430,7 +434,7 @@ contract DrawV2Test is Fixture, WheelWords {
         vm.prank(bob);
         vm.expectRevert(DrawV2.EntriesPaused.selector);
         drawV2.enter(1_000e18);
-        vrf.fulfill(req, WORD[3]);
+        fulfillTo(address(drawV2), req, WORD[3]);
         vm.prank(alice);
         drawV2.claim();
         assertEq(drawV2.outstandingTwak(), 0);
@@ -441,7 +445,7 @@ contract DrawV2Test is Fixture, WheelWords {
         assertEq(drawV2.PRIZE_ALLOCATION(), 70_000_000e18);
         vm.expectRevert(TokenBound.AlreadyBound.selector);
         drawV2.bindToken(address(token));
-        DrawV2 fresh = new DrawV2(address(timelock), address(0), _cfg());
+        DrawV2 fresh = _newPool(address(0));
         vm.expectRevert(abi.encodeWithSelector(TokenBound.BadAllocation.selector, 0, 70_000_000e18));
         fresh.bindToken(address(token));
         vm.expectRevert(TokenBound.NotBound.selector);
@@ -449,7 +453,7 @@ contract DrawV2Test is Fixture, WheelWords {
     }
 
     function test_StandalonePresetAndSeed() public {
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfg());
+        DrawV2 d = _newPool(address(token));
         vm.expectRevert(TokenBound.AlreadyBound.selector);
         d.bindToken(address(token));
         vm.startPrank(seasons);
@@ -474,7 +478,7 @@ contract DrawV2Test is Fixture, WheelWords {
         _enter(alice, 1_000e18);
         vm.expectEmit(true, true, false, true, address(drawV2));
         emit DrawV2.SpinAssigned(1, alice, 5, 5_000e18, 0.01 ether);
-        vrf.fulfill(1, WORD[5]);
+        fulfillTo(address(drawV2), 1, WORD[5]);
         vm.expectEmit(true, false, false, true, address(drawV2));
         emit DrawV2.Claimed(alice, 5_000e18, 0.01 ether);
         vm.prank(alice);
@@ -489,7 +493,7 @@ contract DrawV2Test is Fixture, WheelWords {
     function testFuzz_RandomFlowSolvent(uint256 salt, uint96 seedAmt, uint96 bnbIn) public {
         uint256 s0 = bound(seedAmt, 20_000e18, 20_000_000e18);
         uint256 bnb0 = bound(bnbIn, 0, 200 ether);
-        DrawV2 d = new DrawV2(address(timelock), address(token), _cfg());
+        DrawV2 d = _newPool(address(token));
         vm.startPrank(seasons);
         token.approve(address(d), s0);
         d.seed(s0);
@@ -529,7 +533,7 @@ contract DrawV2Test is Fixture, WheelWords {
                 uint256 id = pending[k];
                 pending[k] = pending[--np];
                 (,,,, uint256 amt,, uint256 bRes, uint256 req) = d.spins(id);
-                vrf.fulfill(req, r >> 32);
+                fulfillTo(address(d), req, r >> 32);
                 (uint256 tP, uint256 bP) = d.spinPrize(id);
                 assertLe(tP, amt * 10, "<= 10x entry");
                 assertLe(bP, bRes, "<= booked BNB cap");
@@ -560,7 +564,7 @@ contract DrawV2Test is Fixture, WheelWords {
         // drain: fulfil everything, everyone claims, all locks release
         for (uint256 k; k < np; ++k) {
             (,,,,,,, uint256 req) = d.spins(pending[k]);
-            vrf.fulfill(req, uint256(keccak256(abi.encode(salt, "drain", k))));
+            fulfillTo(address(d), req, uint256(keccak256(abi.encode(salt, "drain", k))));
         }
         for (uint256 i; i < 3; ++i) {
             if (d.owedTwak(ps[i]) > 0 || d.owedBnb(ps[i]) > 0) {
@@ -582,7 +586,7 @@ contract DrawV2Test is Fixture, WheelWords {
 /// @dev Handler for the stateful invariant run: its own VRF mock (so it may fulfil) and a stand-alone pool.
 contract DrawV2Handler is Test {
     IERC20 public token;
-    MockVRFCoordinator public vrf;
+    VRFCoordinatorV2_5Mock public vrf;
     DrawV2 public d;
     address[3] public players;
     uint256[] public pending;
@@ -590,22 +594,27 @@ contract DrawV2Handler is Test {
     uint256 public bookedTwak;
     uint256 public bookedBnb;
     uint256 public maxOverTenX; // must stay 0
+    uint256 public callbackFailures; // live-request fulfils that did not assign (revert / OOG): must stay 0
 
     constructor(IERC20 token_) {
         token = token_;
-        vrf = new MockVRFCoordinator();
+        vrf = new VRFCoordinatorV2_5Mock(1e14, 1e9, 4e15);
+        uint256 sub = vrf.createSubscription();
+        vm.deal(address(this), 1_000 ether);
+        vrf.fundSubscriptionWithNative{value: 1_000 ether}(sub);
         d = new DrawV2(
             address(0xBEEF),
             address(token_),
             VRFConsumerV25.VRFConfig({
                 coordinator: address(vrf),
-                keyHash: bytes32(0),
-                subId: 0,
+                keyHash: bytes32(uint256(0x8596)),
+                subId: sub,
                 requestConfirmations: 3,
-                callbackGasLimit: 300_000,
-                nativePayment: false
+                callbackGasLimit: 250_000,
+                nativePayment: true
             })
         );
+        vrf.addConsumer(sub, address(d));
         for (uint256 i; i < 3; ++i) {
             players[i] = address(uint160(0xA11CE0 + i));
         }
@@ -645,7 +654,9 @@ contract DrawV2Handler is Test {
         pending[k] = pending[pending.length - 1];
         pending.pop();
         (,,,, uint256 amt,,, uint256 req) = d.spins(id);
-        vrf.fulfill(req, word);
+        _fulfil(req, word);
+        (, uint8 st,,,,,,) = d.spins(id);
+        if (st != 2) ++callbackFailures;
         (uint256 tP,) = d.spinPrize(id);
         if (tP > amt * 10) maxOverTenX = tP;
     }
@@ -656,7 +667,13 @@ contract DrawV2Handler is Test {
         (,,, uint64 at,,,, uint256 oldReq) = d.spins(id);
         vm.warp(uint256(at) + 1 hours);
         d.retrySpin(id);
-        vrf.fulfill(oldReq, word); // stale fulfil must be a no-op
+        _fulfil(oldReq, word); // stale fulfil must be a no-op
+    }
+
+    function _fulfil(uint256 req, uint256 word) internal {
+        uint256[] memory w = new uint256[](1);
+        w[0] = word;
+        vrf.fulfillRandomWordsWithOverride(req, address(d), w);
     }
 
     function claim(uint256 who) external {
@@ -715,5 +732,6 @@ contract DrawV2InvariantTest is Fixture {
         assertLe(d.totalAssignedTwak() + d.reservedTwak(), h.bookedTwak());
         assertLe(d.totalAssignedBnb() + d.reservedBnb(), h.bookedBnb());
         assertEq(h.maxOverTenX(), 0);
+        assertEq(h.callbackFailures(), 0);
     }
 }
