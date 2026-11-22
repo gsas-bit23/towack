@@ -30,19 +30,19 @@ Resumed after the 5:00 AM PKT Claude Code reset. Foundry untouched. Lint + `NEXT
 - iPad landscape: `ipad-home-fold.png`
 - Mac 1280: `mac-home-fold.png`, `mac-bonus-bars.png`
 
-A new Vercel preview URL is recorded in the Vercel section below once deployed (abcd-532d/towack, preview only, SSO on).
+New preview (not production, SSO on): https://towack-235s5xz7h-abcd-532d.vercel.app
 
 ## Next steps (product)
 1. Send more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` to run a real 0.1 tBNB mint (balance after the second deploy + MockAgentId registration is ~0.0776 tBNB). The deployer already holds a Mock Agent ID on the **new** mock (`0xfF5f224349e6aDB7754249d5e4352dB0910717B7`).
 2. Optional: a BscScan-verified listing once a paid Etherscan/BscScan API plan covers chain 97. All nine new contracts are already a Sourcify **exact_match**.
 3. End-to-end testnet rehearsal once funded: mint, owner-fulfil MockVRF, watch the wheel land, claim, then later close / finalize / router / rebates.
 
-## Vercel preview (2026-11-22, 04:08:02 PKT)
+## Vercel preview (2026-11-22, 05:33:14 PKT)
 Preview only (not production), project `abcd-532d/towack`, Node 24.x, framework Next.js. Deployment protection remains `vercel_authentication`.
-- Preview: https://towack-bmrfdbzop-abcd-532d.vercel.app
-- Inspector: https://vercel.com/abcd-532d/towack/9kL3SkNtL9ES8sKMbS2jJWadDFHy
-- Deployment id: `dpl_9kL3SkNtL9ES8sKMbS2jJWadDFHy`, target `None`.
-- Previous preview (old addresses): https://towack-788t1xqg4-abcd-532d.vercel.app
+- Preview: https://towack-235s5xz7h-abcd-532d.vercel.app
+- Inspector: https://vercel.com/abcd-532d/towack/DjnMMMw5yxpL3KkRLqS1bfhoppqz
+- Deployment id: `dpl_DjnMMMw5yxpL3KkRLqS1bfhoppqz`, target `None`.
+- Previous previews: https://towack-bmrfdbzop-abcd-532d.vercel.app (pre-layout-fix), https://towack-788t1xqg4-abcd-532d.vercel.app (old addresses).
 - `?demo=wheel` is off on this preview because a live per-mint launch is configured. Local demo screenshots used `NEXT_PUBLIC_DEMO_WHEEL=1`.
 
 ## Wheel screenshots (1280×800, 2026-11-22, ~04:09 AM PKT)
