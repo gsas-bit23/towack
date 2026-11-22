@@ -1,0 +1,272 @@
+{
+ "timezone": "UTC",
+ "symbols": [
+  {
+   "symbol": "BTCUSDT",
+   "filters": [
+    {
+     "minPrice": "1",
+     "maxPrice": "1000000",
+     "filterType": "PRICE_FILTER",
+     "tickSize": "0.1"
+    },
+    {
+     "stepSize": "0.001",
+     "filterType": "LOT_SIZE",
+     "maxQty": "1000",
+     "minQty": "0.001"
+    },
+    {
+     "stepSize": "0.001",
+     "filterType": "MARKET_LOT_SIZE",
+     "maxQty": "120",
+     "minQty": "0.001"
+    },
+    {
+     "limit": 200,
+     "filterType": "MAX_NUM_ORDERS"
+    },
+    {
+     "limit": 10,
+     "filterType": "MAX_NUM_ALGO_ORDERS"
+    },
+    {
+     "notional": "5",
+     "filterType": "MIN_NOTIONAL"
+    },
+    {
+     "multiplierDown": "0.9800",
+     "multiplierUp": "1.0200",
+     "ltMultiplierDown": "0",
+     "multiplierDecimal": "4",
+     "filterType": "PERCENT_PRICE",
+     "ltMultiplierUp": "0"
+    }
+   ],
+   "orderTypes": [
+    "LIMIT",
+    "MARKET",
+    "STOP",
+    "STOP_MARKET",
+    "TAKE_PROFIT",
+    "TAKE_PROFIT_MARKET",
+    "TRAILING_STOP_MARKET"
+   ],
+   "timeInForce": [
+    "GTC",
+    "IOC",
+    "GTX",
+    "HIDDEN"
+   ],
+   "createTime": 1630045468108,
+   "pair": "BTCUSDT",
+   "contractType": "PERPETUAL",
+   "deliveryDate": 4133404800000,
+   "onboardDate": 1627628400000,
+   "status": "TRADING",
+   "maintMarginPercent": "2.5000",
+   "requiredMarginPercent": "5.0000",
+   "baseAsset": "BTC",
+   "quoteAsset": "USDT",
+   "marginAsset": "USDT",
+   "pricePrecision": 1,
+   "quantityPrecision": 3,
+   "baseAssetPrecision": 8,
+   "quotePrecision": 8,
+   "underlyingType": "COIN",
+   "underlyingSubType": [
+    "Top"
+   ],
+   "symbolType": 0,
+   "tradingMode": 0,
+   "name": "",
+   "channel": "",
+   "sequenceNo": 10,
+   "twapMinNotional": "1000",
+   "imn": "16000.00",
+   "tags": [],
+   "settlePlan": 0,
+   "triggerProtect": "0.0200",
+   "liquidationFee": "0.025000",
+   "marketTakeBound": "0.02"
+  },
+  {
+   "symbol": "ETHUSDT",
+   "filters": [
+    {
+     "minPrice": "0.01",
+     "maxPrice": "1000000",
+     "filterType": "PRICE_FILTER",
+     "tickSize": "0.01"
+    },
+    {
+     "stepSize": "0.001",
+     "filterType": "LOT_SIZE",
+     "maxQty": "10000",
+     "minQty": "0.001"
+    },
+    {
+     "stepSize": "0.001",
+     "filterType": "MARKET_LOT_SIZE",
+     "maxQty": "2000",
+     "minQty": "0.001"
+    },
+    {
+     "limit": 200,
+     "filterType": "MAX_NUM_ORDERS"
+    },
+    {
+     "limit": 10,
+     "filterType": "MAX_NUM_ALGO_ORDERS"
+    },
+    {
+     "notional": "5",
+     "filterType": "MIN_NOTIONAL"
+    },
+    {
+     "multiplierDown": "0.9800",
+     "multiplierUp": "1.0200",
+     "ltMultiplierDown": "0",
+     "multiplierDecimal": "4",
+     "filterType": "PERCENT_PRICE",
+     "ltMultiplierUp": "0"
+    }
+   ],
+   "orderTypes": [
+    "LIMIT",
+    "MARKET",
+    "STOP",
+    "STOP_MARKET",
+    "TAKE_PROFIT",
+    "TAKE_PROFIT_MARKET",
+    "TRAILING_STOP_MARKET"
+   ],
+   "timeInForce": [
+    "GTC",
+    "IOC",
+    "GTX",
+    "HIDDEN"
+   ],
+   "createTime": 1630984677055,
+   "pair": "ETHUSDT",
+   "contractType": "PERPETUAL",
+   "deliveryDate": 4133404800000,
+   "onboardDate": 1630911600000,
+   "status": "TRADING",
+   "maintMarginPercent": "2.5000",
+   "requiredMarginPercent": "5.0000",
+   "baseAsset": "ETH",
+   "quoteAsset": "USDT",
+   "marginAsset": "USDT",
+   "pricePrecision": 2,
+   "quantityPrecision": 3,
+   "baseAssetPrecision": 8,
+   "quotePrecision": 8,
+   "underlyingType": "COIN",
+   "underlyingSubType": [
+    "Top"
+   ],
+   "symbolType": 0,
+   "tradingMode": 0,
+   "name": "",
+   "channel": "",
+   "sequenceNo": 9,
+   "twapMinNotional": "1000",
+   "imn": "8000.00",
+   "tags": [],
+   "settlePlan": 0,
+   "triggerProtect": "0.0200",
+   "liquidationFee": "0.025000",
+   "marketTakeBound": "0.02"
+  },
+  {
+   "symbol": "OLDUSDT",
+   "filters": [
+    {
+     "minPrice": "1",
+     "maxPrice": "1000000",
+     "filterType": "PRICE_FILTER",
+     "tickSize": "0.1"
+    },
+    {
+     "stepSize": "0.001",
+     "filterType": "LOT_SIZE",
+     "maxQty": "1000",
+     "minQty": "0.001"
+    },
+    {
+     "stepSize": "0.001",
+     "filterType": "MARKET_LOT_SIZE",
+     "maxQty": "120",
+     "minQty": "0.001"
+    },
+    {
+     "limit": 200,
+     "filterType": "MAX_NUM_ORDERS"
+    },
+    {
+     "limit": 10,
+     "filterType": "MAX_NUM_ALGO_ORDERS"
+    },
+    {
+     "notional": "5",
+     "filterType": "MIN_NOTIONAL"
+    },
+    {
+     "multiplierDown": "0.9800",
+     "multiplierUp": "1.0200",
+     "ltMultiplierDown": "0",
+     "multiplierDecimal": "4",
+     "filterType": "PERCENT_PRICE",
+     "ltMultiplierUp": "0"
+    }
+   ],
+   "orderTypes": [
+    "LIMIT",
+    "MARKET",
+    "STOP",
+    "STOP_MARKET",
+    "TAKE_PROFIT",
+    "TAKE_PROFIT_MARKET",
+    "TRAILING_STOP_MARKET"
+   ],
+   "timeInForce": [
+    "GTC",
+    "IOC",
+    "GTX",
+    "HIDDEN"
+   ],
+   "createTime": 1630045468108,
+   "pair": "BTCUSDT",
+   "contractType": "PERPETUAL",
+   "deliveryDate": 4133404800000,
+   "onboardDate": 1627628400000,
+   "status": "SETTLING",
+   "maintMarginPercent": "2.5000",
+   "requiredMarginPercent": "5.0000",
+   "baseAsset": "BTC",
+   "quoteAsset": "USDT",
+   "marginAsset": "USDT",
+   "pricePrecision": 1,
+   "quantityPrecision": 3,
+   "baseAssetPrecision": 8,
+   "quotePrecision": 8,
+   "underlyingType": "COIN",
+   "underlyingSubType": [
+    "Top"
+   ],
+   "symbolType": 0,
+   "tradingMode": 0,
+   "name": "",
+   "channel": "",
+   "sequenceNo": 10,
+   "twapMinNotional": "1000",
+   "imn": "16000.00",
+   "tags": [],
+   "settlePlan": 0,
+   "triggerProtect": "0.0200",
+   "liquidationFee": "0.025000",
+   "marketTakeBound": "0.02"
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 ---
 name: towack
-description: Mint Towack (TWAK) slots (optionally with a referrer), claim Genesis 300, enter the Draw V2 pool wheel, claim prizes and referral BNB, and buy/sell TWAK through the Towack router on BNB Smart Chain mainnet using the official Binance Agentic Wallet (BAW) external-sign flow. Use when a user asks to mint, refer, spin, enter, claim, buy or sell on Towack with their Binance Agentic Wallet.
+description: Mint Towack (TWAK) slots (optionally with a referrer), claim Genesis 300, enter the Draw V2 pool wheel, claim prizes and referral BNB, and buy/sell TWAK through the Towack router on BNB Smart Chain mainnet using the official Binance Agentic Wallet (BAW) external-sign flow; and (Agent ID holders) place or cancel Aster perpetual orders from the Towack /perps page, with BAW signing only a trade-only Aster API-wallet approval. Use when a user asks to mint, refer, spin, enter, claim, buy, sell, or trade perps on Towack with their Binance Agentic Wallet.
 ---
 
 # Towack with Binance Agentic Wallet
@@ -76,6 +76,48 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 ### Retries
 If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch / Genesis) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(gasPrice)` again. Same preview / confirm / execute rules.
 
+## Aster perps (`/perps`, Agent ID holders' agent path)
+
+The `/perps` page shows Aster perpetual markets from Aster's public API and lets users trade with their own keys. Its "Give this to your AI agent" box is shown to Agent ID holders only and produces a ready-made instruction for one specific order or cancel.
+
+**Aster orders are NOT a BNB Smart Chain contract call.** Never try `baw contract-call` for them. Aster runs its own order book. The supported agent path:
+
+- BAW signs exactly **one** EIP-712 message (`baw sign-message`, `--binanceChainId 56`, `--signType EIP712`) that approves a **trade-only Aster API wallet** (agent key) the user's own AI agent generates and keeps locally.
+- That API wallet signs each order (EIP-712, domain chainId 1666) after the user's explicit "yes" to that exact order.
+- Towack never signs, never sends, never sees any key. BAW is mainnet-only; testnet testers use a browser wallet on `/perps` (Aster testnet).
+
+### Hard rules (perps)
+- The user's BAW address must already have **deposited USDT margin on Aster** (asterdex.com, same wallet). Until then every trading call returns `{"code":-5050,"msg":"This function can only be used after deposit"}`: stop and tell the user.
+- Agent approval scope is fixed: `canSpotTrade=false`, `canPerpTrade=true`, `canWithdraw=false`, empty `ipWhitelist`, `expired` = now + 7 days (ms). Aster rejects very short expiries ("Agent expired time too short"). **Never** approve withdrawals.
+- The API-wallet private key stays on the user's machine: never print it, never paste it in chat, never send it to Towack or anyone else.
+- Every order, leverage change and cancel: preview (market data + exact param string) → show the user → explicit "yes" for that exact request → send. A changed size/price/side needs a new preview and a new yes. Report Aster's response as returned; never auto-retry.
+- Perps are leveraged: the user can lose their whole margin and be liquidated. Towack adds no fee and has **no** Aster rebate today; Agent ID only unlocks this agent path (any future rebate alignment is not promised).
+
+### Endpoints
+| What | Value |
+|---|---|
+| Mainnet REST | `https://fapi.asterdex.com` |
+| Testnet REST (browser wallets only, not BAW) | `https://fapi.asterdex-testnet.com` |
+| Public, no key | `GET /fapi/v3/exchangeInfo`, `/fapi/v3/ticker/24hr`, `/fapi/v3/premiumIndex` (mark, index, `lastFundingRate`, `nextFundingTime`) |
+| Agent approval (public, main-wallet signature) | `POST /fapi/v3/registerAndApproveAgent` |
+| Agent-signed | `POST /fapi/v3/order`, `DELETE /fapi/v3/order`, `POST /fapi/v3/leverage`, `GET /fapi/v3/openOrders`, `GET /fapi/v3/balance` |
+| Docs | https://github.com/asterdex/api-docs (V3 futures) |
+
+### Signing
+EIP-712 typed data for every Aster signature: domain `{"name":"AsterSignTransaction","version":"1","chainId":<id>,"verifyingContract":"0x0000000000000000000000000000000000000000"}`, `primaryType` `Message`, types `Message: [{name:"msg",type:"string"}]`, `message: {"msg": <string>}`.
+
+1. **Approve agent (once, BAW):** `msg = user=<BAW>&nonce=<µs>&agentName=towack-agent&agentAddress=<API wallet>&expired=<ms>&signatureChainId=56&canSpotTrade=false&canPerpTrade=true&canWithdraw=false&ipWhitelist=`, domain chainId **56**.
+   `baw sign-message preview --binanceChainId 56 --signType EIP712 --message '{"method":"eth_signTypedData_v4","params":["<BAW>","<typed data JSON string>"]}' --json` → show `parsedMessage` + `risks` → wait for "yes" → `baw sign-message execute --requestId <id> --json` (if `PENDING_CONFIRMATION`, the user confirms in the Binance App, then `baw sign-message result --order-id <orderId> --json`). Use the 65-byte signature (append `27 + signatureRecovery` as one hex byte if BAW returns 64 bytes).
+   Then `POST /fapi/v3/registerAndApproveAgent` (form body) with those fields + `signature`. The nonce must be within ~10 s of server time, so post promptly. Expect `{"code":200,"msg":"success"}`.
+2. **Each request (API wallet key, local):** `msg = <params>&nonce=<µs>&user=<BAW>&signer=<API wallet>` (urlencoded, in that order), domain chainId **1666** (testnet: 714). Send `msg&signature=0x…` as the `application/x-www-form-urlencoded` body (GET: query string). Nonce: microseconds, within 60 s, never reused.
+
+### Order params (`POST /fapi/v3/order`)
+- LIMIT: `symbol, side (BUY|SELL), type=LIMIT, timeInForce (GTC|IOC|GTX), quantity, price` [+ `reduceOnly=true`].
+- MARKET: `symbol, side, type=MARKET, quantity` [+ `reduceOnly=true`]. Do **not** send `price`/`timeInForce` (Aster rejects extra params).
+- Floor `quantity` to `LOT_SIZE.stepSize` (MARKET: `MARKET_LOT_SIZE`), `price` to `PRICE_FILTER.tickSize`; `quantity × price` (MARKET: × mark price) must be ≥ `MIN_NOTIONAL.notional`.
+- Leverage (optional, first): `POST /fapi/v3/leverage` `symbol, leverage` (integer 1–125).
+- Cancel: `DELETE /fapi/v3/order` `symbol, orderId`.
+
 ## Risk
 
-A game of chance, not an investment. Most spins pay back less than was put in. Not affiliated with Binance, BNB Chain, PancakeSwap or Chainlink.
+A game of chance, not an investment. Most spins pay back less than was put in. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink or Aster.
