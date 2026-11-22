@@ -22,7 +22,6 @@ import {
   POOL_PRIZES,
   POOL_SLICES,
   POOL_SPLIT,
-  POOL_TESTNET_SEED,
   oddsPct,
   payoutFor,
   poolPrizeById,
@@ -241,9 +240,9 @@ function TreasuryNote() {
     <Panel tone="navy" shadow={false}>
       <Pill tone="sun">TESTNET NOTE</Pill>
       <p className="mt-3 font-bold text-white/85">
-        The intended seed is the {POOL_INTENDED_SEED} Draw V2 allocation. On testnet that allocation is locked in the old Draw V2 skeleton, which is also
-        the launch&apos;s fixed BNB destination. The new pool wheel is seeded with a {POOL_TESTNET_SEED} testnet stand-in until a full stack redeploy.
-        It draws with the official Chainlink VRF v2.5 coordinator; the earlier test pool (test randomness coordinator) is retired.
+        The live pool wheel is seeded with the full {POOL_INTENDED_SEED} Draw V2 allocation from the official-VRF full-stack
+        redeploy, and draws with the official Chainlink VRF v2.5 coordinator. Earlier testnet pools are retired, including the
+        skeleton treasury (the previous launch&apos;s fixed BNB destination) and the mid-stack official-VRF pool.
       </p>
       {addresses.drawV2Legacy ? (
         <p className="mt-3 break-all text-sm font-bold text-white/70">

@@ -524,5 +524,342 @@
         }
       }
     }
+  },
+  "fullStackOfficialVrf": {
+    "deployedAtPkt": "2026-11-22 19:43:19 PKT",
+    "rehearsedAtPkt": "2026-11-22 19:46:00\u201319:47:00 PKT",
+    "script": "script/DeployFullStackTestnet.s.sol",
+    "flags": "--legacy --with-gas-price 1gwei --slow",
+    "chainId": 97,
+    "commit": "ff8801e",
+    "deployer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "note": "Full-stack redeploy of Token, official-VRF Launch, Router, Genesis, DrawV2 (fresh 70M via TokenBound). Reused existing native VRF subscription, no top-up. Old official-VRF Genesis/DrawV2 removed as consumers. Mint window 7 days. Paid 0.1 mint skipped (deployer had 0.00629 tBNB after deploy). Users pay the VRF fee.",
+    "mintWindow": {
+      "startPkt": "2026-11-22 19:43:19 PKT",
+      "endPkt": "2026-11-29 19:43:19 PKT",
+      "startUnix": 1795358599,
+      "endUnix": 1795963399
+    },
+    "vrf": {
+      "coordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+      "keyHash": "0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26",
+      "subId": "108109298338446825657484225053166289400607095163447504257161866471831941368513",
+      "nativePayment": true,
+      "callbackGasLimits": {
+        "launch": 165000,
+        "genesis": 170000,
+        "drawV2": 200000
+      },
+      "nativeBalanceAfterRehearsalWei": "45043627200000000",
+      "reqCountAfterRehearsal": 4,
+      "consumers": [
+        "0x49040903FE8f510F746B223FF189688f375c8c97",
+        "0x7f1F4ADc57060B4d718f0F82dbcDcC23e76D03d1",
+        "0x45ff932F0588811cc140D6Bd3abA22A813418408"
+      ],
+      "removedConsumers": [
+        "0x9BDEf589e2669A10e416Ae4357DE4d85B2C1b97F",
+        "0xC6f7B7062757A0Aa9F91d4551B3C9ab73B0079Fd"
+      ]
+    },
+    "contracts": {
+      "agentId": "0xfF5f224349e6aDB7754249d5e4352dB0910717B7",
+      "agentIdNft": "0x70BC7133E62427DAE709299454ed8c9015898036",
+      "timelock": "0xB64C0ca047efD015E5e2926cA37c6F06AE73DD48",
+      "drawV2": "0x49040903FE8f510F746B223FF189688f375c8c97",
+      "launch": "0x45ff932F0588811cc140D6Bd3abA22A813418408",
+      "rebateDistributor": "0x33C499f41B0287CADcC5A62F2942f6C0eC3664DC",
+      "teamVesting": "0x1BAb9b013DD0bf0abb66536EaBbF9BD3965eEA3E",
+      "token": "0x7C5510995210E40F5E9fd46066F01CbADf0666CD",
+      "pair": "0x3d134c2E4796b7d7C618Ad4C177552C21e770a59",
+      "router": "0x48E86F673De1268053c5f5Dc411a9613f645Ee4e",
+      "genesis": "0x7f1F4ADc57060B4d718f0F82dbcDcC23e76D03d1"
+    },
+    "funding": {
+      "deployerTbnbBefore": "0.020915098",
+      "deployGasTbnb": "0.01462486",
+      "deployerTbnbAfterDeploy": "0.006290238",
+      "deployerTbnbAfterRehearsal": "0.004258928",
+      "subNativeBeforeWei": "44408360000000000",
+      "subNativeAfterWei": "45043627200000000",
+      "deployerTwakAfterRehearsal": "122023000000000000000000000"
+    },
+    "transactions": [
+      {
+        "i": 0,
+        "hash": "0x8eddb18912e0c5e9c3fb3daa21d33bb2a18b41a104ea7bae9dafabbd4e9f20c3",
+        "status": "0x1",
+        "gas": 1338712,
+        "name": "TimelockController",
+        "fn": "CREATE",
+        "created": "0xb64c0ca047efd015e5e2926ca37c6f06ae73dd48"
+      },
+      {
+        "i": 1,
+        "hash": "0xc1621636180b76cdeaec8e21fd85e2b5de3dbeb016d34f337a639d64a800755a",
+        "status": "0x1",
+        "gas": 2049764,
+        "name": "DrawV2",
+        "fn": "CREATE",
+        "created": "0x49040903fe8f510f746b223ff189688f375c8c97"
+      },
+      {
+        "i": 2,
+        "hash": "0x55fe0e9863b49c2ac0fed41cda14f3ce86264e0a734f1e86775176cc8998eb86",
+        "status": "0x1",
+        "gas": 2731384,
+        "name": "TowackLaunch",
+        "fn": "CREATE",
+        "created": "0x45ff932f0588811cc140d6bd3aba22a813418408"
+      },
+      {
+        "i": 3,
+        "hash": "0x800232f5465488d1fe35cd397bad1acf9b94ea73975c0da4a8e9e0ee6d2bcf3b",
+        "status": "0x1",
+        "gas": 729262,
+        "name": "RebateDistributor",
+        "fn": "CREATE",
+        "created": "0x33c499f41b0287cadcc5a62f2942f6c0ec3664dc"
+      },
+      {
+        "i": 4,
+        "hash": "0xc7271272bd2cfb1bec4bbd625afb83d305afb85d0c2410204035d37f2eadce36",
+        "status": "0x1",
+        "gas": 405966,
+        "name": "TeamVesting",
+        "fn": "CREATE",
+        "created": "0x1bab9b013dd0bf0abb66536eabbf9bd3965eea3e"
+      },
+      {
+        "i": 5,
+        "hash": "0x047fd2d52ecfe31f3decccbaf95abc778dbd4bbb6364254d5ad82d0ad8dd1994",
+        "status": "0x1",
+        "gas": 2897660,
+        "name": "TowackToken",
+        "fn": "CREATE",
+        "created": "0x7c5510995210e40f5e9fd46066f01cbadf0666cd"
+      },
+      {
+        "i": 6,
+        "hash": "0x4707114100716c6a987d7a025d0ac5ba50c1ffc33238cbec5a35d915bbe02dc7",
+        "status": "0x1",
+        "gas": 74920,
+        "name": "TowackLaunch",
+        "fn": "bindToken(address)",
+        "created": "0x45ff932f0588811cc140d6bd3aba22a813418408"
+      },
+      {
+        "i": 7,
+        "hash": "0xa7177771c16df0c4183c5e3dc39dc148dd31ba56f2a23acef7705edd26a1bbf7",
+        "status": "0x1",
+        "gas": 50544,
+        "name": "TeamVesting",
+        "fn": "bindToken(address)",
+        "created": "0x1bab9b013dd0bf0abb66536eabbf9bd3965eea3e"
+      },
+      {
+        "i": 8,
+        "hash": "0x0cf064398a94967562ae4e83117d836c31aee45e76396de11cba69e2dcdf6d3b",
+        "status": "0x1",
+        "gas": 50968,
+        "name": "DrawV2",
+        "fn": "bindToken(address)",
+        "created": "0x49040903fe8f510f746b223ff189688f375c8c97"
+      },
+      {
+        "i": 9,
+        "hash": "0xb51704e82a6ea5e1d1406b07d0a2b7ca6448fda3f0a027d5e5347253f4a967b1",
+        "status": "0x1",
+        "gas": 1380646,
+        "name": "TowackRouter",
+        "fn": "CREATE",
+        "created": "0x48e86f673de1268053c5f5dc411a9613f645ee4e"
+      },
+      {
+        "i": 10,
+        "hash": "0x81bf3924e17e72b7eb5dd485f44808a3ac9b326a23f287b9b0ee784376002c78",
+        "status": "0x1",
+        "gas": 73534,
+        "name": "RebateDistributor",
+        "fn": "bind(address,address)",
+        "created": "0x33c499f41b0287cadcc5a62f2942f6c0ec3664dc"
+      },
+      {
+        "i": 11,
+        "hash": "0xad19b9a401a4c33c4a2d9db7e031d3e28983ee0634ad14c665fb2f2f38c2c8d4",
+        "status": "0x1",
+        "gas": 2291963,
+        "name": "TowackGenesis",
+        "fn": "CREATE",
+        "created": "0x7f1f4adc57060b4d718f0f82dbcdcc23e76d03d1"
+      },
+      {
+        "i": 12,
+        "hash": "0xbaf6260bd82556807212062930388f941e66c25ebc22f525fd486a755ee1b795",
+        "status": "0x1",
+        "gas": 46017,
+        "name": "TowackToken",
+        "fn": "approve(address,uint256)",
+        "created": "0x7c5510995210e40f5e9fd46066f01cbadf0666cd"
+      },
+      {
+        "i": 13,
+        "hash": "0x14578b4280b4348243ac935c2e0e3dc70cbf49fefe58f636a30a01adcd82fee7",
+        "status": "0x1",
+        "gas": 85342,
+        "name": "TowackGenesis",
+        "fn": "fund(uint256)",
+        "created": "0x7f1f4adc57060b4d718f0f82dbcdcc23e76d03d1"
+      },
+      {
+        "i": 14,
+        "hash": "0xc61e5e0b32410ec805a34594793a21a6abd2bca8d32989bdd6ae7bb2db4e1f6e",
+        "status": "0x1",
+        "gas": 60616,
+        "name": "TowackGenesis",
+        "fn": "open()",
+        "created": "0x7f1f4adc57060b4d718f0f82dbcdcc23e76d03d1"
+      },
+      {
+        "i": 15,
+        "hash": "0x5646b80b0c6000bf16e71a75639f939c3439af0aad3f5478fea0a62816db818a",
+        "status": "0x1",
+        "gas": 78086,
+        "name": "",
+        "fn": "addConsumer(uint256,address)",
+        "created": "0xda3b641d438362c440ac5458c57e00a712b66700"
+      },
+      {
+        "i": 16,
+        "hash": "0xc16162521a63cf810bc4cc78bd17a114d666cfeea27c7346291735afa2686447",
+        "status": "0x1",
+        "gas": 78086,
+        "name": "",
+        "fn": "addConsumer(uint256,address)",
+        "created": "0xda3b641d438362c440ac5458c57e00a712b66700"
+      },
+      {
+        "i": 17,
+        "hash": "0x2a3780ed10b31a3cc86d7c1232506e204540d4eab26b7f4c602a06f6e5bb478b",
+        "status": "0x1",
+        "gas": 78086,
+        "name": "",
+        "fn": "addConsumer(uint256,address)",
+        "created": "0xda3b641d438362c440ac5458c57e00a712b66700"
+      },
+      {
+        "i": 18,
+        "hash": "0x39705509bc739e50f2ca914de27ff8dd0f22b8cbd1e1430903527f885f2e8523",
+        "status": "0x1",
+        "gas": 64003,
+        "name": "",
+        "fn": "removeConsumer(uint256,address)",
+        "created": "0xda3b641d438362c440ac5458c57e00a712b66700"
+      },
+      {
+        "i": 19,
+        "hash": "0x583ed94bf4ad13fc2115c9510a7a0c1a2f467d606d388067d69c940a289fb60c",
+        "status": "0x1",
+        "gas": 59301,
+        "name": "",
+        "fn": "removeConsumer(uint256,address)",
+        "created": "0xda3b641d438362c440ac5458c57e00a712b66700"
+      }
+    ],
+    "rehearsal": {
+      "paidV1": "skipped: 0.1 BNB mint + VRF fee exceeds remaining 0.00629 tBNB",
+      "genesis300": {
+        "agentTokenId": 2,
+        "prizeId": 5,
+        "label": "1.1\u00d7",
+        "baseTwak": "20000",
+        "extraTwak": "2000",
+        "claimed": true,
+        "mintCountAfter": 1,
+        "vrfFeeWei": "586040000000000",
+        "txs": {
+          "mint": "0xaa835f9303c1655eb3e10bc0e0ee33b2550b9e79c73b9ebe10d5b1ca8df18a7b",
+          "vrfFulfill": "0x702cb089bbca0fc911d37911d55c21595e1f428a4e3672b390016c2add8c439a",
+          "claim": "0x11cbd39e20680391942dc34bde4c834c2da6baf3b139beeb3c0c33cfe2ac1259"
+        }
+      },
+      "drawV2": {
+        "spinId": 1,
+        "prizeId": 4,
+        "label": "2\u00d7",
+        "entryTwak": "1000",
+        "payoutTwak": "2000",
+        "payoutBnb": "0",
+        "availableTwakAfter": "69999000000000000000000000",
+        "claimed": true,
+        "vrfFeeWei": "641240000000000",
+        "txs": {
+          "approve": "0xc7638c0e3f3157999235f21e4df6a4ab4653467e6ec3b871af425b967cc7611f",
+          "enter": "0xc550b75b61258d15772cec5ca91f48afa6208233676fc03a8f7dce2b5dd647ae",
+          "vrfFulfill": "0xa3f1234fd0b006fedd3b7ff7293cafe42dc7581f972275f6db12ef145fb052c9",
+          "claim": "0x7eacca96878fc7c46d1a3bbefa78b9bc767244b6bf0c0d7eac36b1027d762c11"
+        }
+      }
+    },
+    "verification": {
+      "sourcify": {
+        "TimelockController": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0xB64C0ca047efD015E5e2926cA37c6F06AE73DD48/"
+        },
+        "DrawV2": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x49040903FE8f510F746B223FF189688f375c8c97/"
+        },
+        "TowackLaunch": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x45ff932F0588811cc140D6Bd3abA22A813418408/"
+        },
+        "RebateDistributor": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x33C499f41B0287CADcC5A62F2942f6C0eC3664DC/"
+        },
+        "TeamVesting": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x1BAb9b013DD0bf0abb66536EaBbF9BD3965eEA3E/"
+        },
+        "TowackToken": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x7C5510995210E40F5E9fd46066F01CbADf0666CD/"
+        },
+        "TowackRouter": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x48E86F673De1268053c5f5Dc411a9613f645Ee4e/"
+        },
+        "TowackGenesis": {
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "url": "https://repo.sourcify.dev/contracts/full_match/97/0x7f1F4ADc57060B4d718f0F82dbcDcC23e76D03d1/"
+        }
+      }
+    },
+    "preview": {
+      "url": "https://towack-ch5kicclp-abcd-532d.vercel.app",
+      "inspector": "https://vercel.com/abcd-532d/towack/UuTCi2esuYEfCU3uWQT1yAjwX2dQ",
+      "id": "dpl_UuTCi2esuYEfCU3uWQT1yAjwX2dQ",
+      "target": null,
+      "readyAtPkt": "2026-11-22 19:48:00 PKT",
+      "protection": "vercel_authentication"
+    }
   }
 }

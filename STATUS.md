@@ -3,6 +3,17 @@
 **Repo:** https://github.com/gsas-bit23/towack
 **Milestone:** 1 — instant per-mint prize-wheel contracts redeployed on BSC testnet (97); Arcade Sky frontend wired to the new addresses.
 
+## Full-stack official VRF redeploy (2026-11-22, 19:43:19 PKT)
+Redeployed the **entire BSC testnet stack** from `ff8801e` (user-paid VRF fees) onto the **existing** native-payment subscription, with **no top-up**. `--legacy --with-gas-price 1gwei --slow`. Script: `script/DeployFullStackTestnet.s.sol`. Record: `deployments/bsc-testnet.json` → `fullStackOfficialVrf`. All 20 deploy txs `status=0x1`. Sourcify **exact_match** (creation + runtime) for all eight new contracts. Never mainnet.
+
+- **Subscription (reused):** `108109298338446825657484225053166289400607095163447504257161866471831941368513`. Consumers now: DrawV2, Genesis, Launch. Old official-VRF Genesis `0x9BDE…97F` and DrawV2 `0xC6f7…0191` were removed as consumers. Native balance after rehearsal: **0.0450436272 tBNB** (was 0.04440836; user fees exceeded actual billing).
+- **New contracts:** Token [`0x7C5510995210E40F5E9fd46066F01CbADf0666CD`](https://testnet.bscscan.com/address/0x7C5510995210E40F5E9fd46066F01CbADf0666CD) · Launch [`0x45ff932F0588811cc140D6Bd3abA22A813418408`](https://testnet.bscscan.com/address/0x45ff932F0588811cc140D6Bd3abA22A813418408) (create [tx](https://testnet.bscscan.com/tx/0x55fe0e9863b49c2ac0fed41cda14f3ce86264e0a734f1e86775176cc8998eb86)) · Router [`0x48E86F673De1268053c5f5Dc411a9613f645Ee4e`](https://testnet.bscscan.com/address/0x48E86F673De1268053c5f5Dc411a9613f645Ee4e) · Genesis [`0x7f1F4ADc57060B4d718f0F82dbcDcC23e76D03d1`](https://testnet.bscscan.com/address/0x7f1F4ADc57060B4d718f0F82dbcDcC23e76D03d1) (funded 8M, open) · DrawV2 [`0x49040903FE8f510F746B223FF189688f375c8c97`](https://testnet.bscscan.com/address/0x49040903FE8f510F746B223FF189688f375c8c97) (owner = new timelock, **70M** TokenBound seed) · Timelock [`0xB64C0ca047efD015E5e2926cA37c6F06AE73DD48`](https://testnet.bscscan.com/address/0xB64C0ca047efD015E5e2926cA37c6F06AE73DD48) · Rebates [`0x33C499f41B0287CADcC5A62F2942f6C0eC3664DC`](https://testnet.bscscan.com/address/0x33C499f41B0287CADcC5A62F2942f6C0eC3664DC) · TeamVesting [`0x1BAb9b013DD0bf0abb66536EaBbF9BD3965eEA3E`](https://testnet.bscscan.com/address/0x1BAb9b013DD0bf0abb66536EaBbF9BD3965eEA3E) · pair `0x3d134c2E4796b7d7C618Ad4C177552C21e770a59`. Agent ID mocks reused. Sourcify: [Launch](https://repo.sourcify.dev/contracts/full_match/97/0x45ff932F0588811cc140D6Bd3abA22A813418408/) · [Genesis](https://repo.sourcify.dev/contracts/full_match/97/0x7f1F4ADc57060B4d718f0F82dbcDcC23e76D03d1/) · [DrawV2](https://repo.sourcify.dev/contracts/full_match/97/0x49040903FE8f510F746B223FF189688f375c8c97/) · [Token](https://repo.sourcify.dev/contracts/full_match/97/0x7C5510995210E40F5E9fd46066F01CbADf0666CD/).
+- **Mint window:** 22 Nov 2026, 19:43:19 PKT → **29 Nov 2026, 19:43:19 PKT** (7 days).
+- **Funding:** deployer 0.020915098 → **0.006290238** after deploy (gas **0.01462486** tBNB). After rehearsal: **0.004258928 tBNB**, **122,023,000 TWAK**.
+- **Rehearsal (user-paid VRF fees, callbacks in seconds):** Genesis `mint(2)` prizeId **5 (1.1×, +2,000 extra)**, claimed. [mint](https://testnet.bscscan.com/tx/0xaa835f9303c1655eb3e10bc0e0ee33b2550b9e79c73b9ebe10d5b1ca8df18a7b) · [VRF fulfill](https://testnet.bscscan.com/tx/0x702cb089bbca0fc911d37911d55c21595e1f428a4e3672b390016c2add8c439a) · [claim](https://testnet.bscscan.com/tx/0x11cbd39e20680391942dc34bde4c834c2da6baf3b139beeb3c0c33cfe2ac1259). DrawV2 `enter(1000 TWAK)` prizeId **4 (2×, +2,000 TWAK)**, claimed; `availableTwak` 69,999,000. [approve](https://testnet.bscscan.com/tx/0xc7638c0e3f3157999235f21e4df6a4ab4653467e6ec3b871af425b967cc7611f) · [enter](https://testnet.bscscan.com/tx/0xc550b75b61258d15772cec5ca91f48afa6208233676fc03a8f7dce2b5dd647ae) · [VRF fulfill](https://testnet.bscscan.com/tx/0xa3f1234fd0b006fedd3b7ff7293cafe42dc7581f972275f6db12ef145fb052c9) · [claim](https://testnet.bscscan.com/tx/0x7eacca96878fc7c46d1a3bbefa78b9bc767244b6bf0c0d7eac36b1027d762c11). **Paid V1 mint skipped** — 0.1 BNB + fee exceeds the 0.00629 tBNB left after deploy.
+- **Vercel preview (not production, SSO on):** https://towack-ch5kicclp-abcd-532d.vercel.app — inspector https://vercel.com/abcd-532d/towack/UuTCi2esuYEfCU3uWQT1yAjwX2dQ (`dpl_UuTCi2esuYEfCU3uWQT1yAjwX2dQ`, 22 Nov 2026, 19:48:00 PKT).
+- **Viewport sanity (local production build, `NEXT_PUBLIC_DEMO_WHEEL=1`, `/mint` and `/lottery` only):** 360×740, 768×1024, 1440×900, 1920×1080. Horizontal overflow 0 on all eight shots. Live counts match chain (Genesis 1/300, Launch 0/5,000, DrawV2 available 69,999,000, mint window ~7 days). No layout breaks. One copy fix in this commit: the lottery TESTNET NOTE still said the pool was a 5M stand-in pending a full-stack redeploy; it now describes the live 70M official-VRF pool. The preview above was cut just before that copy fix (addresses were already current). Shots left untracked in `web/shots/fullstack/`.
+
 ## User-paid Chainlink VRF fee + tight callback limits (code + estimates only, 2026-11-22 ~19:30 PKT) — NOT DEPLOYED
 Nothing was deployed or broadcast. All numbers below are keyless simulations / read-only RPC calls. Live testnet contracts are unchanged; the frontend detects that they predate the fee and keeps sending the old values to them.
 - **Approach:** stay on the VRF v2.5 **native-payment subscription** (not the wrapper/direct funding: wrapper overhead, no refunds, separate per-network consumer base). `VRFConsumerV25` quotes `vrfFeeAt(gasPrice)` with the coordinator's own formula (`_calculatePaymentAmountNative`, live `s_config()`, 100k coordinator overhead, full callback limit, +15%). Gas price is clamped to [node floor, lane cap]: 97 = [1, 50] gwei, 56 = [0.1, 200] gwei. On every request it forwards **exactly the fee** with `fundSubscriptionWithNative` **before** `requestRandomWords`, then refunds the excess. Too little → `VrfFeeTooLow`, atomic.
@@ -89,18 +100,17 @@ Resumed after the 5:00 AM PKT Claude Code reset. Foundry untouched. Lint + `NEXT
 New preview (not production, SSO on): https://towack-235s5xz7h-abcd-532d.vercel.app
 
 ## Next steps (product)
-1. **Needs Mateen:** a full token-stack redeploy if paid V1 (`TowackLaunch`) should also use official Chainlink VRF. The live Launch is ownerless with immutable VRF config and holds 650M TWAK plus one claimed paid mint.
-2. Cut a new Vercel preview (not production) so the UI points at official-VRF Genesis/DrawV2. The current preview still has the old mock-VRF addresses.
-3. More tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` for a real 0.1 paid mint (current balance **0.020915098** tBNB). Until the full redeploy, that mint would still use MockVRF `fulfillPseudo`.
-4. Optional: BscScan verification once a paid API plan covers chain 97. Genesis + DrawV2 (official VRF) are already Sourcify **exact_match**.
+1. **Needs Mateen:** more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` for a real 0.1 official-VRF paid V1 mint (need 0.1 + ~0.0006 fee; current balance **0.004258928** tBNB).
+2. Optional: BscScan verification once a paid API plan covers chain 97. All eight new contracts are already Sourcify **exact_match**.
+3. Do not promote the Vercel preview to production, and do not touch mainnet, until Mateen explicitly approves.
 
-## Vercel preview (2026-11-22, 06:50:24 PKT)
+## Vercel preview (2026-11-22, 19:48:00 PKT)
 Preview only (not production), project `abcd-532d/towack`, Node 24.x, framework Next.js. Deployment protection remains `vercel_authentication`.
-- Preview: https://towack-czg2h9vg8-abcd-532d.vercel.app
-- Inspector: https://vercel.com/abcd-532d/towack/BHVvt7wH47tmH3kcTeZkCR6XRqbk
-- Deployment id: `dpl_BHVvt7wH47tmH3kcTeZkCR6XRqbk`, target `None`.
-- `NEXT_PUBLIC_DEMO_WHEEL=1` is set on the **Preview** environment only (not Production), so `?demo=wheel`, `?demo=genesis` and `?demo=pool` work on this preview.
-- Previous previews: https://towack-235s5xz7h-abcd-532d.vercel.app (responsive layout), https://towack-bmrfdbzop-abcd-532d.vercel.app (pre-layout-fix), https://towack-788t1xqg4-abcd-532d.vercel.app (old addresses).
+- Preview: https://towack-ch5kicclp-abcd-532d.vercel.app
+- Inspector: https://vercel.com/abcd-532d/towack/UuTCi2esuYEfCU3uWQT1yAjwX2dQ
+- Deployment id: `dpl_UuTCi2esuYEfCU3uWQT1yAjwX2dQ`, target `None` (preview).
+- Wired to the full-stack official-VRF addresses in `addresses.json`. `NEXT_PUBLIC_DEMO_WHEEL=1` is set on the **Preview** environment only (not Production).
+- Previous previews: https://towack-czg2h9vg8-abcd-532d.vercel.app (Genesis/DrawV2 mock-then-official mid-stack), https://towack-235s5xz7h-abcd-532d.vercel.app (responsive layout), https://towack-bmrfdbzop-abcd-532d.vercel.app, https://towack-788t1xqg4-abcd-532d.vercel.app.
 
 ## Wheel screenshots (1280×800, 2026-11-22, ~04:09 AM PKT)
 Taken against a local `next dev` with `NEXT_PUBLIC_DEMO_WHEEL=1` and `?demo=wheel` (first demo prize is 3× TWAK). Not committed.
@@ -209,7 +219,7 @@ Design details: `docs/ARCHITECTURE.md`.
 - `incorrect-equality` (`== 0` checks), `uninitialized-local` (zero-initialised accumulators), `unused-return` (`pair.mint`): benign.
 
 ## Deploy status
-**Redeployed on BSC testnet (chain 97)** at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch). Official Chainlink VRF v2.5 was wired for Genesis + DrawV2 at 18:30 PKT the same day (see the section at the top and `deployments/bsc-testnet.json` → `officialVrf`). The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is **0.020915098 tBNB** — not enough for a 0.1 mint. Paid Launch still uses MockVRFCoordinator.
+**Redeployed on BSC testnet (chain 97)** at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch). Official Chainlink VRF v2.5 was wired for Genesis + DrawV2 at 18:30 PKT the same day (see the section at the top and `deployments/bsc-testnet.json` → `officialVrf`). The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is **0.004258928 tBNB** — not enough for a 0.1 paid mint. Paid Launch is now on official VRF (needs more tBNB to rehearse).
 
 
 ## Known gaps / decisions to confirm
