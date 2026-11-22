@@ -1,0 +1,210 @@
+{
+  "status": "NOT_DEPLOYED_EXPECTED_DEPENDENCIES_ONLY",
+  "warning": "NOT a live deployment record. Towack protocol contracts have NOT been broadcast to BSC mainnet (chain 56). Do NOT broadcast until Mateen explicitly says go.",
+  "chainId": 56,
+  "network": "bsc-mainnet",
+  "explorer": "https://bscscan.com",
+  "verifiedAtUtc": "2026-11-22T23:00:44Z",
+  "verifiedAtBlock": 135163386,
+  "verificationRpc": "https://bsc-rpc.publicnode.com",
+  "dependencies": {
+    "agentId": {
+      "address": "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
+      "contractName": "HandleRegistry",
+      "tokenName": "SPACE ID Agent ID",
+      "tokenSymbol": "AI",
+      "soulbound": true,
+      "erc721": true,
+      "erc721Enumerable": false,
+      "tokenIdFormula": "uint256(keccak256(bytes(handle)))",
+      "codeBytes": 8756,
+      "interfaceProbes": {
+        "supportsInterface_ERC721_0x80ac58cd": true,
+        "supportsInterface_ERC721Enumerable_0x780e9d63": false,
+        "balanceOf_dead": 0,
+        "sampleHolder": "0x56a9813E93363fb5141bdDD332f9BBbdC955e2b8",
+        "sampleHandle": "delben96",
+        "sampleTokenId": "0xe677278a4e92d3c079954d98663823908cbcee7ae78534bb130987be003aa9f7",
+        "sampleTokenURI": "https://agentid.prd.space.id/metadata/delben96.json",
+        "handleOf_sampleHolder": "delben96",
+        "ownerOfHandle_delben96": "0x56a9813E93363fb5141bdDD332f9BBbdC955e2b8",
+        "ownerOf_sampleTokenId": "0x56a9813E93363fb5141bdDD332f9BBbdC955e2b8",
+        "balanceOf_sampleHolder": 1
+      },
+      "sources": [
+        "https://repo.sourcify.dev/contracts/full_match/56/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F/ (Sourcify exact_match: creation + runtime, verified 2026-10-16T09:00:53Z)",
+        "https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
+        "On-chain eth_getCode + eth_call via https://bsc-rpc.publicnode.com at block 135163386"
+      ]
+    },
+    "vrfWrapper": {
+      "address": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94",
+      "typeAndVersion": "VRFV2PlusWrapper 1.0.0",
+      "note": "Deterministic CREATE2 deployment shares the same address on BSC mainnet (56) and BSC testnet (97); verified independently on chain 56 via s_vrfCoordinator() and link().",
+      "codeBytes": 14694,
+      "onchainProbes": {
+        "s_vrfCoordinator": "0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9",
+        "link": "0x404460C6A5EdE2D891e8297795264fDe62ADBB75",
+        "linkNativeFeed": "0xB38722F6A608646a538E882Ee9972D15c86Fc597",
+        "s_configured": true,
+        "s_disabled": false,
+        "subscriptionId": "19262709020754917837560821295307473039921929604207340502600018227350726274425",
+        "subscriptionReqCount": 92667,
+        "subscriptionNativeBalanceWei": "99817053499586906867",
+        "subscriptionLinkBalanceWei": "199313099581772811328"
+      },
+      "liveQuotesExactWei": {
+        "launch_165k": {
+          "0.05_gwei": "21864800000000",
+          "0.1_gwei": "43729600000000",
+          "1_gwei": "437296000000000"
+        },
+        "genesis_170k": {
+          "0.05_gwei": "22264800000000",
+          "0.1_gwei": "44529600000000",
+          "1_gwei": "445296000000000"
+        },
+        "drawV2_200k": {
+          "0.05_gwei": "24664800000000",
+          "0.1_gwei": "49329600000000",
+          "1_gwei": "493296000000000"
+        }
+      },
+      "sources": [
+        "https://docs.chain.link/vrf/v2-5/supported-networks#bnb-chain-mainnet (Direct Funding table)",
+        "https://bscscan.com/address/0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94",
+        "On-chain eth_getCode + eth_call via https://bsc-rpc.publicnode.com at block 135163386"
+      ]
+    },
+    "vrfCoordinator": {
+      "address": "0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9",
+      "codeBytes": 24095,
+      "onchainConfig": {
+        "minimumRequestConfirmations": 3,
+        "maxGasLimit": 2500000,
+        "stalenessSeconds": 172800,
+        "gasAfterPaymentCalculation": 48500,
+        "fulfillmentFlatFeeNativePPM": 0,
+        "fulfillmentFlatFeeLinkDiscountPPM": 0,
+        "nativePremiumPercentage": 60,
+        "linkPremiumPercentage": 50
+      },
+      "sources": [
+        "https://docs.chain.link/vrf/v2-5/supported-networks#bnb-chain-mainnet",
+        "https://bscscan.com/address/0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9",
+        "On-chain eth_getCode + s_config() via https://bsc-rpc.publicnode.com at block 135163386"
+      ]
+    },
+    "link": {
+      "address": "0x404460C6A5EdE2D891e8297795264fDe62ADBB75",
+      "note": "Reference only; Towack pays Chainlink VRF v2.5 in native BNB via direct funding.",
+      "sources": [
+        "https://docs.chain.link/vrf/v2-5/supported-networks#bnb-chain-mainnet",
+        "Verified via VRF_WRAPPER.link() on chain 56"
+      ]
+    },
+    "pancakeFactory": {
+      "address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+      "codeBytes": 19085,
+      "onchainProbes": {
+        "allPairsLength": 3752550,
+        "matchesRouterFactory": true
+      },
+      "sources": [
+        "https://developer.pancakeswap.finance/contracts/v2/addresses",
+        "https://bscscan.com/address/0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+        "Verified via PANCAKE_ROUTER.factory() at block 135163386"
+      ]
+    },
+    "pancakeRouter": {
+      "address": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+      "codeBytes": 21937,
+      "onchainProbes": {
+        "factory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+        "WETH": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+      },
+      "sources": [
+        "https://developer.pancakeswap.finance/contracts/v2/addresses",
+        "https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E",
+        "On-chain eth_getCode + factory()/WETH() at block 135163386"
+      ]
+    },
+    "wbnb": {
+      "address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      "name": "Wrapped BNB",
+      "symbol": "WBNB",
+      "codeBytes": 3125,
+      "onchainProbes": {
+        "matchesRouterWETH": true
+      },
+      "sources": [
+        "https://bscscan.com/token/0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+        "Verified via PANCAKE_ROUTER.WETH() at block 135163386"
+      ]
+    }
+  },
+  "plannedProtocolParams": {
+    "script": "script/DeployFullStackMainnet.s.sol",
+    "tokenSupply": "1000000000e18",
+    "launch": {
+      "mintPriceBnb": "0.1",
+      "tokensPerMint": "80000",
+      "maxMints": 5000,
+      "referralFeeBnb": "0.005",
+      "bnbPrizeTiersBnb": ["0.095", "0.07125", "0.0475", "0.02375"],
+      "deckBnbTotal": "166.25",
+      "deckBonusTotalTwak": "35200000",
+      "instantClose": false,
+      "defaultMintDurationSeconds": 604800,
+      "vrfCallbackGasLimit": 165000,
+      "vrfRequestConfirmations": 3
+    },
+    "genesis": {
+      "maxMints": 300,
+      "baseTokens": "20000",
+      "budgetTwak": "8000000",
+      "vrfCallbackGasLimit": 170000,
+      "vrfRequestConfirmations": 3
+    },
+    "drawV2": {
+      "seedPoolTwak": "70000000",
+      "wheelSlots": 10000,
+      "expectedReturnBps": 9500,
+      "minEntryTwak": "100",
+      "bnbBonusScaling": "2% * availableBnb * amount / maxEntry (10x); half for 5x",
+      "vrfCallbackGasLimit": 200000,
+      "vrfRequestConfirmations": 3
+    },
+    "governance": {
+      "timelockDefaultDelaySeconds": 172800,
+      "timelockMinDelaySeconds": 86400,
+      "timelockAdmin": "0x0000000000000000000000000000000000000000",
+      "drawV2Owner": "TimelockController",
+      "rebateDistributorRouterAdmin": "TimelockController",
+      "genesisOwner": "GENESIS_OWNER (Ownable2Step, hand off to Timelock/multisig)"
+    }
+  },
+  "anvilForkDryRunEstimate": {
+    "note": "Measured via local Anvil fork of BSC mainnet (DeployFullStackMainnet.s.sol --sig 'forkRun()', 16 txs including Genesis fund+open; deployer-only with separate multisig ecosystem wallet is 13 txs = 15,329,466 gas).",
+    "txCountAll16": 16,
+    "totalGasAll16": 15521207,
+    "deployerOnlyGas13Txs": 15329466,
+    "costBnbAll16": {
+      "0.05_gwei": "0.000776060",
+      "0.1_gwei": "0.001552121",
+      "1_gwei": "0.015521207"
+    },
+    "recommendedDeployerFundingBnb": "0.03 (script GAS_RESERVE floor; covers ~2x gas-price headroom at 1 gwei, ~19x at 0.1 gwei)"
+  },
+  "protocolContracts": {
+    "token": "",
+    "launch": "",
+    "router": "",
+    "rebateDistributor": "",
+    "teamVesting": "",
+    "drawV2": "",
+    "timelock": "",
+    "genesis": "",
+    "pair": ""
+  }
+}

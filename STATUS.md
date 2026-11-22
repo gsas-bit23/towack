@@ -1,7 +1,65 @@
 # Towack status
 
 **Repo:** https://github.com/gsas-bit23/towack
-**Milestone:** 1 — instant per-mint prize-wheel contracts redeployed on BSC testnet (97); Arcade Sky frontend wired to the new addresses.
+**Milestone:** 1 — BSC testnet (97) referrals stack live; **BSC mainnet (56) Phase 1 readiness complete (NOT DEPLOYED — awaiting Mateen's go)**.
+
+## Mainnet readiness — Phase 1 (2026-11-23, NOT DEPLOYED)
+**DO NOT BROADCAST TO BSC MAINNET (CHAIN 56) UNTIL MATEEN SAYS GO.** Nothing was sent to chain 56, no mainnet BNB was spent, no testnet tBNB was spent, and no `--prod` Vercel deploy was cut.
+
+### Verified BSC mainnet dependencies (chain 56, block `135,163,386`, RPC `https://bsc-rpc.publicnode.com`)
+Full record + on-chain probe results: `deployments/bsc-mainnet.expected.json` (not a live deployment record).
+
+- **SPACE ID Agent ID (`HandleRegistry`):** [`0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F`](https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F) — [Sourcify exact_match](https://repo.sourcify.dev/contracts/full_match/56/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F/). Soulbound ERC-721 (`"SPACE ID Agent ID"`, `"AI"`), non-enumerable (`ERC721Enumerable = false`), strictly one handle per address, `tokenId = uint256(keccak256(bytes(handle)))`. Verified on-chain via `balanceOf`, `handleOf`, `ownerOfHandle`, `ownerOf` (e.g. `0x56a9…e2b8` → `"delben96"`). `IAgentId` updated with `ownerOf` / `handleOf` / `ownerOfHandle` (keeping testnet mocks compatible); `TowackGenesis` adds `mintByHandle()` alongside `mint(uint256)`.
+- **Chainlink VRF v2.5 Direct-Funding Wrapper:** [`0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94`](https://bscscan.com/address/0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94) — [Chainlink VRF v2.5 BNB Chain Mainnet docs](https://docs.chain.link/vrf/v2-5/supported-networks#bnb-chain-mainnet). Same deterministic CREATE2 address as testnet, verified independently on chain 56: `typeAndVersion() = "VRFV2PlusWrapper 1.0.0"`, `s_vrfCoordinator() = 0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9`, `link() = 0x404460C6A5EdE2D891e8297795264fDe62ADBB75`, `s_configured() = true`, `s_disabled() = false`, active wrapper sub (`92,667` requests, ~99.8 BNB / ~199.3 LINK). Live quotes @ 0.1 gwei (exact): Launch 165k `0.0000437296 BNB`, Genesis 170k `0.0000445296 BNB`, DrawV2 200k `0.0000493296 BNB`.
+- **Chainlink VRF v2.5 Coordinator:** [`0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9`](https://bscscan.com/address/0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9) — [Chainlink docs](https://docs.chain.link/vrf/v2-5/supported-networks#bnb-chain-mainnet). On-chain `s_config()`: minConf `3`, maxGas `2,500,000`, native premium `60%`, flat fee `0`.
+- **PancakeSwap v2 Factory / Router02:** [`0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73`](https://bscscan.com/address/0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73) / [`0x10ED43C718714eb63d5aA57B78B54704E256024E`](https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E) — [PancakeSwap v2 addresses docs](https://developer.pancakeswap.finance/contracts/v2/addresses). Verified `router.factory()` and `router.WETH()` on-chain (`allPairsLength = 3,752,550`).
+- **WBNB:** [`0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c`](https://bscscan.com/token/0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) — `"Wrapped BNB"` (`"WBNB"`), matches `PANCAKE_ROUTER.WETH()`.
+
+### Anvil mainnet fork dry-run & gas/cost report
+- **Deploy script:** `script/DeployFullStackMainnet.s.sol` (`dryRun()` default keyless simulation; `forkRun()` Anvil-only; `run()` gated behind `TOWACK_MAINNET_GO=I_HAVE_MATEENS_GO` + multisig recipient checks + non-Anvil check).
+- **Local Anvil fork broadcast (`forkRun()`, 16 txs including Genesis fund + open):** **15,521,207 gas** (all 16 txs `status=0x1`; deployer-only is 13 txs = **15,329,466 gas** when `ECOSYSTEM_WALLET != deployer`):
+  - **@ 0.05 gwei:** `0.000776060 BNB`
+  - **@ 0.10 gwei:** `0.001552121 BNB`
+  - **@ 1.00 gwei:** `0.015521207 BNB`
+- **Full end-to-end mainnet fork lifecycle (`test/fork/ForkMainnetFullStack.t.sol`):** **PASS** against real `HandleRegistry` holders (`0x56a9…e2b8` `"delben96"` & `0xecdC…7bC6`), real `VRFV2PlusWrapper` + `VRFCoordinatorV2_5` (`_callWithExactGas` 165k/170k/200k), and real PancakeSwap v2: referred paid mint + referral/prize claims, Genesis `mintByHandle()` + `mint(tokenId)` + claims, `closeMint` + `finalizeListing` (LP burned to `address(0)`), agent + non-agent router buy/sell + `flushFees` + `RebateDistributor` claim, and `DrawV2` 10× jackpot + scaled BNB bonus claim.
+
+### Security pass & tests
+- **Audit fixes (with regression tests):**
+  1. `DrawV2.sol`: scaled BNB bonus cap linearly by `amount / maxEntry` (`bnbBonusPreviewFor` added) so `MIN_ENTRY` (100 TWAK) spam cannot drain the BNB pot at +EV.
+  2. `RebateDistributor.sol`: added `routerAdmin` + `setRouterAdmin` (handed to `TimelockController` at deploy; `address(0)` freezes permanently), removing the irreversible deployer EOA trust trap.
+  3. `TowackToken.sol`: reuse pre-existing PancakeSwap v2 pair via `getPair` instead of reverting `PAIR_EXISTS` if a front-runner pre-creates the pair before deploy.
+  4. `TowackLaunch.sol`: added `MIN_LP_BNB = 1e12` floor so force-sent dust BNB (e.g. `1 wei` via `selfdestruct` when normal leftover is `0`) cannot brick `finalizeListing()` via PancakePair `MINIMUM_LIQUIDITY` underflow; verified `pair.mint(...) > 0`; tightened CEI in `closeMint()`.
+  5. `TowackGenesis.sol`: added `mintByHandle()` for mainnet `HandleRegistry` compatibility while preserving `mint(uint256)` for mocks; tightened CEI on sellout auto-close.
+  6. `TowackRouter.sol`: added independent `flushLottery()` and `flushDev()` alongside `flushFees()` so a reverting `dev` wallet can never trap Draw V2's 30% BNB share.
+- **Verification:** `forge test` **175 passed, 0 failed, 2 skipped** (gated fork tests); `BSC_MAINNET_FORK=1 forge test --match-contract ForkMainnetFullStack` **PASS**; `FOUNDRY_FUZZ_RUNS=2000 forge test --match-test testFuzz` **14/14 passed**; `slither` re-run on `src/` **17 results** (all reviewed false positives / intentional patterns; 0 unmitigated high/medium findings); `web`: `tsc --noEmit`, `npm run lint`, `NEXT_PUBLIC_DEFAULT_CHAIN_ID=56 npm run build` green; Playwright mainnet-mode audit across all 10 routes × 2 viewports (1440px & 360px): **20/20 HTTP 200, 0px overflow, 0 console/page errors, 0 testnet leaks**, `/r/delben96.ai` resolves on-chain, `/icon.svg` + `/opengraph-image` + `/robots.txt` + 404 verified.
+
+### Mainnet go checklist (MATEEN-ONLY — DO NOT RUN UNTIL MATEEN SAYS GO)
+1. **Prepare multisig / Safe wallets on BSC mainnet (chain 56)** for: `SEASONS_WALLET`, `ECOSYSTEM_WALLET`, `POL_BUFFER_WALLET`, `TEAM_BENEFICIARY`, `DEV_WALLET` (must accept plain BNB transfers), `TIMELOCK_PROPOSER`, and `GENESIS_OWNER` (or leave `GENESIS_OWNER` as multisig / hand off via 2-step transfer to Timelock after opening).
+2. **Fund the mainnet deployer wallet** with at least **`0.03 BNB`** (`GAS_RESERVE` enforced by script; actual deploy gas is ~0.0016 BNB @ 0.1 gwei / ~0.0155 BNB @ 1 gwei; no VRF subscription deposit required).
+3. **Keyless pre-flight simulation (safe, no broadcast):**
+   ```bash
+   forge script script/DeployFullStackMainnet.s.sol --sig "dryRun()" --rpc-url https://bsc-rpc.publicnode.com
+   ```
+4. **MATEEN-ONLY broadcast command (DO NOT RUN UNTIL MATEEN SAYS GO):**
+   ```bash
+   set -a; source <mainnet-deployer-env>; set +a   # never echo or commit secrets
+   TOWACK_MAINNET_GO=I_HAVE_MATEENS_GO \
+   MAINNET_DEPLOYER=0x... \
+   SEASONS_WALLET=0x... \
+   ECOSYSTEM_WALLET=0x... \
+   POL_BUFFER_WALLET=0x... \
+   TEAM_BENEFICIARY=0x... \
+   DEV_WALLET=0x... \
+   TIMELOCK_PROPOSER=0x... \
+   GENESIS_OWNER=0x... \
+   forge script script/DeployFullStackMainnet.s.sol --sig "run()" \
+     --rpc-url https://bsc-dataseed.bnbchain.org \
+     --broadcast --slow --legacy --with-gas-price 0.1gwei
+   ```
+5. **Post-deploy steps (after Mateen's broadcast):**
+   - If `ECOSYSTEM_WALLET != MAINNET_DEPLOYER`: from `ECOSYSTEM_WALLET`, call `TWAK.approve(genesis, 8000000e18)` then `TowackGenesis.fund(8000000e18)`; from `GENESIS_OWNER`, call `TowackGenesis.open()`.
+   - Verify all 8 deployed contracts on Sourcify (chain 56) & BscScan.
+   - Copy the real deployed addresses from `deployments/out/bsc-mainnet.addresses.json` into `web/src/config/addresses.json` (chain `"56"`), commit `deployments/bsc-mainnet.json`, update `web/public/skills/towack/SKILL.md`, set `NEXT_PUBLIC_DEFAULT_CHAIN_ID=56` on production Vercel, and promote only after Mateen's sign-off.
 
 ## Paid-mint referrals stack (deployed 2026-11-23, 03:23:57 PKT)
 Main testnet stack redeploy with **5% paid-mint referrals** on `TowackLaunch` and the agent-first UX. Official VRF v2.5 direct-funding wrapper, reused Mock Agent ID / NFT, `instantClose = false`, 7-day mint window. Script: `script/DeployFullStackTestnet.s.sol` (`--legacy --with-gas-price 1gwei --slow`). Record: `deployments/bsc-testnet.json` → `fullStackReferrals`. `web/src/config/addresses.json` chain **97** now points here (previous wrapper stack Launch [`0x617f9d29B274118267CcdF9a7160F739927ba1aB`](https://testnet.bscscan.com/address/0x617f9d29B274118267CcdF9a7160F739927ba1aB) stays on-chain). Chain 56 unchanged (mainnet contracts still undeployed). Never mainnet, no `--prod`.
