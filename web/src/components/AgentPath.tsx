@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } from "viem";
 import { ADDRESSES } from "@/config/addresses";
+import { buildSwapInstruction, type AgentRoute } from "@/lib/agentSwap";
 import { useTowack } from "@/lib/chain";
 import { Button, Pill } from "./ui";
 
@@ -24,7 +25,12 @@ export type AgentFlow =
   | "lotteryClaim"
   | "referralClaim" // TowackLaunch.claimReferral()
   | "buy" // TowackRouter.buy
-  | "sell"; // TWAK.approve(exact) + TowackRouter.sell
+  | "sell" // TWAK.approve(exact) + TowackRouter.sell
+  | "swap" // /swap: same-chain route (PancakeSwap / Uniswap / Relay / 0x / 1inch), see lib/agentSwap.ts
+  | "bridge"; // /swap: cross-chain route via Relay
+
+/** Route context for the "swap" / "bridge" flows (mainnet tokens; see toMainnetToken). */
+export type AgentSwapContext = { route?: AgentRoute; inPlaceholder?: boolean; outPlaceholder?: boolean };
 
 /** Referrer baked into a paid-mint instruction (from `?ref=` / `/r/<handle>`). */
 export type AgentReferral = { address?: Address; handle?: string };
@@ -81,7 +87,8 @@ function missingList(items: [string, boolean][]) {
   return items.filter(([, m]) => m).map(([n]) => n);
 }
 
-export function buildInstruction(flow: AgentFlow, referral?: AgentReferral): { text: string; missing: string[] } {
+export function buildInstruction(flow: AgentFlow, referral?: AgentReferral, swap?: AgentSwapContext): { text: string; missing: string[] } {
+  if (flow === "swap" || flow === "bridge") return buildSwapInstruction(swap?.route, swap);
   const l = mainnet("launch", "<TOWACK_LAUNCH>");
   const g = mainnet("genesis", "<TOWACK_GENESIS>");
   const d = mainnet("drawV2", "<TOWACK_DRAWV2>");
@@ -190,7 +197,17 @@ ${footer(BASE_RULES)}`;
 }
 
 /** Toggle button meant to sit next to the normal wallet action. */
-export function AgentPathToggle({ flow, referral, className = "" }: { flow: AgentFlow; referral?: AgentReferral; className?: string }) {
+export function AgentPathToggle({
+  flow,
+  referral,
+  swap,
+  className = "",
+}: {
+  flow: AgentFlow;
+  referral?: AgentReferral;
+  swap?: AgentSwapContext;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className={className}>
@@ -199,14 +216,24 @@ export function AgentPathToggle({ flow, referral, className = "" }: { flow: Agen
           <span aria-hidden="true">🤖</span> {open ? "Hide AI agent steps" : "Give this to your AI agent"}
         </Button>
       </div>
-      {open ? <AgentPathPanel flow={flow} referral={referral} className="mt-4 text-left" /> : null}
+      {open ? <AgentPathPanel flow={flow} referral={referral} swap={swap} className="mt-4 text-left" /> : null}
     </div>
   );
 }
 
-export function AgentPathPanel({ flow, referral, className = "" }: { flow: AgentFlow; referral?: AgentReferral; className?: string }) {
+export function AgentPathPanel({
+  flow,
+  referral,
+  swap,
+  className = "",
+}: {
+  flow: AgentFlow;
+  referral?: AgentReferral;
+  swap?: AgentSwapContext;
+  className?: string;
+}) {
   const { meta } = useTowack();
-  const { text, missing } = buildInstruction(flow, referral);
+  const { text, missing } = buildInstruction(flow, referral, swap);
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
 
   async function copy() {

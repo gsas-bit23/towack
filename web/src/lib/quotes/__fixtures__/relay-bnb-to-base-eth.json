@@ -1,0 +1,94 @@
+{
+ "requestId": "0x17953868951421263eb29559e64e91492e98ea377b19c3b41610b707a0d18ebd",
+ "steps": [
+  {
+   "id": "deposit",
+   "action": "Confirm transaction in your wallet",
+   "description": "Depositing funds to the relayer to execute the swap for ETH",
+   "kind": "transaction",
+   "items": [
+    {
+     "status": "incomplete",
+     "data": {
+      "from": "0x000000000000000000000000000000000000dEaD",
+      "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+      "data": "0x49290c1c000000000000000000000000000000000000000000000000000000000000deada3e7e82a99dffca2bb605c107533336cd795e2fe5683ae52c5e706a5fe4ce6cb",
+      "value": "100000000000000000",
+      "chainId": 56,
+      "gas": "32432",
+      "maxFeePerGas": "67000000",
+      "maxPriorityFeePerGas": "67000000"
+     },
+     "check": {
+      "endpoint": "/intents/status?requestId=0x17953868951421263eb29559e64e91492e98ea377b19c3b41610b707a0d18ebd",
+      "method": "GET"
+     }
+    }
+   ],
+   "requestId": "0x17953868951421263eb29559e64e91492e98ea377b19c3b41610b707a0d18ebd",
+   "depositAddress": ""
+  }
+ ],
+ "fees": {
+  "gas": {
+   "currency": {
+    "chainId": 56,
+    "address": "0x0000000000000000000000000000000000000000",
+    "symbol": "BNB",
+    "name": "Binance Coin",
+    "decimals": 18
+   },
+   "amount": "2172944000000",
+   "amountFormatted": "0.000002172944",
+   "amountUsd": "0.001205",
+   "minimumAmount": "2172944000000"
+  },
+  "relayer": {
+   "currency": {
+    "chainId": 56,
+    "address": "0x0000000000000000000000000000000000000000",
+    "symbol": "BNB",
+    "name": "Binance Coin",
+    "decimals": 18
+   },
+   "amount": "225955792820179",
+   "amountFormatted": "0.000225955792820179",
+   "amountUsd": "0.125304",
+   "minimumAmount": "225955792820179"
+  }
+ },
+ "details": {
+  "currencyIn": {
+   "currency": {
+    "chainId": 56,
+    "address": "0x0000000000000000000000000000000000000000",
+    "symbol": "BNB",
+    "name": "Binance Coin",
+    "decimals": 18
+   },
+   "amount": "100000000000000000",
+   "amountFormatted": "0.1",
+   "amountUsd": "55.455102",
+   "minimumAmount": "100000000000000000"
+  },
+  "currencyOut": {
+   "currency": {
+    "chainId": 8453,
+    "address": "0x0000000000000000000000000000000000000000",
+    "symbol": "ETH",
+    "name": "Ether",
+    "decimals": 18
+   },
+   "amount": "32233536023005114",
+   "amountFormatted": "0.032233536023005114",
+   "amountUsd": "55.051922",
+   "minimumAmount": "31588865302545012"
+  },
+  "totalImpact": {
+   "usd": "-0.403180",
+   "percent": "-0.73"
+  },
+  "timeEstimate": 1,
+  "rate": "0.3223353602300511"
+ }
+}

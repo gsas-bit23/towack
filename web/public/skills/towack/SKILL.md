@@ -1,6 +1,6 @@
 ---
 name: towack
-description: Mint Towack (TWAK) slots (optionally with a referrer), claim Genesis 300, enter the Draw V2 pool wheel, claim prizes and referral BNB, and buy/sell TWAK through the Towack router on BNB Smart Chain mainnet using the official Binance Agentic Wallet (BAW) external-sign flow. Use when a user asks to mint, refer, spin, enter, claim, buy or sell on Towack with their Binance Agentic Wallet.
+description: Mint Towack (TWAK) slots (optionally with a referrer), claim Genesis 300, enter the Draw V2 pool wheel, claim prizes and referral BNB, buy/sell TWAK through the Towack router, and swap or bridge tokens via PancakeSwap, Uniswap, and Relay on BNB Smart Chain mainnet using the official Binance Agentic Wallet (BAW) external-sign flow. Use when a user asks to mint, refer, spin, enter, claim, buy, sell, swap or bridge on Towack with their Binance Agentic Wallet.
 ---
 
 # Towack with Binance Agentic Wallet
@@ -72,6 +72,49 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 1. `TWAK.approve(TowackRouter, amount)` (selector `0x095ea7b3`): `--to TWAK`, `--value 0`, **exact** `amount`, never unlimited.
 2. Quote: `getAmountsOut(amount, [TWAK, WBNB])`; `minBnbOut = quote * 99 / 100 * (100 - slippage%) / 100` (1% router fee on BNB out); `deadline = now + 600`.
 3. `TowackRouter.sell(uint256 amountIn, uint256 minBnbOut, uint256 deadline)` (selector `0xd3c9727c`): `--to TowackRouter`, `--value 0`.
+
+### Swap / bridge (anyone; third-party routes earn no Towack rebate)
+The Towack `/swap` desk compares live quotes across PancakeSwap (v2/v3), Uniswap v3, and Relay (plus 0x / 1inch when API keys are configured), ranking by best net output after gas. BAW users execute the selected route on BNB Smart Chain mainnet (chain 56).
+
+**Pre-flight rules:**
+1. Origin chain is always BSC mainnet: `--binanceChainId 56`.
+2. Developer Mode must be enabled in Binance App (`baw wallet settings --json`).
+3. If the output token is unfamiliar, run the BAW token security audit pre-check first.
+4. Exact ERC-20 approval only (never unlimited / max uint256).
+5. Always re-quote immediately before constructing calldata; abort if price drifted beyond slippage tolerance.
+
+#### 1. PancakeSwap v2 (same-chain swap)
+- Router: `0x10ED43C718714eb63d5aA57B78B54704E256024E`
+- Path: `[tokenIn, tokenOut]` or `[tokenIn, WBNB, tokenOut]`
+- Quote: `getAmountsOut(amountIn, path)` via `eth_call`. Calculate `amountOutMin = quote * (10000 - slippageBps) / 10000`.
+- If `tokenIn` is ERC-20: approve exact `amountIn` to Router (selector `0x095ea7b3`).
+- Swap:
+  - Native BNB in: `swapExactETHForTokens(amountOutMin, path, recipient, deadline)` (selector `0x7ff36ab5`), `--value = amountIn`.
+  - Native BNB out: `swapExactTokensForETH(amountIn, amountOutMin, path, recipient, deadline)` (selector `0x18cbafe5`), `--value = 0`.
+  - Token to Token: `swapExactTokensForTokens(amountIn, amountOutMin, path, recipient, deadline)` (selector `0x38ed1739`), `--value = 0`.
+
+#### 2. PancakeSwap v3 / Uniswap v3 (same-chain swap)
+- PancakeSwap v3: QuoterV2 `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997`, Router `0x13f4EA83D0bd40E75C8222255bc855a974568Dd4`
+- Uniswap v3: QuoterV2 `0x78D78E420Da98ad378D7799bE8f4AF69033EB077`, SwapRouter02 `0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2`
+- Quote: `quoteExactInputSingle((tokenIn, tokenOut, amountIn, fee, sqrtPriceLimitX96))` (selector `0xc6a5026a`). `amountOutMin = amountOut * (10000 - slippageBps) / 10000`.
+- If `tokenIn` is ERC-20: approve exact `amountIn` to the Router.
+- Swap: `router.multicall(deadline, [exactInputSingle, unwrapWETH9?])` (selector `0x5ae401dc`):
+  - `exactInputSingle((tokenIn, tokenOut, fee, recipient, amountIn, amountOutMin, 0))` (selector `0x04e45aaf`). When output is native BNB, recipient is `0x0000000000000000000000000000000000000002` (the router itself).
+  - Native output unwrap: `unwrapWETH9(amountOutMin, recipient)` (selector `0x49404b7c`).
+
+#### 3. Relay (cross-chain bridge & swap via relay.link)
+- Keyless public API: `https://api.relay.link`
+- Supported destination chains: Ethereum (1), Base (8453), Arbitrum (42161), Optimism (10), Polygon (137).
+- Flow:
+  1. Quote: `POST https://api.relay.link/quote` with `user`, `recipient`, `originChainId: 56`, `destinationChainId`, `originCurrency`, `destinationCurrency`, `amount`, `tradeType: "EXACT_INPUT"`, `slippageTolerance`.
+  2. Verify all returned `steps[]` are kind `"transaction"` and target BSC (`chainId: 56`).
+  3. If approve step present: execute exact ERC-20 approval for `amountIn` to the designated spender.
+  4. For each tx step: preview -> wait for user explicit "yes" -> execute.
+  5. Status tracking: poll `GET https://api.relay.link/intents/status/v2?requestId=<requestId>` every 3-5 seconds until terminal status (`success`, `refund`, or `failure`).
+
+#### 4. BAW-Native Alternative (same-chain)
+When not bridging, BAW's native routing can also be used directly:
+`baw market-order quote --fromTokenQty <qty> --fromToken <in> --toToken <out> --binanceChainId 56 --slippage <slip> --json` -> preview -> explicit yes -> `baw market-order swap` -> poll order status.
 
 ### Retries
 If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch / Genesis) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(gasPrice)` again. Same preview / confirm / execute rules.

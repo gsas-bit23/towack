@@ -2,6 +2,7 @@ export const NAV_LINKS = [
   { href: "/mint", label: "Mint" },
   { href: "/draw", label: "Draw" },
   { href: "/trade", label: "Trade" },
+  { href: "/swap", label: "Swap" },
   { href: "/rebates", label: "Rebates" },
   { href: "/referrals", label: "Referrals" },
   { href: "/tokenomics", label: "Tokenomics" },
