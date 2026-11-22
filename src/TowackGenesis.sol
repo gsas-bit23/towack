@@ -6,6 +6,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IAgentId} from "./interfaces/IAgentId.sol";
 import {VRFConsumerV25} from "./VRFConsumerV25.sol";
 
 /// @title TowackGenesis ("Genesis 300")
@@ -178,6 +179,25 @@ contract TowackGenesis is VRFConsumerV25, Ownable2Step, ReentrancyGuard {
     /// @notice Free mint. Caller must own Agent ID `agentTokenId`. 20,000 TWAK now + one wheel spin.
     /// `msg.value` must cover the VRF fee (no mint price); excess is refunded.
     function mint(uint256 agentTokenId) external payable nonReentrant {
+        _mint(agentTokenId);
+    }
+
+    /// @notice Convenience for the mainnet SPACE ID HandleRegistry (`0x60B9…022F`), where each address has
+    /// at most one handle and `tokenId = uint256(keccak256(bytes(handle)))`. Resolves `handleOf(msg.sender)`
+    /// and delegates to `_mint(tokenId)`, enforcing the same `ownerOf` and single-use `tokenIdUsed` checks.
+    /// Reverts `NotAgentOwner` on registries without `handleOf` (e.g. testnet MockAgentIdNFT).
+    function mintByHandle() external payable nonReentrant {
+        string memory handle;
+        try IAgentId(address(agentId)).handleOf(msg.sender) returns (string memory h) {
+            handle = h;
+        } catch {
+            revert NotAgentOwner();
+        }
+        if (bytes(handle).length == 0) revert NotAgentOwner();
+        _mint(uint256(keccak256(bytes(handle))));
+    }
+
+    function _mint(uint256 agentTokenId) internal {
         if (!isOpen) revert NotOpen();
         if (mintCount >= MAX_MINTS) revert SoldOut();
         Ticket storage t = tickets[msg.sender];
@@ -193,13 +213,13 @@ contract TowackGenesis is VRFConsumerV25, Ownable2Step, ReentrancyGuard {
         t.index = uint32(idx);
         t.agentTokenId = agentTokenId;
         baseGranted += BASE_TOKENS;
-        token.safeTransfer(msg.sender, BASE_TOKENS);
-        emit GenesisMinted(msg.sender, idx, agentTokenId, BASE_TOKENS);
-        (, uint256 fee) = _request(msg.sender, t);
         if (idx == MAX_MINTS) {
             isOpen = false;
             emit WindowClosed(idx);
         }
+        token.safeTransfer(msg.sender, BASE_TOKENS);
+        emit GenesisMinted(msg.sender, idx, agentTokenId, BASE_TOKENS);
+        (, uint256 fee) = _request(msg.sender, t);
         _refund(msg.value - fee);
     }
 

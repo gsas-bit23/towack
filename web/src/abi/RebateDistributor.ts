@@ -321,10 +321,36 @@ export const rebateDistributorAbi = [
   },
   {
     "type": "function",
+    "name": "routerAdmin",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "setRouter",
     "inputs": [
       {
         "name": "newRouter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setRouterAdmin",
+    "inputs": [
+      {
+        "name": "newAdmin",
         "type": "address",
         "internalType": "address"
       }
@@ -479,6 +505,19 @@ export const rebateDistributorAbi = [
   },
   {
     "type": "event",
+    "name": "RouterAdminSet",
+    "inputs": [
+      {
+        "name": "admin",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "RouterSet",
     "inputs": [
       {
@@ -543,6 +582,11 @@ export const rebateDistributorAbi = [
   {
     "type": "error",
     "name": "NotDeployer",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotRouterAdmin",
     "inputs": []
   },
   {

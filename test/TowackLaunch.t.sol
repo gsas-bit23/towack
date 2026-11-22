@@ -1001,6 +1001,25 @@ contract TowackLaunchInstantCloseTest is Fixture {
         assertEq(address(launch).balance, 0.1 ether);
     }
 
+    /// Regression: force-sending 1 wei BNB (e.g. selfdestruct) when real leftover is 0 must NOT brick
+    /// finalizeListing() via PancakePair MINIMUM_LIQUIDITY underflow; dust < MIN_LP_BNB goes to DrawV2 instead.
+    function test_ForceSentDustBnbDoesNotBrickFinalizeListing() public {
+        address ref = newAgent("ref");
+        address u = newAgent("u");
+        vm.deal(u, PRICE + launchFee);
+        vm.prank(u);
+        launch.mint{value: PRICE + launchFee}(ref);
+        fulfillTo(address(launch), requestOf(u), 0); // 0.095 refund + 0.005 referral = 0.1 (0 leftover)
+        vm.deal(address(launch), address(launch).balance + 1); // simulate 1 wei forced BNB
+        launch.closeMint();
+        uint256 v2Before = address(drawV2).balance;
+        launch.finalizeListing();
+        assertEq(launch.lpBnb(), 0, "dust skipped for LP");
+        assertEq(launch.sentToDrawV2(), 1, "dust routed to DrawV2");
+        assertEq(address(drawV2).balance - v2Before, 1);
+        assertTrue(token.tradingOpen());
+    }
+
     /// Zero mints: no instant path. closeMint still needs mintEnd, then takes the existing burn-everything route.
     function test_ZeroMints_NoInstantClose() public {
         vm.expectRevert(TowackLaunch.MintStillOpen.selector);

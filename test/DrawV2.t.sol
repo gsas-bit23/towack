@@ -270,18 +270,21 @@ contract DrawV2Test is Fixture, WheelWords {
 
     function test_TenXPaysTenXPlusTwoPercentBnb() public {
         vm.deal(address(drawV2), 10 ether);
-        (uint256 id, uint256 req) = _enter(alice, 100_000e18);
+        uint256 amt = drawV2.maxEntry(); // only a max-size entry gets the full 2%
+        (uint256 j,) = drawV2.bnbBonusPreviewFor(amt);
+        assertEq(j, 0.2 ether);
+        (uint256 id, uint256 req) = _enter(alice, amt);
         assertEq(drawV2.reservedBnb(), 0.2 ether);
         assertEq(drawV2.availableBnb(), 9.8 ether);
         fulfillTo(address(drawV2), req, WORD[6]);
         (uint256 tP, uint256 bP) = drawV2.spinPrize(id);
-        assertEq(tP, 1_000_000e18);
+        assertEq(tP, 10 * amt);
         assertEq(bP, 0.2 ether);
         uint256 t0 = token.balanceOf(alice);
         uint256 b0 = alice.balance;
         vm.prank(alice);
         drawV2.claim();
-        assertEq(token.balanceOf(alice) - t0, 1_000_000e18);
+        assertEq(token.balanceOf(alice) - t0, 10 * amt);
         assertEq(alice.balance - b0, 0.2 ether);
         assertEq(address(drawV2).balance, 9.8 ether);
         vm.prank(alice);
@@ -291,10 +294,11 @@ contract DrawV2Test is Fixture, WheelWords {
 
     function test_FiveXPaysOnePercentBnb() public {
         vm.deal(address(drawV2), 10 ether);
-        (uint256 id, uint256 req) = _enter(alice, 100_000e18);
+        uint256 amt = drawV2.maxEntry();
+        (uint256 id, uint256 req) = _enter(alice, amt);
         fulfillTo(address(drawV2), req, WORD[5]);
         (uint256 tP, uint256 bP) = drawV2.spinPrize(id);
-        assertEq(tP, 500_000e18);
+        assertEq(tP, 5 * amt);
         assertEq(bP, 0.1 ether);
         assertEq(drawV2.reservedBnb(), 0);
         assertEq(drawV2.availableBnb(), 9.9 ether);
@@ -318,9 +322,11 @@ contract DrawV2Test is Fixture, WheelWords {
         uint256 sum;
         for (uint256 i; i < 20; ++i) {
             uint256 before = drawV2.availableBnb();
-            _enter(i % 2 == 0 ? alice : bob, 1_000e18);
+            uint256 maxE = drawV2.maxEntry();
+            uint256 amt = maxE / 4;
+            _enter(i % 2 == 0 ? alice : bob, amt);
             uint256 res = before - drawV2.availableBnb();
-            assertEq(res, before * 200 / 10_000, "2% of available");
+            assertEq(res, before * 200 * amt / (10_000 * maxE), "2% of available x amount / maxEntry");
             sum += res;
         }
         for (uint256 i = 1; i <= 20; ++i) fulfillTo(address(drawV2), i, WORD[6]);
@@ -332,6 +338,31 @@ contract DrawV2Test is Fixture, WheelWords {
         vm.prank(bob);
         drawV2.claim();
         assertEq(address(drawV2).balance, 10 ether - sum);
+    }
+
+    /// Regression: a flat 2%-of-pot jackpot per spin let MIN_ENTRY spam drain the BNB pot at +EV.
+    /// The BNB cap now scales with amount / maxEntry, so a 100-TWAK spin can only win a sliver.
+    function test_BnbBonusScalesWithEntry_MinEntrySpamCannotDrainPot() public {
+        vm.deal(address(drawV2), 50 ether);
+        uint256 maxE = drawV2.maxEntry();
+        (uint256 jMax,) = drawV2.bnbBonusPreview();
+        (uint256 jMin, uint256 bMin) = drawV2.bnbBonusPreviewFor(100e18);
+        assertEq(jMax, 1 ether, "2% of 50 BNB for a max entry");
+        assertEq(jMin, 50 ether * 200 * 100e18 / (10_000 * maxE));
+        assertEq(bMin, jMin / 2);
+        assertLt(jMin, jMax / 1_000, "a min entry gets < 0.1% of the max-entry bonus");
+        (uint256 z,) = drawV2.bnbBonusPreviewFor(maxE + 1);
+        assertEq(z, 0, "not enterable");
+        (z,) = drawV2.bnbBonusPreviewFor(99e18);
+        assertEq(z, 0, "below min");
+
+        // 200 min-entry spins that ALL hit 10x still take only a sliver of the pot.
+        for (uint256 i; i < 200; ++i) {
+            (, uint256 req) = _enter(alice, 100e18);
+            fulfillTo(address(drawV2), req, WORD[6]);
+        }
+        assertLt(drawV2.owedBnb(alice), 0.06 ether, "<0.12% of the pot even with 200 straight jackpots");
+        _solvent(drawV2);
     }
 
     function test_EmptyBnbPotStillPaysTwak() public {
@@ -474,16 +505,17 @@ contract DrawV2Test is Fixture, WheelWords {
 
     function test_EventsOnEnterAssignClaim() public {
         vm.deal(address(drawV2), 1 ether);
+        uint256 amt = drawV2.maxEntry(); // full 2% BNB cap
         vm.expectEmit(true, true, false, true, address(drawV2));
-        emit DrawV2.Entered(1, alice, 1_000e18, 10_000e18, 0.02 ether);
+        emit DrawV2.Entered(1, alice, amt, 10 * amt, 0.02 ether);
         vm.expectEmit(true, true, false, false, address(drawV2));
         emit DrawV2.SpinRequested(1, 1);
-        _enter(alice, 1_000e18);
+        _enter(alice, amt);
         vm.expectEmit(true, true, false, true, address(drawV2));
-        emit DrawV2.SpinAssigned(1, alice, 5, 5_000e18, 0.01 ether);
+        emit DrawV2.SpinAssigned(1, alice, 5, 5 * amt, 0.01 ether);
         fulfillTo(address(drawV2), 1, WORD[5]);
         vm.expectEmit(true, false, false, true, address(drawV2));
-        emit DrawV2.Claimed(alice, 5_000e18, 0.01 ether);
+        emit DrawV2.Claimed(alice, 5 * amt, 0.01 ether);
         vm.prank(alice);
         drawV2.claim();
         assertEq(drawV2.lastSpinOf(alice), 1);

@@ -68,4 +68,28 @@ contract TowackTokenTest is Fixture {
         vm.expectRevert(TokenBound.NotDeployer.selector);
         team.bindToken(address(token));
     }
+
+    /// A front-runner can predict the token address (deployer nonce) and pre-create the pair. The token
+    /// must reuse it instead of reverting with PAIR_EXISTS, and the pair guard still applies.
+    function test_PreCreatedPairIsReusedNotGriefed() public {
+        address d2 = makeAddr("deployer2");
+        TowackToken.Recipients memory rc = TowackToken.Recipients({
+            launch: makeAddr("l2"),
+            rebates: makeAddr("r2"),
+            team: makeAddr("t2"),
+            drawV2: makeAddr("d2"),
+            seasons: seasons,
+            ecosystem: ecosystem,
+            polBuffer: polBuffer
+        });
+        address predicted = vm.computeCreateAddress(d2, vm.getNonce(d2));
+        address pre = factory.createPair(predicted, address(wbnb));
+        vm.prank(d2);
+        TowackToken t2 = new TowackToken(rc, address(factory), address(wbnb));
+        assertEq(address(t2), predicted);
+        assertEq(t2.pair(), pre, "reused the pre-created pair");
+        vm.prank(seasons);
+        vm.expectRevert(TowackToken.PairLocked.selector);
+        t2.transfer(pre, 1);
+    }
 }

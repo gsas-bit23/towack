@@ -5,7 +5,28 @@ import {Fixture} from "./Fixture.sol";
 import {TowackGenesis} from "../src/TowackGenesis.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
 import {MockAgentIdNFT} from "../src/mocks/MockAgentIdNFT.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+/// @dev Mirrors the verified BSC mainnet SPACE ID HandleRegistry (0x60B9…022F): soulbound ERC-721 where
+/// `tokenId = uint256(keccak256(bytes(handle)))`, `handleOf(addr)` and `ownerOfHandle(handle)` exist, and
+/// ERC721Enumerable is NOT implemented.
+contract MockHandleRegistry is ERC721 {
+    mapping(address => string) public handleOf;
+
+    constructor() ERC721("SPACE ID Agent ID", "AI") {}
+
+    function adminRegister(string calldata handle, address to) external {
+        require(bytes(handleOf[to]).length == 0, "has handle");
+        bytes32 label = keccak256(bytes(handle));
+        handleOf[to] = handle;
+        _mint(to, uint256(label));
+    }
+
+    function ownerOfHandle(string calldata handle) external view returns (address) {
+        return _ownerOf(uint256(keccak256(bytes(handle))));
+    }
+}
 
 /// @dev Exposes the Genesis deck walk without VRF / minting, for the fuzz invariant.
 contract GenesisDeckHarness is TowackGenesis {
@@ -494,5 +515,64 @@ contract TowackGenesisTest is Fixture {
             }
         }
         assertEq(token.balanceOf(address(genesis)), 0, "empty after claims + sweep");
+    }
+
+    // ---------------------------------------------------------------- mainnet HandleRegistry compatibility
+    function test_MintByHandle_HandleRegistryCompatibleAndBlocksDoubleMint() public {
+        MockHandleRegistry reg = new MockHandleRegistry();
+        TowackGenesis g = new TowackGenesis(address(token), address(reg), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS));
+        vm.startPrank(ecosystem);
+        token.approve(address(g), BUDGET);
+        g.fund(BUDGET);
+        vm.stopPrank();
+        g.open();
+        uint256 fee = g.vrfFeeAt(TEST_GAS_PRICE);
+
+        address alice = makeAddr("aliceHandle");
+        address bob = makeAddr("bobHandle");
+        address noHandle = makeAddr("noHandle");
+        vm.deal(alice, 1 ether);
+        vm.deal(bob, 1 ether);
+        vm.deal(noHandle, 1 ether);
+
+        reg.adminRegister("aliceagent", alice);
+        reg.adminRegister("bobagent", bob);
+        uint256 aliceTid = uint256(keccak256(bytes("aliceagent")));
+        uint256 bobTid = uint256(keccak256(bytes("bobagent")));
+
+        // No handle reverts NotAgentOwner
+        vm.prank(noHandle);
+        vm.expectRevert(TowackGenesis.NotAgentOwner.selector);
+        g.mintByHandle{value: fee}();
+
+        // Alice uses mintByHandle() -> derives keccak256("aliceagent"), marks tokenIdUsed & wallet used
+        vm.prank(alice);
+        g.mintByHandle{value: fee}();
+        assertEq(g.mintCount(), 1);
+        assertTrue(g.tokenIdUsed(aliceTid));
+        assertEq(token.balanceOf(alice), BASE);
+
+        // Alice cannot double-mint via mint(tokenId) or mintByHandle()
+        vm.prank(alice);
+        vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
+        g.mint{value: fee}(aliceTid);
+
+        // Bob uses mint(tokenId) directly -> works and blocks mintByHandle()
+        vm.prank(bob);
+        g.mint{value: fee}(bobTid);
+        assertEq(g.mintCount(), 2);
+        assertTrue(g.tokenIdUsed(bobTid));
+        vm.prank(bob);
+        vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
+        g.mintByHandle{value: fee}();
+    }
+
+    function test_MintByHandle_RevertsOnMockWithoutHandleOf() public {
+        _fundAndOpen();
+        (address u,) = _newHolder(0);
+        vm.deal(u, 1 ether);
+        vm.prank(u);
+        vm.expectRevert(TowackGenesis.NotAgentOwner.selector);
+        genesis.mintByHandle{value: genesisFee}();
     }
 }

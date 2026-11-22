@@ -33,9 +33,12 @@ import {TokenBound} from "./TokenBound.sol";
 ///    cannot cover 10 × entry or the entry exceeds maxEntry. Availability is measured before the entry is added.
 ///
 /// BNB pot (router 30% fee share, launch sellout 75 BNB, unclaimed V1 refunds; plain `receive()`)
-///  - Only the top tiers get a BNB bonus: 10× → BNB_BONUS_BPS_10X (2%), 5× → BNB_BONUS_BPS_5X (1%) of
-///    availableBnb = balance − reservedBnb − outstandingBnb, snapshotted at entry. The 2% cap is reserved on
-///    entry (released on fulfil unless won), so concurrent top-tier wins can never overdraw. An empty pot just
+///  - Only the top tiers get a BNB bonus: 10× → up to BNB_BONUS_BPS_10X (2%), 5× → half of that, of
+///    availableBnb = balance − reservedBnb − outstandingBnb, snapshotted at entry. The bonus SCALES WITH THE
+///    ENTRY: bnbCap = 2% × availableBnb × amount / maxEntry, so only a max-size entry can win the full 2%.
+///    (A flat 2% per spin let anyone drain the pot with spam of MIN_ENTRY spins: each 100-TWAK spin had a
+///    BNB expectation of 0.03% of the whole pot for a few cents of VRF fee.) The cap is reserved on entry
+///    (released on fulfil unless won), so concurrent top-tier wins can never overdraw. An empty pot just
 ///    means a TWAK-only spin; it never reverts.
 ///
 /// Prizes are pull-based (`claim`). The owner (TimelockController) can only pause NEW entries; there is no
@@ -67,7 +70,7 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
         uint64 requestedAt;
         uint256 amount; // TWAK entered
         uint256 maxTwak; // 10 × amount: booked at entry, counted in reservedTwak only while pending
-        uint256 bnbCap; // 2% of available BNB at entry: counted in reservedBnb only while pending
+        uint256 bnbCap; // 2% of available BNB × amount / maxEntry at entry: in reservedBnb only while pending
         uint256 requestId; // live VRF request
     }
 
@@ -210,10 +213,24 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
         else if (id == BIG_WIN_ID) bnb = bnbCap * BNB_BONUS_BPS_5X / BNB_BONUS_BPS_10X;
     }
 
-    /// @notice BNB bonus a 10× / 5× hit would get if entered now.
+    /// @notice BNB bonus a 10× / 5× hit would get for a MAX-SIZE entry (`maxEntry()`) entered now.
     function bnbBonusPreview() external view returns (uint256 jackpot, uint256 bigWin) {
         jackpot = availableBnb() * BNB_BONUS_BPS_10X / BPS;
         bigWin = jackpot * BNB_BONUS_BPS_5X / BNB_BONUS_BPS_10X;
+    }
+
+    /// @notice BNB bonus a 10× / 5× hit would get for an entry of `amount` TWAK entered now
+    /// (scaled by amount / maxEntry, capped at the max-entry bonus). 0 if the entry would not be accepted.
+    function bnbBonusPreviewFor(uint256 amount) external view returns (uint256 jackpot, uint256 bigWin) {
+        uint256 maxE = maxEntry();
+        if (amount < MIN_ENTRY || amount > maxE) return (0, 0);
+        jackpot = _bnbCap(availableBnb(), amount, maxE);
+        bigWin = jackpot * BNB_BONUS_BPS_5X / BNB_BONUS_BPS_10X;
+    }
+
+    /// @dev 2% of `availBnb`, scaled by amount / maxE (amount <= maxE, maxE > 0 enforced by callers).
+    function _bnbCap(uint256 availBnb, uint256 amount, uint256 maxE) internal pure returns (uint256) {
+        return availBnb * BNB_BONUS_BPS_10X * amount / (BPS * maxE);
     }
 
     // ---------------------------------------------------------------- play
@@ -225,7 +242,8 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
         emit PoolSeeded(msg.sender, amount);
     }
 
-    /// @notice Deposit `amount` TWAK into the pool and spin. Reserves 10 × amount TWAK and 2% of free BNB.
+    /// @notice Deposit `amount` TWAK into the pool and spin. Reserves 10 × amount TWAK and
+    /// 2% × amount / maxEntry of free BNB.
     /// `msg.value` pays the Chainlink VRF fee (`vrfFeeAt(gasPrice)`); it never enters the BNB pot and any
     /// excess is refunded.
     function enter(uint256 amount)
@@ -242,7 +260,7 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
         if (twakRes > avail) revert PoolTooSmall(twakRes, avail);
         uint256 maxE = avail * MAX_PAYOUT_BPS / MAX_MULT_BPS;
         if (amount > maxE) revert EntryTooLarge(amount, maxE);
-        uint256 bnbRes = _availableBnb(msg.value) * BNB_BONUS_BPS_10X / BPS;
+        uint256 bnbRes = _bnbCap(_availableBnb(msg.value), amount, maxE);
 
         reservedTwak += twakRes;
         reservedBnb += bnbRes;

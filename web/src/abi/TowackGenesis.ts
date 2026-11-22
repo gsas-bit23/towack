@@ -428,6 +428,13 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
+    "name": "mintByHandle",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
     "name": "mintCount",
     "inputs": [],
     "outputs": [

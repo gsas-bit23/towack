@@ -208,7 +208,21 @@ export const towackRouterAbi = [
   },
   {
     "type": "function",
+    "name": "flushDev",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "flushFees",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "flushLottery",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
