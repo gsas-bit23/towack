@@ -8,6 +8,7 @@ import { drawV2Abi, towackTokenAbi } from "@/abi";
 import { Confetti } from "@/components/motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "@/components/PrizeBooth";
 import { SpinWheel } from "@/components/SpinWheel";
+import { AgentPathToggle } from "@/components/AgentPath";
 import { AddressLink, ChainNote, NeedsWallet, TxNotice, VrfSource } from "@/components/status";
 import { Button, Panel, Pill, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
@@ -500,6 +501,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
                 Your entry joins the pool. Most spins pay back less than you put in.
                 {vrf.supported === false ? null : ` Each spin also sends a Chainlink VRF fee of about ${vrf.label} in BNB (pays for the random draw, not the pot; any extra is refunded).`}
               </p>
+              <AgentPathToggle flow="lottery" className="mt-4" />
             </>
           )}
           {hasOwed && status !== "assigned" ? (
@@ -507,6 +509,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
               Claim {fmt18(owedTwak, 2)} TWAK{owedBnb > 0n ? ` + ${fmt18(owedBnb, 5)} BNB` : ""}
             </Button>
           ) : null}
+          {hasOwed ? <AgentPathToggle flow="lotteryClaim" className="mt-4" /> : null}
         </NeedsWallet>
       </div>
       <TxNotice state={tx.state} onClose={tx.reset} />

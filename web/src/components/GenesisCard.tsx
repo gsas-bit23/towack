@@ -181,6 +181,7 @@ function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: num
         }
       />
       <TxNotice state={tx.state} onClose={tx.reset} />
+      {status === "assigned" && hasExtra && !prize?.claimed ? <AgentPathToggle flow="genesisClaim" className="mt-4" /> : null}
     </div>
   );
 }
@@ -281,6 +282,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
           : `No mint price. You pay gas plus a Chainlink VRF fee of about ${vrf.label} for your spin (not a mint price; any extra is refunded). Your wallet asks you to confirm.`}
       </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
+      {!minted ? <AgentPathToggle flow="genesis" className="mt-4" /> : null}
     </div>
   );
 }

@@ -15,7 +15,7 @@ import {TowackToken} from "./TowackToken.sol";
 /// contract.
 ///
 /// Flow:
-///  1. mint(): 0.1 BNB + the VRF fee (`vrfFeeAt(gasPrice)`) -> 80,000 TWAK instantly. One per Agent ID
+///  1. mint(address referrer) (or zero-arg mint() == mint(address(0))): 0.1 BNB + the VRF fee (`vrfFeeAt(gasPrice)`) -> 80,000 TWAK instantly. One per Agent ID
 ///     holder, cap 5000. Each mint makes its own Chainlink VRF v2.5 request; exactly the wrapper's price is
 ///     forwarded to the VRF v2.5 direct-funding wrapper and any excess over 0.1 BNB + price is refunded. Only the 0.1 BNB stays in this contract.
 ///  2. VRF callback: pops ONE slot uniformly at random from the remaining fixed 5,000-slot prize deck and
@@ -29,7 +29,17 @@ import {TowackToken} from "./TowackToken.sol";
 ///     reserve, keeps the still-unclaimed BNB prizes in escrow, lists the remaining BNB at the mint price
 ///     (800,000 TWAK/BNB, capped at 250 BNB / 200M TWAK) with the LP burned, sends the rest to DrawV2 and
 ///     opens trading.
-///  6. sweepUnclaimed(): after the 180-day claim window, unclaimed BNB -> DrawV2, unclaimed bonus burned.
+///  6. sweepUnclaimed(): after the 180-day claim window, unclaimed PRIZE BNB -> DrawV2, unclaimed bonus burned.
+///     Unclaimed referral BNB is never swept.
+///  7. claimReferral(): pull-based, any time, by a referrer with accrued referral BNB.
+///
+/// Referrals (paid mint only; Genesis has none): a referred mint credits REFERRAL_FEE = 5% of the mint price
+/// (0.005 BNB) to the referrer (must hold an Agent ID, must not be the minter). Solvency: every BNB refund tier
+/// is 95% of its pre-referral value (top tier 0.095 = 100% of the 0.1 - 0.005 residual), so for any single mint
+/// prize BNB + referral fee <= MINT_PRICE. The 5% is therefore carved out of the residual that would otherwise
+/// flow to LP / DrawV2 (unreferred mints leave it there), and finalizeListing reserves
+/// `bnbOutstanding + referralUnclaimedTotal` before computing leftover. Invariant:
+/// `address(this).balance >= bnbOutstanding + referralUnclaimedTotal`.
 ///
 /// The prize deck (immutable, see `prizeSlots`) always starts at 5,000 slots; it is NOT rescaled for an
 /// undersold mint. Slots never drawn are simply unsold: their bonus tokens are burned and the BNB they
@@ -73,11 +83,14 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         | (40 << 80) | (80 << 96) | (160 << 112) | (320 << 128) | (400 << 144) | (480 << 160);
 
     /// @notice Total BNB / bonus TWAK of the full deck (all 5000 slots drawn).
-    uint256 public constant DECK_BNB_TOTAL = 175 ether;
+    uint256 public constant DECK_BNB_TOTAL = 166.25 ether; // 175 BNB * 0.95
     uint256 public constant DECK_BONUS_TOTAL = 35_200_000e18;
 
     uint256 public constant VRF_RETRY_DELAY = 1 hours;
     uint256 public constant CLAIM_WINDOW = 180 days;
+
+    /// @notice Referral credit per referred paid mint: 5% of MINT_PRICE = 0.005 BNB.
+    uint256 public constant REFERRAL_FEE = MINT_PRICE * 5 / 100;
 
     /// @dev LP tokens are burned (sent to address(0)).
     address public constant LP_RECIPIENT = address(0);
@@ -132,6 +145,21 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     /// @notice 0 until finalizeListing; claims have no deadline before that.
     uint256 public claimDeadline;
 
+    // ---------------------------------------------------------------- referrals
+    /// @notice Fixed referrer of a minter (address(0) = none). Set on that minter's only mint.
+    mapping(address => address) public referrerOf;
+    /// @notice Referral BNB accrued to a referrer and not yet pulled with claimReferral().
+    mapping(address => uint256) public referralUnclaimed;
+    /// @notice Lifetime referral BNB accrued to a referrer (claimed + unclaimed).
+    mapping(address => uint256) public referralEarned;
+    /// @notice Number of mints that credited a referrer.
+    mapping(address => uint256) public referralCount;
+    mapping(address => address[]) internal _referees;
+    /// @notice Sum of referralUnclaimed over all referrers. Always held in this contract; never swept.
+    uint256 public referralUnclaimedTotal;
+    /// @notice Lifetime referral BNB accrued over all referrers.
+    uint256 public referralAccruedTotal;
+
     // ---------------------------------------------------------------- errors/events
     error WrongPhase(Phase have);
     error MintNotOpen();
@@ -149,6 +177,9 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     error NothingToClaim();
     error ClaimWindowClosed();
     error TransferFailed();
+    error ReferrerHasNoAgentId();
+    error SelfReferral();
+    error NothingToClaimReferral();
 
     event Minted(address indexed minter, uint256 indexed mintIndex);
     event PrizeRequested(address indexed minter, uint256 indexed mintIndex, uint256 requestId);
@@ -161,6 +192,9 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     );
     event Claimed(address indexed minter, uint8 prizeId, uint256 bnbAmount, uint256 bonusAmount);
     event UnclaimedSwept(uint256 bnbToDrawV2, uint256 tokensBurned);
+    event ReferralBound(address indexed minter, address indexed referrer);
+    event ReferralAccrued(address indexed referrer, address indexed minter, uint256 amount);
+    event ReferralClaimed(address indexed referrer, uint256 amount);
 
     constructor(
         address agentId_,
@@ -193,7 +227,18 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     }
 
     // ================================================================= 1. mint + VRF request
+    /// @notice No-referrer convenience: same as `mint(address(0))`.
     function mint() external payable nonReentrant whenBound {
+        _mint(address(0));
+    }
+
+    /// @notice Paid mint crediting `referrer` (address(0) = no referral). A non-zero referrer must hold an
+    /// Agent ID and must not be the minter; otherwise the mint reverts (a bad referrer is never ignored).
+    function mint(address referrer) external payable nonReentrant whenBound {
+        _mint(referrer);
+    }
+
+    function _mint(address referrer) internal {
         if (phase != Phase.Minting) revert WrongPhase(phase);
         if (block.timestamp < mintStart || block.timestamp >= mintEnd) revert MintNotOpen();
         if (agentId.balanceOf(msg.sender) == 0) revert NoAgentId();
@@ -201,11 +246,17 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         if (t.index != 0) revert AlreadyMinted();
         if (msg.value < MINT_PRICE) revert WrongPrice();
         if (mintCount >= MAX_MINTS) revert SoldOut();
+        if (referrer != address(0)) {
+            // Agent IDs are soulbound (one holder address per ID), so the address check covers "same Agent ID".
+            if (referrer == msg.sender) revert SelfReferral();
+            if (agentId.balanceOf(referrer) == 0) revert ReferrerHasNoAgentId();
+        }
 
         uint256 idx = ++mintCount;
         t.index = uint32(idx);
         token.safeTransfer(msg.sender, TOKENS_PER_MINT);
         emit Minted(msg.sender, idx);
+        if (referrer != address(0)) _accrueReferral(msg.sender, referrer);
         // MINT_PRICE stays here (launch accounting); exactly the wrapper price goes to the VRF wrapper; the rest is refunded.
         uint256 available = msg.value - MINT_PRICE;
         uint256 fee = _request(msg.sender, t, available);
@@ -223,6 +274,20 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         delete requestMinter[t.requestId];
         uint256 fee = _request(minter, t, msg.value);
         _refund(msg.value - fee);
+    }
+
+    /// @dev REFERRAL_FEE comes out of this mint's MINT_PRICE (already in the contract). With every BNB tier
+    /// <= 0.095, prize + fee <= 0.1, so the set-aside can never make the leftover negative.
+    function _accrueReferral(address minter, address referrer) internal {
+        referrerOf[minter] = referrer;
+        _referees[referrer].push(minter);
+        ++referralCount[referrer];
+        referralUnclaimed[referrer] += REFERRAL_FEE;
+        referralEarned[referrer] += REFERRAL_FEE;
+        referralUnclaimedTotal += REFERRAL_FEE;
+        referralAccruedTotal += REFERRAL_FEE;
+        emit ReferralBound(minter, referrer);
+        emit ReferralAccrued(referrer, minter, REFERRAL_FEE);
     }
 
     function _request(address minter, Ticket storage t, uint256 available) internal returns (uint256 fee) {
@@ -298,6 +363,16 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         emit Claimed(msg.sender, id, bnbAmt, bonusAmt);
     }
 
+    /// @notice Pull your accrued referral BNB. Any time (mint, closed, finalized, after the prize window).
+    function claimReferral() external nonReentrant {
+        uint256 amt = referralUnclaimed[msg.sender];
+        if (amt == 0) revert NothingToClaimReferral();
+        referralUnclaimed[msg.sender] = 0;
+        referralUnclaimedTotal -= amt;
+        _sendBnb(msg.sender, amt);
+        emit ReferralClaimed(msg.sender, amt);
+    }
+
     // ================================================================= 4. close
     function closeMint() external nonReentrant whenBound {
         if (phase != Phase.Minting) revert WrongPhase(phase);
@@ -333,8 +408,9 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         bonusBurned = unusedBonus;
         if (unusedBonus > 0) twak.burn(unusedBonus);
 
-        // Assigned-but-unclaimed refunds stay in escrow. Everything else is free for LP / DrawV2.
-        uint256 reserved = bnbOutstanding;
+        // Assigned-but-unclaimed refunds and unclaimed referral BNB stay in escrow. Everything else is free for
+        // LP / DrawV2. Non-negative: per mint, prize BNB (<= 0.095) + referral fee (0.005) <= MINT_PRICE.
+        uint256 reserved = bnbOutstanding + referralUnclaimedTotal;
         uint256 leftover = address(this).balance - reserved;
         uint256 bnbForLp = leftover < MAX_LP_BNB ? leftover : MAX_LP_BNB;
         uint256 tokensForLp = bnbForLp * LP_TOKENS_PER_BNB; // <= 200M by the 250 BNB cap
@@ -360,11 +436,12 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         emit ListingFinalized(reserved, unusedBonus, bnbForLp, tokensForLp, toV2);
     }
 
-    /// @notice After the claim window, unclaimed BNB goes to Draw V2 and unclaimed bonus TWAK is burned.
+    /// @notice After the claim window, unclaimed prize BNB goes to Draw V2 and unclaimed bonus TWAK is burned.
+    /// Unclaimed referral BNB (`referralUnclaimedTotal`) stays here, claimable forever via claimReferral().
     function sweepUnclaimed() external nonReentrant {
         if (phase != Phase.Finalized) revert WrongPhase(phase);
         if (block.timestamp < claimDeadline) revert TooEarly();
-        uint256 bnbAmt = address(this).balance;
+        uint256 bnbAmt = address(this).balance - referralUnclaimedTotal;
         uint256 tok = token.balanceOf(address(this));
         bnbOutstanding = 0;
         bonusOutstanding = 0;
@@ -374,6 +451,11 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
     }
 
     // ================================================================= views
+    /// @notice Every minter that credited `referrer`, in mint order.
+    function referees(address referrer) external view returns (address[] memory) {
+        return _referees[referrer];
+    }
+
     function hasMinted(address minter) external view returns (bool) {
         return tickets[minter].index != 0;
     }
@@ -426,10 +508,11 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
 
     /// @notice BNB refund for prize id (0 for bonus / no-win tiers).
     function prizeBnb(uint8 id) public pure returns (uint256) {
-        if (id == 0) return 0.1 ether;
-        if (id == 1) return 0.075 ether;
-        if (id == 2) return 0.05 ether;
-        if (id == 3) return 0.025 ether;
+        // 100% / 75% / 50% / 25% of the 0.095 BNB residual (MINT_PRICE - REFERRAL_FEE).
+        if (id == 0) return 0.095 ether;
+        if (id == 1) return 0.07125 ether;
+        if (id == 2) return 0.0475 ether;
+        if (id == 3) return 0.02375 ether;
         if (id < PRIZE_TIERS) return 0;
         revert("tier");
     }

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatEther, maxUint256, parseEther } from "viem";
 import { useBalance, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { agentIdAbi, pancakeRouterAbi, towackRouterAbi, towackTokenAbi } from "@/abi";
+import { AgentPathToggle } from "@/components/AgentPath";
 import { ChainNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
 import { Button, Field, Panel, Pill, Stat, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
@@ -253,7 +254,7 @@ function SwapCard() {
       </div>
 
       <div className="mt-6">
-        <NeedsWallet why="Connect any wallet to trade. Rebates accrue only if it holds an Agent ID.">
+        <NeedsWallet why="Connect any wallet to trade. Rebates accrue only if it holds an Agent ID." agent={side}>
           {hasAgent === false ? (
             <div className="mb-4 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-4 font-bold">
               <Pill tone="candy">NO REBATES FOR THIS WALLET</Pill>
@@ -289,6 +290,7 @@ function SwapCard() {
             )}
           </>
           <TxNotice state={tx.state} onClose={tx.reset} />
+          <AgentPathToggle key={side} flow={side} className="mt-4" />
         </NeedsWallet>
       </div>
       <p className="mt-6 text-sm font-semibold text-navy/60">Trading involves risk. Prices can move fast, and you can lose money. Quotes are estimates.</p>

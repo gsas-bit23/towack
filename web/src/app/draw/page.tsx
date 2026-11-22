@@ -19,7 +19,7 @@ export default function DrawPage() {
             <li>★ The deck always starts at 5,000 slots: 3,500 BNB refunds (500 full, 600 × 75%, 800 × 50%, 1,600 × 25%), 1,020 TWAK bonuses (20 × 5×,
               40 × 3×, 80 × 2×, 160 × 1.5×, 320 × 1.25×, 400 × 1.1×) and 480 “better luck next time”.</li>
             <li>★ Each VRF answer picks one remaining slot uniformly (random word mod slots left) and removes it. The odds shift as the deck empties.</li>
-            <li>★ At a full 5,000 sellout the prize pool is 175 BNB of refunds and 35.2M TWAK of bonuses. Assigned refunds stay in escrow until claimed.</li>
+            <li>★ At a full 5,000 sellout the prize pool is 166.25 BNB of refunds and 35.2M TWAK of bonuses. Assigned refunds stay in escrow until claimed.</li>
             <li>★ If the mint ends early, undrawn slots are unsold: their BNB goes to liquidity / Draw V2 and their bonus TWAK is burned.</li>
             <li>★ This is a game of chance, not an investment. Most spins get back less than the 0.1 BNB paid.</li>
           </ul>

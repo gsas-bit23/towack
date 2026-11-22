@@ -3,6 +3,7 @@ export const NAV_LINKS = [
   { href: "/draw", label: "Draw" },
   { href: "/trade", label: "Trade" },
   { href: "/rebates", label: "Rebates" },
+  { href: "/referrals", label: "Referrals" },
   { href: "/tokenomics", label: "Tokenomics" },
   { href: "/lottery", label: "Lottery" },
   { href: "/docs", label: "Docs" },

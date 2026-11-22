@@ -114,7 +114,7 @@ export default function Home() {
                 ?
               </text>
             </svg>
-            <div className="mt-5 font-display text-[52px] font-extrabold leading-none text-sun sm:text-[64px]">175 BNB</div>
+            <div className="mt-5 font-display text-[52px] font-extrabold leading-none text-sun sm:text-[64px]">166.25 BNB</div>
             <div className="mt-1 font-bold text-white/80">+ 35.2M TWAK in bonuses: the whole prize pool at a 5,000 sellout</div>
             <p className="mt-auto pt-5 text-[15px] font-semibold text-white/80">
               That&apos;s a refund-style prize deck, not a profit promise. The draw is a game of chance, and most spins get back less than they paid.

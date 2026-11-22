@@ -106,6 +106,10 @@ contract ReentrantPlayer {
         l.claim();
     }
 
+    function claimReferralLaunch() external {
+        l.claimReferral();
+    }
+
     /// Re-enters only the contract that is paying (same-contract reentrancy).
     receive() external payable {
         attempts++;
@@ -127,6 +131,9 @@ contract ReentrantPlayer {
                 reentries++;
             } catch {}
             try l.mint{value: 0}() {
+                reentries++;
+            } catch {}
+            try l.claimReferral() {
                 reentries++;
             } catch {}
         }
@@ -767,9 +774,22 @@ contract OfficialVRFTest is Fixture {
         p.claimLaunch();
         assertEq(p.attempts(), 4);
         assertEq(p.reentries(), 0);
-        assertEq(address(p).balance - b0, PRICE, "full refund paid once");
+        assertEq(address(p).balance - b0, launch.prizeBnb(0), "full refund paid once");
         (,,,,, bool claimed) = launch.prizeOf(address(p));
         assertTrue(claimed);
+
+        // Launch referral: p is a referrer; claimReferral pays it via call -> nested claimReferral fails
+        address friend = makeAddr("friend");
+        agentId.registerFor(friend);
+        vm.deal(friend, PRICE + launchFee);
+        vm.prank(friend);
+        launch.mint{value: PRICE + launchFee}(address(p));
+        uint256 b1 = address(p).balance;
+        p.claimReferralLaunch();
+        assertEq(p.attempts(), 5);
+        assertEq(p.reentries(), 0, "no nested claimReferral");
+        assertEq(address(p).balance - b1, launch.REFERRAL_FEE(), "referral paid once");
+        assertEq(launch.referralUnclaimed(address(p)), 0);
     }
 
     // ================================================================ pending accounting while in flight

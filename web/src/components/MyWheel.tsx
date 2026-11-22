@@ -10,6 +10,7 @@ import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
 import { useVrfFee } from "@/lib/vrfFee";
 import { ShareButton, WheelStage, type WheelStatus } from "./PrizeBooth";
+import { AgentPathToggle } from "./AgentPath";
 import { TxNotice } from "./status";
 import { Button, Pill } from "./ui";
 
@@ -118,6 +119,7 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
         size={size}
       />
       <TxNotice state={tx.state} onClose={tx.reset} />
+      {status === "assigned" && winsSomething && !prize?.claimed ? <AgentPathToggle flow="launchClaim" className="mt-4" /> : null}
     </div>
   );
 }

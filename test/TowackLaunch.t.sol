@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Fixture} from "./Fixture.sol";
 import {TowackLaunch} from "../src/TowackLaunch.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
@@ -156,12 +157,12 @@ contract TowackLaunchTest is Fixture {
         mintN(1);
         // word 0 on a full deck -> slot 0 -> tier 0 (full refund)
         vm.expectEmit(true, true, false, true, address(launch));
-        emit TowackLaunch.PrizeAssigned(user(0), 1, 0, 0.1 ether, 0);
+        emit TowackLaunch.PrizeAssigned(user(0), 1, 0, 0.095 ether, 0);
         fulfillTo(address(launch), 1, 0);
         (bool minted, bool assigned, uint8 id, uint256 b, uint256 t, bool claimed) = launch.prizeOf(user(0));
         assertTrue(minted && assigned && !claimed);
         assertEq(id, 0);
-        assertEq(b, 0.1 ether);
+        assertEq(b, 0.095 ether);
         assertEq(t, 0);
         assertEq(launch.remaining(0), 499);
         assertEq(launch.remainingTotal(), 4999);
@@ -291,7 +292,7 @@ contract TowackLaunchTest is Fixture {
         uint256 b0 = user(0).balance;
         vm.prank(user(0));
         launch.claim();
-        assertEq(user(0).balance - b0, 0.1 ether);
+        assertEq(user(0).balance - b0, 0.095 ether);
         vm.prank(user(0));
         vm.expectRevert(TowackLaunch.AlreadyClaimed.selector);
         launch.claim();
@@ -312,7 +313,7 @@ contract TowackLaunchTest is Fixture {
 
         assertEq(launch.bnbOutstanding(), 0);
         assertEq(launch.bonusOutstanding(), 0);
-        assertEq(address(launch).balance, 0.2 ether);
+        assertEq(address(launch).balance, 0.3 ether - 0.095 ether);
     }
 
     function test_CannotFinalizeWhilePending() public {
@@ -375,7 +376,7 @@ contract TowackLaunchTest is Fixture {
             assertEq(launch.remaining(uint8(k)), 0);
         }
         assertEq(launch.remainingTotal(), 0);
-        assertEq(launch.bnbAssigned(), 175 ether);
+        assertEq(launch.bnbAssigned(), 166.25 ether);
         assertEq(launch.bonusAssigned(), 35_200_000e18);
 
         launch.closeMint();
@@ -386,9 +387,10 @@ contract TowackLaunchTest is Fixture {
         assertEq(supplyBefore - token.totalSupply(), 14_800_000e18);
         assertEq(launch.lpBnb(), 250 ether);
         assertEq(launch.lpTokens(), 200_000_000e18);
-        assertEq(launch.sentToDrawV2(), 75 ether);
-        assertEq(address(drawV2).balance, 75 ether);
-        assertEq(address(launch).balance, 175 ether); // reserved prizes
+        // no referrals: leftover 500 - 166.25 = 333.75 -> 250 LP (cap) + 83.75 DrawV2
+        assertEq(launch.sentToDrawV2(), 83.75 ether);
+        assertEq(address(drawV2).balance, 83.75 ether);
+        assertEq(address(launch).balance, 166.25 ether); // reserved prizes
         assertEq(token.balanceOf(address(launch)), 35_200_000e18);
 
         MockPancakePair pair = MockPancakePair(token.pair());
@@ -410,7 +412,7 @@ contract TowackLaunchTest is Fixture {
             paidBnb += b;
             paidBonus += t;
         }
-        assertEq(paidBnb, 175 ether);
+        assertEq(paidBnb, 166.25 ether);
         assertEq(paidBonus, 35_200_000e18);
         assertEq(address(launch).balance, 0);
         assertEq(token.balanceOf(address(launch)), 0);
@@ -452,15 +454,17 @@ contract TowackLaunchTest is Fixture {
         assertTrue(token.tradingOpen());
     }
 
-    /// N=1 and the sole minter wins (and claims) a full refund: nothing left to list.
-    function test_Undersold_NothingToList() public {
+    /// N=1, no referrer, the sole minter wins (and claims) the top refund (0.095): the unreferred 0.005 is listed.
+    function test_Undersold_TopRefundLeavesReferralShareForLp() public {
         mintN(1);
         fulfillTo(address(launch), requestOf(user(0)), 0);
         vm.prank(user(0));
         launch.claim();
         close();
         launch.finalizeListing();
-        assertEq(launch.lpBnb(), 0);
+        assertEq(launch.lpBnb(), 0.005 ether);
+        assertEq(launch.lpTokens(), 4_000e18);
+        assertEq(launch.sentToDrawV2(), 0);
         assertEq(token.balanceOf(address(launch)), 0);
         assertEq(address(launch).balance, 0);
         assertTrue(token.tradingOpen());
@@ -474,7 +478,7 @@ contract TowackLaunchTest is Fixture {
         mintN(n);
         fulfillUsers(0, n, salt);
         uint256 proceeds = n * PRICE;
-        assertLe(launch.bnbAssigned(), 175 ether);
+        assertLe(launch.bnbAssigned(), 166.25 ether);
         assertLe(launch.bnbAssigned(), proceeds);
         assertLe(launch.bonusAssigned(), 35_200_000e18);
         assertEq(launch.remainingTotal() + n, 5000);
@@ -521,10 +525,10 @@ contract TowackLaunchTest is Fixture {
         }
         assertEq(sum, h.remainingTotal());
         assertEq(h.remainingTotal() + k, 5000);
-        assertLe(bnb, 175 ether);
+        assertLe(bnb, 166.25 ether);
         assertLe(bonus, 35_200_000e18);
         if (k == 5000) {
-            assertEq(bnb, 175 ether);
+            assertEq(bnb, 166.25 ether);
             assertEq(bonus, 35_200_000e18);
         }
     }
@@ -544,6 +548,344 @@ contract TowackLaunchTest is Fixture {
         assertEq(bnb, launch.DECK_BNB_TOTAL());
         assertEq(bonus, launch.DECK_BONUS_TOTAL());
         assertEq(launch.prizeBnb(10) + launch.prizeBonus(10), 0);
+        assertEq(launch.DECK_BNB_TOTAL(), 166.25 ether);
+        // BNB tiers are 100/75/50/25% of the 0.095 residual left after the 5% referral set-aside
+        assertEq(launch.REFERRAL_FEE(), 0.005 ether);
+        uint256 residual = PRICE - launch.REFERRAL_FEE();
+        assertEq(launch.prizeBnb(0), residual);
+        assertEq(launch.prizeBnb(1), residual * 75 / 100);
+        assertEq(launch.prizeBnb(2), residual * 50 / 100);
+        assertEq(launch.prizeBnb(3), residual * 25 / 100);
+        for (uint8 k; k < 11; ++k) {
+            assertLe(launch.prizeBnb(k) + launch.REFERRAL_FEE(), PRICE, "prize + referral <= price");
+        }
+    }
+
+    // ------------------------------------------------------------ referrals
+    function test_Referral_ValidMintBindsAndAccrues() public {
+        address ref = newAgent("ref");
+        address u = newAgent("u");
+        vm.deal(u, PRICE + launchFee);
+        vm.expectEmit(true, true, false, true, address(launch));
+        emit TowackLaunch.ReferralBound(u, ref);
+        vm.expectEmit(true, true, false, true, address(launch));
+        emit TowackLaunch.ReferralAccrued(ref, u, 0.005 ether);
+        vm.prank(u);
+        launch.mint{value: PRICE + launchFee}(ref);
+        assertEq(launch.referrerOf(u), ref);
+        assertEq(launch.referralUnclaimed(ref), 0.005 ether);
+        assertEq(launch.referralEarned(ref), 0.005 ether);
+        assertEq(launch.referralCount(ref), 1);
+        assertEq(launch.referralUnclaimedTotal(), 0.005 ether);
+        assertEq(launch.referralAccruedTotal(), 0.005 ether);
+        address[] memory list = launch.referees(ref);
+        assertEq(list.length, 1);
+        assertEq(list[0], u);
+        assertEq(token.balanceOf(u), 80_000e18);
+        assertEq(address(launch).balance, PRICE);
+    }
+
+    function test_Referral_ClaimPaysAndZeroes() public {
+        address ref = newAgent("ref");
+        _mintRef(user(0), ref);
+        uint256 b0 = ref.balance;
+        vm.expectEmit(true, false, false, true, address(launch));
+        emit TowackLaunch.ReferralClaimed(ref, 0.005 ether);
+        vm.prank(ref);
+        launch.claimReferral();
+        assertEq(ref.balance - b0, 0.005 ether);
+        assertEq(launch.referralUnclaimed(ref), 0);
+        assertEq(launch.referralUnclaimedTotal(), 0);
+        assertEq(launch.referralEarned(ref), 0.005 ether, "lifetime kept");
+        vm.prank(ref);
+        vm.expectRevert(TowackLaunch.NothingToClaimReferral.selector);
+        launch.claimReferral();
+    }
+
+    function test_Referral_TwoMintersOneClaim() public {
+        address ref = newAgent("ref");
+        _mintRef(user(0), ref);
+        _mintRef(user(1), ref);
+        assertEq(launch.referralCount(ref), 2);
+        assertEq(launch.referees(ref).length, 2);
+        assertEq(launch.referees(ref)[1], user(1));
+        uint256 b0 = ref.balance;
+        vm.prank(ref);
+        launch.claimReferral();
+        assertEq(ref.balance - b0, 0.01 ether);
+        assertEq(launch.referralEarned(ref), 0.01 ether);
+    }
+
+    function test_Referral_ZeroAddressAndZeroArg_NoBind_LeftoverKeepsShare() public {
+        address u = newAgent("u");
+        vm.deal(u, PRICE + launchFee);
+        vm.recordLogs();
+        vm.prank(u);
+        launch.mint{value: PRICE + launchFee}(address(0));
+        _assertNoReferralLogs();
+        mintN(1); // zero-arg mint()
+        assertEq(launch.referrerOf(u), address(0));
+        assertEq(launch.referrerOf(user(0)), address(0));
+        assertEq(launch.referralUnclaimedTotal(), 0);
+        assertEq(launch.referralCount(address(0)), 0);
+        // both draw the top refund: 0.2 - 2 * 0.095 = 0.01 leftover (2 x the unreferred 0.005) goes to LP
+        fulfillTo(address(launch), requestOf(u), 0);
+        fulfillTo(address(launch), requestOf(user(0)), 0);
+        close();
+        launch.finalizeListing();
+        assertEq(launch.lpBnb(), 0.01 ether);
+        assertEq(address(launch).balance, 0.19 ether);
+    }
+
+    function test_Referral_SelfReferralReverts() public {
+        address u = newAgent("u");
+        vm.deal(u, PRICE + launchFee);
+        vm.prank(u);
+        vm.expectRevert(TowackLaunch.SelfReferral.selector);
+        launch.mint{value: PRICE + launchFee}(u);
+        assertEq(launch.mintCount(), 0);
+    }
+
+    function test_Referral_ReferrerWithoutAgentIdReverts() public {
+        address u = newAgent("u");
+        address noid = makeAddr("noid");
+        vm.deal(u, PRICE + launchFee);
+        vm.prank(u);
+        vm.expectRevert(TowackLaunch.ReferrerHasNoAgentId.selector);
+        launch.mint{value: PRICE + launchFee}(noid);
+        assertEq(launch.mintCount(), 0);
+    }
+
+    function test_Referral_MinterWithoutAgentIdStillReverts() public {
+        address ref = newAgent("ref");
+        address noid = makeAddr("noid");
+        vm.deal(noid, 1 ether);
+        vm.prank(noid);
+        vm.expectRevert(TowackLaunch.NoAgentId.selector);
+        launch.mint{value: PRICE + launchFee}(ref);
+    }
+
+    function test_Referral_SecondMintStillOnePerWallet() public {
+        address ref = newAgent("ref");
+        address ref2 = newAgent("ref2");
+        _mintRef(user(0), ref);
+        vm.deal(user(0), PRICE + launchFee);
+        vm.prank(user(0));
+        vm.expectRevert(TowackLaunch.AlreadyMinted.selector);
+        launch.mint{value: PRICE + launchFee}(ref2);
+        assertEq(launch.referrerOf(user(0)), ref);
+    }
+
+    /// Worst case: one referred mint draws the top refund. Prize + referral == the whole 0.1.
+    function test_Referral_Solvency_TopPrize_ClaimThenReferral() public {
+        address ref = _soloReferredTopPrize();
+        vm.prank(user(0));
+        launch.claim();
+        _assertSolvent();
+        vm.prank(ref);
+        launch.claimReferral();
+        _assertSolvent();
+        assertEq(address(launch).balance, 0);
+    }
+
+    function test_Referral_Solvency_TopPrize_ReferralThenClaim() public {
+        address ref = _soloReferredTopPrize();
+        vm.prank(ref);
+        launch.claimReferral();
+        _assertSolvent();
+        vm.prank(user(0));
+        launch.claim();
+        _assertSolvent();
+        assertEq(address(launch).balance, 0);
+    }
+
+    function test_Referral_ClaimBeforeFinalize_KeepsLpMath() public {
+        address ref = newAgent("ref");
+        for (uint256 i; i < 10; ++i) {
+            _mintRef(user(i), ref);
+        }
+        fulfillUsers(0, 10, 42);
+        vm.prank(ref);
+        launch.claimReferral(); // 0.05 out before listing
+        _assertSolvent();
+        close();
+        launch.finalizeListing();
+        assertEq(launch.lpBnb(), 1 ether - launch.bnbAssigned() - 0.05 ether);
+        assertEq(
+            launch.bnbAssigned() + launch.lpBnb() + launch.sentToDrawV2() + launch.referralAccruedTotal(), 10 * PRICE
+        );
+        assertEq(address(launch).balance, launch.bnbOutstanding());
+    }
+
+    function test_Referral_UnclaimedReservedAtFinalize() public {
+        address ref = newAgent("ref");
+        for (uint256 i; i < 10; ++i) {
+            _mintRef(user(i), ref);
+        }
+        fulfillUsers(0, 10, 42);
+        close();
+        launch.finalizeListing();
+        assertEq(launch.lpBnb(), 1 ether - launch.bnbAssigned() - 0.05 ether);
+        assertEq(address(launch).balance, launch.bnbOutstanding() + 0.05 ether);
+        uint256 b0 = ref.balance;
+        vm.prank(ref);
+        launch.claimReferral();
+        assertEq(ref.balance - b0, 0.05 ether);
+    }
+
+    function test_Referral_SweepLeavesReferralClaimable() public {
+        address ref = newAgent("ref");
+        _mintRef(user(0), ref);
+        _mintRef(user(1), address(0));
+        _mintRef(user(2), address(0));
+        fulfillUsers(0, 3, 7);
+        close();
+        launch.finalizeListing();
+        uint256 prizes = launch.bnbOutstanding();
+        assertEq(address(launch).balance, prizes + 0.005 ether);
+        vm.warp(launch.claimDeadline());
+        uint256 v2Before = address(drawV2).balance;
+        launch.sweepUnclaimed();
+        assertEq(address(drawV2).balance - v2Before, prizes, "only prize BNB swept");
+        assertEq(address(launch).balance, 0.005 ether);
+        assertEq(launch.referralUnclaimedTotal(), 0.005 ether);
+        // still claimable long after the prize window
+        vm.warp(block.timestamp + 365 days);
+        uint256 b0 = ref.balance;
+        vm.prank(ref);
+        launch.claimReferral();
+        assertEq(ref.balance - b0, 0.005 ether);
+        assertEq(address(launch).balance, 0);
+    }
+
+    function test_Referral_ClaimDuringMint() public {
+        address ref = newAgent("ref");
+        _mintRef(user(0), ref);
+        vm.prank(ref);
+        launch.claimReferral(); // VRF still pending, phase Minting
+        assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Minting));
+        assertEq(address(launch).balance, PRICE - 0.005 ether);
+    }
+
+    /// All 5000 mints referred: leftover 500 - 166.25 - 25 = 308.75 -> LP 250 + DrawV2 58.75.
+    function test_Referral_SelloutAllReferred() public {
+        address ref = newAgent("ref");
+        for (uint256 i; i < 5000; ++i) {
+            _mintRef(user(i), ref);
+        }
+        fulfillUsers(0, 5000, uint256(keccak256("sellout")));
+        launch.closeMint();
+        launch.finalizeListing();
+        assertEq(launch.bnbAssigned(), 166.25 ether);
+        assertEq(launch.referralUnclaimedTotal(), 25 ether);
+        assertEq(launch.lpBnb(), 250 ether);
+        assertEq(launch.sentToDrawV2(), 58.75 ether);
+        assertEq(address(launch).balance, 166.25 ether + 25 ether);
+        uint256 b0 = ref.balance;
+        vm.prank(ref);
+        launch.claimReferral();
+        assertEq(ref.balance - b0, 25 ether);
+        assertEq(launch.referralCount(ref), 5000);
+    }
+
+    /// Mixed referred / unreferred mints with referral + prize claims interleaved at every phase.
+    function testFuzz_Referral_ConservationAndSolvency(uint256 n, uint256 salt, uint256 refMask, uint256 early) public {
+        n = bound(n, 1, 120);
+        early = bound(early, 0, n);
+        address[3] memory refs = [newAgent("r0"), newAgent("r1"), newAgent("r2")];
+        uint256 referred;
+        for (uint256 i; i < n; ++i) {
+            uint256 pick = uint256(keccak256(abi.encode(refMask, i))) % 4; // 0..2 = referrer, 3 = none
+            if (pick < 3) {
+                _mintRef(user(i), refs[pick]);
+                ++referred;
+            } else {
+                _mintRef(user(i), address(0));
+            }
+            _assertSolvent();
+        }
+        assertEq(launch.referralAccruedTotal(), referred * 0.005 ether);
+        fulfillUsers(0, n, salt);
+        _assertSolvent();
+        // a referrer pulls mid-way; some minters claim early
+        if (refMask & 1 == 1 && launch.referralUnclaimed(refs[0]) > 0) {
+            vm.prank(refs[0]);
+            launch.claimReferral();
+            _assertSolvent();
+        }
+        uint256 paidB;
+        uint256 paidT;
+        for (uint256 i; i < early; ++i) {
+            (paidB, paidT) = _claimIfAny(user(i), paidB, paidT);
+            _assertSolvent();
+        }
+        close();
+        launch.finalizeListing();
+        _assertSolvent();
+        assertEq(
+            launch.bnbAssigned() + launch.lpBnb() + launch.sentToDrawV2() + launch.referralAccruedTotal(), n * PRICE
+        );
+        assertEq(address(launch).balance, launch.bnbOutstanding() + launch.referralUnclaimedTotal());
+        for (uint256 i = early; i < n; ++i) {
+            (paidB, paidT) = _claimIfAny(user(i), paidB, paidT);
+            _assertSolvent();
+        }
+        assertEq(paidB, launch.bnbAssigned());
+        uint256 paidR;
+        for (uint256 k; k < 3; ++k) {
+            uint256 owed = launch.referralUnclaimed(refs[k]);
+            if (owed == 0) continue;
+            uint256 b0 = refs[k].balance;
+            vm.prank(refs[k]);
+            launch.claimReferral();
+            assertEq(refs[k].balance - b0, owed);
+            paidR += owed;
+            _assertSolvent();
+        }
+        assertEq(launch.referralUnclaimedTotal(), 0);
+        assertEq(address(launch).balance, 0);
+        assertEq(
+            launch.referralEarned(refs[0]) + launch.referralEarned(refs[1]) + launch.referralEarned(refs[2]),
+            launch.referralAccruedTotal()
+        );
+        assertLe(paidR, launch.referralAccruedTotal());
+    }
+
+    function _mintRef(address u, address ref) internal {
+        agentId.registerFor(u);
+        vm.deal(u, PRICE + launchFee);
+        vm.prank(u);
+        launch.mint{value: PRICE + launchFee}(ref);
+    }
+
+    /// One referred mint (user(0) -> ref) that draws prize 0, closed and finalized.
+    function _soloReferredTopPrize() internal returns (address ref) {
+        ref = newAgent("ref");
+        _mintRef(user(0), ref);
+        fulfillTo(address(launch), requestOf(user(0)), 0);
+        (,, uint8 id,,,) = launch.prizeOf(user(0));
+        assertEq(id, 0);
+        _assertSolvent();
+        assertEq(address(launch).balance, launch.bnbOutstanding() + launch.referralUnclaimedTotal());
+        close();
+        launch.finalizeListing();
+        assertEq(launch.lpBnb(), 0);
+        assertEq(launch.sentToDrawV2(), 0);
+        assertTrue(token.tradingOpen());
+        _assertSolvent();
+    }
+
+    function _assertSolvent() internal view {
+        assertGe(address(launch).balance, launch.bnbOutstanding() + launch.referralUnclaimedTotal(), "solvency");
+    }
+
+    function _assertNoReferralLogs() internal {
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(launch)) continue;
+            assertTrue(logs[i].topics[0] != TowackLaunch.ReferralBound.selector, "no bind");
+            assertTrue(logs[i].topics[0] != TowackLaunch.ReferralAccrued.selector, "no accrue");
+        }
     }
 
     // ------------------------------------------------------------ helpers
@@ -566,7 +908,7 @@ contract TowackLaunchInstantCloseTest is Fixture {
         return true;
     }
 
-    /// Deck slot 1900 (full deck) is prize 3: 0.025 BNB refund, no bonus.
+    /// Deck slot 1900 (full deck) is prize 3: 0.02375 BNB refund, no bonus.
     uint256 constant WORD_PRIZE3 = 1900;
 
     function test_FlagSet() public view {
@@ -590,21 +932,21 @@ contract TowackLaunchInstantCloseTest is Fixture {
         assertLt(block.timestamp, mintEnd);
         assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Finalized));
         assertTrue(token.tradingOpen());
-        // leftover = 0.1 - 0.025 reserved refund = 0.075 BNB, all to LP at 800,000 TWAK/BNB
-        assertEq(launch.lpBnb(), 0.075 ether);
-        assertEq(launch.lpTokens(), 0.075 ether * 800_000);
+        // leftover = 0.1 - 0.02375 reserved refund = 0.07625 BNB, all to LP at 800,000 TWAK/BNB
+        assertEq(launch.lpBnb(), 0.07625 ether);
+        assertEq(launch.lpTokens(), 0.07625 ether * 800_000);
         assertEq(launch.sentToDrawV2(), 0);
         (uint112 r0, uint112 r1,) = MockPancakePair(token.pair()).getReserves();
         assertGt(r0, 0);
         assertGt(r1, 0);
-        assertEq(wbnb.balanceOf(token.pair()), 0.075 ether);
-        assertEq(token.balanceOf(token.pair()), 60_000e18);
+        assertEq(wbnb.balanceOf(token.pair()), 0.07625 ether);
+        assertEq(token.balanceOf(token.pair()), 61_000e18);
         // the refund is still claimable from escrow
-        assertEq(address(launch).balance, 0.025 ether);
+        assertEq(address(launch).balance, 0.02375 ether);
         uint256 b0 = user(0).balance;
         vm.prank(user(0));
         launch.claim();
-        assertEq(user(0).balance - b0, 0.025 ether);
+        assertEq(user(0).balance - b0, 0.02375 ether);
     }
 
     function test_CloseBeforeVrf_FinalizeWaitsForPrize() public {
@@ -629,16 +971,34 @@ contract TowackLaunchInstantCloseTest is Fixture {
         launch.mint{value: PRICE + launchFee}();
     }
 
-    /// Full refund (prize 0): no leftover BNB, LP skipped, trading still opens (unchanged behaviour).
-    function test_FullRefund_NoLpButTradingOpens() public {
+    /// Top refund (prize 0, 0.095), no referrer: the unreferred 0.005 is listed.
+    function test_TopRefund_NoReferrer_ListsReferralShare() public {
         mintN(1);
         fulfillTo(address(launch), requestOf(user(0)), 0);
         launch.closeMint();
         launch.finalizeListing();
+        assertEq(launch.lpBnb(), 0.005 ether);
+        assertTrue(token.tradingOpen());
+        assertEq(wbnb.balanceOf(token.pair()), 0.005 ether);
+    }
+
+    /// Top refund (prize 0) on a referred mint: 0.095 prize + 0.005 referral reserved, no leftover, LP skipped,
+    /// trading still opens.
+    function test_TopRefund_Referred_NoLpButTradingOpens() public {
+        address ref = newAgent("ref");
+        address u = newAgent("u");
+        vm.deal(u, PRICE + launchFee);
+        vm.prank(u);
+        launch.mint{value: PRICE + launchFee}(ref);
+        fulfillTo(address(launch), requestOf(u), 0);
+        launch.closeMint();
+        launch.finalizeListing();
         assertEq(launch.lpBnb(), 0);
+        assertEq(launch.sentToDrawV2(), 0);
         assertTrue(token.tradingOpen());
         (uint112 r0, uint112 r1,) = MockPancakePair(token.pair()).getReserves();
         assertEq(uint256(r0) + r1, 0);
+        assertEq(address(launch).balance, 0.1 ether);
     }
 
     /// Zero mints: no instant path. closeMint still needs mintEnd, then takes the existing burn-everything route.

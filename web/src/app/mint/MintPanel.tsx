@@ -1,18 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { parseEther } from "viem";
+import { isAddressEqual, parseEther, zeroAddress } from "viem";
 import { useBalance, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { agentIdAbi, towackLaunchAbi } from "@/abi";
 import { AnimatedNumber, ProgressFill } from "@/components/motion";
 import { DemoWheel, MyWheel } from "@/components/MyWheel";
 import { SpinFeed, WheelStage } from "@/components/PrizeBooth";
+import { AgentPathToggle } from "@/components/AgentPath";
 import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, TxNotice, VrfSource } from "@/components/status";
 import { Button, Check, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { DEMO_SPINS, LAUNCH_PHASES, useDemoWheel, useLaunchState, useRecentSpins } from "@/lib/draw";
 import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
+import { referralLabel, useReferralFromUrl } from "@/lib/referral";
 import { useNow } from "@/lib/useNow";
 import { useVrfFee } from "@/lib/vrfFee";
 const MINT_PRICE_FALLBACK = parseEther("0.1");
@@ -64,6 +66,23 @@ export function MintPanel() {
     chainId,
     query: { enabled: Boolean(launch && account) },
   });
+  // Referrer from `?ref=<address>&handle=<name.ai>` (or a /r/<handle> landing). The contract reverts on a self
+  // referral or a referrer without an Agent ID, so those are shown and the mint credits nobody (address(0)).
+  const urlRef = useReferralFromUrl();
+  const { data: refAgentBal, isPending: refPending } = useReadContract({
+    address: registry,
+    abi: agentIdAbi,
+    functionName: "balanceOf",
+    args: urlRef.address ? [urlRef.address] : undefined,
+    chainId,
+    query: { enabled: Boolean(registry && urlRef.address) },
+  });
+  const selfRef = Boolean(urlRef.address && account && isAddressEqual(urlRef.address, account));
+  const refNoAgent = refAgentBal !== undefined && refAgentBal === 0n;
+  const refChecking = Boolean(urlRef.address && registry && refPending); // a failed lookup unblocks; the contract still checks
+  const referrer = urlRef.address && !selfRef && !refNoAgent ? urlRef.address : undefined;
+  const refLabel = referralLabel(urlRef);
+
   const { data: bal } = useBalance({ address: account, chainId, query: { enabled: Boolean(account) } });
 
   const { writeContractAsync } = useWriteContract();
@@ -94,6 +113,7 @@ export function MintPanel() {
     soldOut === false &&
     bound === true &&
     mintValue !== undefined &&
+    !refChecking &&
     !legacy;
 
   const pct = mintCount !== undefined ? Math.min(100, (Number(mintCount) / Number(cap)) * 100) : 0;
@@ -103,8 +123,9 @@ export function MintPanel() {
     if (mintValue === undefined) return;
     // MINT_PRICE (0.1 BNB) + the quoted VRF fee (+ a small cushion the contract refunds). The wallet asks the
     // user to confirm; nothing is auto-signed. Pre-fee contracts (vrf.supported === false) get exactly 0.1 BNB.
+    // Always mint(address referrer); address(0) = no referral (same as the zero-arg mint()).
     const ok = await tx.run("Mint", () =>
-      writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "mint", value: mintValue, chainId }),
+      writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "mint", args: [referrer ?? zeroAddress], value: mintValue, chainId }),
     );
     if (ok) setFresh(true); // confirmed: the wheel starts its anticipation spin right away
   }
@@ -203,7 +224,7 @@ export function MintPanel() {
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
             <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App on mainnet).</li>
             <li>
-              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-white px-1">mint()</code>. Exactly
+              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-white px-1">mint(address referrer)</code> (referrer is optional: address(0) means none). Exactly
               Chainlink&apos;s price for your random draw goes straight to the Chainlink VRF wrapper, and anything above 0.1 BNB + that price is
               refunded in the same transaction. You confirm it in your own wallet.
             </li>
@@ -213,6 +234,13 @@ export function MintPanel() {
               a BNB refund tier, a TWAK bonus tier, or better luck next time.
             </li>
             <li>Claim your prize whenever you like (within 180 days of listing). Prizes are pulled, never pushed.</li>
+            <li>
+              Came from a friend&apos;s link? Their wallet earns 0.005 BNB (5% of the price) from the contract. Your price is the same 0.1 BNB.{" "}
+              <a className="underline" href="/referrals">
+                Get your own link
+              </a>
+              .
+            </li>
           </ol>
           <p className="mt-4 font-semibold text-navy/70">
             You can lose some or all of the 0.1 BNB (the VRF fee is never refunded by prizes). Most slots get back less than they paid. This is a game of chance, not an investment.
@@ -224,7 +252,7 @@ export function MintPanel() {
         <Panel>
           <h2 className="font-display text-[28px] font-extrabold">Your ticket</h2>
           <div className="mt-5">
-            <NeedsWallet why="Connect to check your Agent ID and mint." agent="launch">
+            <NeedsWallet why="Connect to check your Agent ID and mint." agent="launch" referral={urlRef}>
               <ul className="space-y-3">
                 <Check ok={registry ? (agentLoading ? undefined : hasAgent) : false}>
                   {!registry
@@ -251,6 +279,8 @@ export function MintPanel() {
                 </p>
               ) : null}
 
+              <ReferrerNote label={refLabel} selfRef={selfRef} noAgent={refNoAgent} checking={refChecking} />
+
               {launch ? (
                 <>
                   <Button tone="candy" size="lg" className="mt-6 w-full" disabled={!canMint || tx.busy} onClick={mint}>
@@ -258,6 +288,7 @@ export function MintPanel() {
                   </Button>
                   <p className="mt-3 text-center text-sm font-bold text-navy/60">Your wallet will ask you to confirm. We never sign for you.</p>
                   <TxNotice state={tx.state} onClose={tx.reset} />
+                  <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </>
               ) : (
                 <div className="mt-6 rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-4 text-center font-display text-[20px] font-extrabold">
@@ -281,5 +312,27 @@ export function MintPanel() {
         </Panel>
       </div>
     </div>
+  );
+}
+
+/** Who this mint credits (from the referral link), or why it credits nobody. */
+function ReferrerNote({ label, selfRef, noAgent, checking }: { label?: string; selfRef: boolean; noAgent: boolean; checking: boolean }) {
+  if (!label) {
+    return <p className="mt-5 text-sm font-bold text-navy/60">No referrer: this mint credits nobody (referrer = address(0)).</p>;
+  }
+  if (selfRef || noAgent) {
+    return (
+      <p className="mt-5 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
+        <Pill tone="candy">REFERRAL NOT APPLIED</Pill>{" "}
+        {selfRef ? "That referral link is your own wallet, and you can't refer yourself." : `${label} holds no Agent ID, so it can't earn referrals.`} This
+        mint credits nobody (address(0)).
+      </p>
+    );
+  }
+  return (
+    <p className="mt-5 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+      <Pill tone="navy">REFERRED BY</Pill> <span className="break-all">{label}</span>
+      {checking ? " (checking Agent ID…)" : ". They earn 0.005 BNB from this mint; your price stays 0.1 BNB."}
+    </p>
   );
 }

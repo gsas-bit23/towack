@@ -1,5 +1,6 @@
 // Draw V1 prize deck. Mirrors TowackLaunch.prizeSlots / prizeBnb / prizeBonus (ids 0..10).
 // One deck of 5,000 slots; each mint pops exactly one slot (mutually exclusive prizes).
+// BNB tiers are 100/75/50/25% of the 0.095 BNB residual (0.1 mint price minus the 0.005 referral set-aside).
 
 export type PrizeKind = "bnb" | "bonus" | "none";
 
@@ -23,10 +24,10 @@ const WHITE = "#FFFFFF";
 const ICE = "#BFEFFF";
 
 export const PRIZES: readonly Prize[] = [
-  { id: 0, label: "Full refund", wheel: "FULL", kind: "bnb", slots: 500, amount: "0.1 BNB back", jackpot: true, fill: SUN, ink: NAVY },
-  { id: 1, label: "75% refund", wheel: "75%", kind: "bnb", slots: 600, amount: "0.075 BNB back", jackpot: false, fill: CANDY, ink: WHITE },
-  { id: 2, label: "50% refund", wheel: "50%", kind: "bnb", slots: 800, amount: "0.05 BNB back", jackpot: false, fill: SKY, ink: NAVY },
-  { id: 3, label: "25% refund", wheel: "25%", kind: "bnb", slots: 1600, amount: "0.025 BNB back", jackpot: false, fill: WHITE, ink: NAVY },
+  { id: 0, label: "Full refund", wheel: "FULL", kind: "bnb", slots: 500, amount: "0.095 BNB back", jackpot: true, fill: SUN, ink: NAVY },
+  { id: 1, label: "75% refund", wheel: "75%", kind: "bnb", slots: 600, amount: "0.07125 BNB back", jackpot: false, fill: CANDY, ink: WHITE },
+  { id: 2, label: "50% refund", wheel: "50%", kind: "bnb", slots: 800, amount: "0.0475 BNB back", jackpot: false, fill: SKY, ink: NAVY },
+  { id: 3, label: "25% refund", wheel: "25%", kind: "bnb", slots: 1600, amount: "0.02375 BNB back", jackpot: false, fill: WHITE, ink: NAVY },
   { id: 4, label: "5× TWAK", wheel: "5×", kind: "bonus", slots: 20, amount: "+320,000 TWAK", jackpot: true, fill: NAVY, ink: SUN },
   { id: 5, label: "3× TWAK", wheel: "3×", kind: "bonus", slots: 40, amount: "+160,000 TWAK", jackpot: true, fill: CANDY, ink: WHITE },
   { id: 6, label: "2× TWAK", wheel: "2×", kind: "bonus", slots: 80, amount: "+80,000 TWAK", jackpot: false, fill: SUN, ink: NAVY },
@@ -38,7 +39,9 @@ export const PRIZES: readonly Prize[] = [
 
 export const DECK_SIZE = 5000;
 export const NO_WIN_ID = 10;
-export const DECK_BNB_TOTAL = "175 BNB";
+export const DECK_BNB_TOTAL = "166.25 BNB";
+/** BNB a referrer earns per referred paid mint (TowackLaunch.REFERRAL_FEE). */
+export const REFERRAL_FEE_BNB = "0.005 BNB";
 export const DECK_BONUS_TOTAL = "35.2M TWAK";
 
 export function prizeById(id: number | undefined): Prize | undefined {

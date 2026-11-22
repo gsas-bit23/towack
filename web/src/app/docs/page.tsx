@@ -37,7 +37,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Can I lose my mint BNB?",
-    a: "Yes. Each spin wins exactly one outcome from a 5,000-slot deck: 3,500 slots refund 100%, 75%, 50%, or 25% of the mint price, 1,020 slots pay a TWAK bonus instead (no BNB back), and 480 slots win nothing. Your 80,000 TWAK is yours either way, but its market price can fall.",
+    a: "Yes. Each spin wins exactly one outcome from a 5,000-slot deck: 3,500 slots refund 100%, 75%, 50%, or 25% of the 0.095 BNB residual (0.095 / 0.07125 / 0.0475 / 0.02375 BNB; the other 0.005 of each 0.1 is the referral share), 1,020 slots pay a TWAK bonus instead (no BNB back), and 480 slots win nothing. Your 80,000 TWAK is yours either way, but its market price can fall.",
   },
   {
     q: "What are the trading risks?",
