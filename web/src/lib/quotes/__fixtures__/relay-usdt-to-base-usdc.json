@@ -1,0 +1,116 @@
+{
+ "requestId": "0x1795387311cd060ddc7660b70abff9dc8e1be132172946bbd33da698f7e77037",
+ "steps": [
+  {
+   "id": "approve",
+   "action": "Confirm transaction in your wallet",
+   "description": "Sign an approval for USDT",
+   "kind": "transaction",
+   "items": [
+    {
+     "status": "incomplete",
+     "data": {
+      "from": "0x000000000000000000000000000000000000dEaD",
+      "to": "0x55d398326f99059ff775485246999027b3197955",
+      "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc31000000000000000000000000000000000000000000000002b5e3af16b1880000",
+      "value": "0",
+      "chainId": 56,
+      "gas": "60564",
+      "maxFeePerGas": "71500000",
+      "maxPriorityFeePerGas": "71500000"
+     }
+    }
+   ],
+   "requestId": "0x1795387311cd060ddc7660b70abff9dc8e1be132172946bbd33da698f7e77037"
+  },
+  {
+   "id": "deposit",
+   "action": "Confirm transaction in your wallet",
+   "description": "Depositing funds to the relayer to execute the swap for USDC",
+   "kind": "transaction",
+   "items": [
+    {
+     "status": "incomplete",
+     "data": {
+      "from": "0x000000000000000000000000000000000000dEaD",
+      "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+      "data": "0xe8017952000000000000000000000000000000000000000000000000000000000000dead00000000000000000000000055d398326f99059ff775485246999027b3197955000000000000000000000000000000000000000000000002b5e3af16b1880000f90aeaa2fcb6803fd995d05870010d05e69ec6a22d8e67a732af754cfb03431f",
+      "value": "0",
+      "chainId": 56,
+      "gas": "64789",
+      "maxFeePerGas": "71500000",
+      "maxPriorityFeePerGas": "71500000"
+     },
+     "check": {
+      "endpoint": "/intents/status?requestId=0x1795387311cd060ddc7660b70abff9dc8e1be132172946bbd33da698f7e77037",
+      "method": "GET"
+     }
+    }
+   ],
+   "requestId": "0x1795387311cd060ddc7660b70abff9dc8e1be132172946bbd33da698f7e77037",
+   "depositAddress": ""
+  }
+ ],
+ "fees": {
+  "gas": {
+   "currency": {
+    "chainId": 56,
+    "address": "0x0000000000000000000000000000000000000000",
+    "symbol": "BNB",
+    "name": "Binance Coin",
+    "decimals": 18
+   },
+   "amount": "4632413500000",
+   "amountFormatted": "0.0000046324135",
+   "amountUsd": "0.002568",
+   "minimumAmount": "4632413500000"
+  },
+  "relayer": {
+   "currency": {
+    "chainId": 56,
+    "address": "0x55d398326f99059ff775485246999027b3197955",
+    "symbol": "USDT",
+    "name": "Tether USD",
+    "decimals": 18
+   },
+   "amount": "75738545916159359",
+   "amountFormatted": "0.075738545916159359",
+   "amountUsd": "0.075595",
+   "minimumAmount": "75738545916159359"
+  }
+ },
+ "details": {
+  "currencyIn": {
+   "currency": {
+    "chainId": 56,
+    "address": "0x55d398326f99059ff775485246999027b3197955",
+    "symbol": "USDT",
+    "name": "Tether USD",
+    "decimals": 18
+   },
+   "amount": "50000000000000000000",
+   "amountFormatted": "50.0",
+   "amountUsd": "49.905400",
+   "minimumAmount": "50000000000000000000"
+  },
+  "currencyOut": {
+   "currency": {
+    "chainId": 8453,
+    "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "symbol": "USDC",
+    "name": "USD Coin",
+    "decimals": 6
+   },
+   "amount": "49840483",
+   "amountFormatted": "49.840483",
+   "amountUsd": "49.829967",
+   "minimumAmount": "49342079"
+  },
+  "totalImpact": {
+   "usd": "-0.075433",
+   "percent": "-0.15"
+  },
+  "timeEstimate": 1,
+  "rate": "0.9968096599999999"
+ }
+}

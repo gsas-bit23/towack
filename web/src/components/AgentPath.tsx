@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } from "viem";
 import { ADDRESSES } from "@/config/addresses";
+import { buildSwapInstruction, type AgentRoute } from "@/lib/agentSwap";
 import { useTowack } from "@/lib/chain";
 import { buildPerpsInstruction, type PerpsAgentIntent } from "@/lib/aster/instruction";
 import { Button, Pill } from "./ui";
@@ -26,7 +27,12 @@ export type AgentFlow =
   | "referralClaim" // TowackLaunch.claimReferral()
   | "buy" // TowackRouter.buy
   | "sell" // TWAK.approve(exact) + TowackRouter.sell
+  | "swap" // /swap: same-chain route (PancakeSwap / Uniswap / Relay / 0x / 1inch), see lib/agentSwap.ts
+  | "bridge" // /swap: cross-chain route via Relay
   | "perps"; // Aster perps: NOT a contract-call. BAW sign-message approves a trade-only API wallet; it signs orders.
+
+/** Route context for the "swap" / "bridge" flows (mainnet tokens; see toMainnetToken). */
+export type AgentSwapContext = { route?: AgentRoute; inPlaceholder?: boolean; outPlaceholder?: boolean };
 
 /** Referrer baked into a paid-mint instruction (from `?ref=` / `/r/<handle>`). */
 export type AgentReferral = { address?: Address; handle?: string };
@@ -85,7 +91,8 @@ function missingList(items: [string, boolean][]) {
 
 const DEFAULT_PERPS: PerpsAgentIntent = { kind: "order", symbol: "BTCUSDT", side: "BUY", type: "LIMIT", quantity: "", base: "BTC" };
 
-export function buildInstruction(flow: AgentFlow, referral?: AgentReferral, perps?: PerpsAgentIntent): { text: string; missing: string[] } {
+export function buildInstruction(flow: AgentFlow, referral?: AgentReferral, perps?: PerpsAgentIntent, swap?: AgentSwapContext): { text: string; missing: string[] } {
+  if (flow === "swap" || flow === "bridge") return buildSwapInstruction(swap?.route, swap);
   const l = mainnet("launch", "<TOWACK_LAUNCH>");
   const g = mainnet("genesis", "<TOWACK_GENESIS>");
   const d = mainnet("drawV2", "<TOWACK_DRAWV2>");
@@ -200,11 +207,13 @@ export function AgentPathToggle({
   flow,
   referral,
   perps,
+  swap,
   className = "",
 }: {
   flow: AgentFlow;
   referral?: AgentReferral;
   perps?: PerpsAgentIntent;
+  swap?: AgentSwapContext;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -215,7 +224,7 @@ export function AgentPathToggle({
           <span aria-hidden="true">🤖</span> {open ? "Hide AI agent steps" : "Give this to your AI agent"}
         </Button>
       </div>
-      {open ? <AgentPathPanel flow={flow} referral={referral} perps={perps} className="mt-4 text-left" /> : null}
+      {open ? <AgentPathPanel flow={flow} referral={referral} perps={perps} swap={swap} className="mt-4 text-left" /> : null}
     </div>
   );
 }
@@ -224,15 +233,17 @@ export function AgentPathPanel({
   flow,
   referral,
   perps,
+  swap,
   className = "",
 }: {
   flow: AgentFlow;
   referral?: AgentReferral;
   perps?: PerpsAgentIntent;
+  swap?: AgentSwapContext;
   className?: string;
 }) {
   const { meta } = useTowack();
-  const { text, missing } = buildInstruction(flow, referral, perps);
+  const { text, missing } = buildInstruction(flow, referral, perps, swap);
   const isPerps = flow === "perps";
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
 

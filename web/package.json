@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "abi": "cd .. && forge build && node web/scripts/export-abi.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:live": "LIVE_QUOTES=1 vitest run src/lib/quotes/live.test.ts"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",
