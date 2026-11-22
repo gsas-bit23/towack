@@ -8,6 +8,7 @@ import { useMyPrize } from "@/lib/draw";
 import { fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
+import { useVrfFee } from "@/lib/vrfFee";
 import { ShareButton, WheelStage, type WheelStatus } from "./PrizeBooth";
 import { TxNotice } from "./status";
 import { Button, Pill } from "./ui";
@@ -64,13 +65,17 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
   const launch = addresses.launch;
   const canRetry = status === "waiting" && now > 0 && requestedAt !== undefined && requestedAt > 0 && now >= requestedAt + retryDelay;
   const winsSomething = Boolean(prize && (prize.bnb > 0n || prize.bonus > 0n));
+  const vrf = useVrfFee(launch, chainId); // a retry is a new VRF request: the caller pays its fee
 
   const claim = () =>
     launch && tx.run("Claim prize", () => writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "claim", chainId }));
   const retry = () =>
     launch &&
     account &&
-    tx.run("Retry VRF", () => writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "retryPrize", args: [account], chainId }));
+    vrf.value !== undefined &&
+    tx.run("Retry VRF", () =>
+      writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "retryPrize", args: [account], value: vrf.value, chainId }),
+    );
 
   const waitingNote = (
     <>
@@ -79,8 +84,8 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
       The prize is drawn on-chain from the remaining deck when the VRF callback lands.
       {canRetry ? (
         <div className="mt-3 flex justify-center">
-          <Button tone="white" size="sm" disabled={tx.busy} onClick={retry}>
-            Retry VRF request
+          <Button tone="white" size="sm" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
+            {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
           </Button>
         </div>
       ) : null}

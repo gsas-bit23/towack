@@ -16,7 +16,7 @@ const HOWTO = [
     title: "Connect your wallet",
     body: "Use a browser wallet, the Binance Wallet, or WalletConnect. Connect the same address that holds your Agent ID. We never ask for keys, seed phrases, or pairing codes.",
   },
-  { n: 3, title: "Mint + spin", body: "On Mint, send exactly 0.1 BNB. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One mint per Agent ID wallet." },
+  { n: 3, title: "Mint + spin", body: "On Mint, send 0.1 BNB plus the Chainlink VRF fee shown on the button (a fraction of a cent to a few cents; anything extra is refunded in the same transaction). Genesis 300 has no mint price but also sends the VRF fee, and so does every pool-wheel spin. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One mint per Agent ID wallet." },
   {
     n: 4,
     title: "Claim",
@@ -49,7 +49,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How is the draw kept fair?",
-    a: "Every mint requests its own Chainlink VRF v2.5 random word. The contract uses it only as an index into the remaining fixed deck (word mod slots left) and removes that slot, so the deck counts are exact and nobody can change the word or who it belongs to. The launch contract has no owner. On BSC testnet, Genesis 300 and the pool wheel use the official Chainlink VRF v2.5 coordinator (paid in test BNB); the testnet paid-mint contract still uses a team-answered test coordinator until the full testnet redeploy.",
+    a: "Every mint requests its own Chainlink VRF v2.5 random word. The contract uses it only as an index into the remaining fixed deck (word mod slots left) and removes that slot, so the deck counts are exact and nobody can change the word or who it belongs to. The launch contract has no owner. Each request is paid by the user who makes it: the contract quotes the fee on-chain (vrfFeeAt), forwards exactly that fee into the Chainlink VRF subscription and refunds the rest. On BSC testnet, Genesis 300 and the pool wheel use the official Chainlink VRF v2.5 coordinator (paid in test BNB; the currently deployed testnet contracts predate user-paid fees); the testnet paid-mint contract still uses a team-answered test coordinator until the full testnet redeploy.",
   },
   {
     q: "Are rebates staking?",

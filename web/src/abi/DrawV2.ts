@@ -47,6 +47,16 @@ export const drawV2Abi = [
             "name": "nativePayment",
             "type": "bool",
             "internalType": "bool"
+          },
+          {
+            "name": "minFeeGasPrice",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxFeeGasPrice",
+            "type": "uint64",
+            "internalType": "uint64"
           }
         ]
       }
@@ -111,7 +121,46 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
+    "name": "COORDINATOR_OVERHEAD_GAS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "EXPECTED_RETURN_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "FEE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "FEE_BUFFER_BPS",
     "inputs": [],
     "outputs": [
       {
@@ -377,7 +426,7 @@ export const drawV2Abi = [
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -644,7 +693,7 @@ export const drawV2Abi = [
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -914,6 +963,38 @@ export const drawV2Abi = [
   },
   {
     "type": "function",
+    "name": "vrfFee",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vrfFeeAt",
+    "inputs": [
+      {
+        "name": "gasPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "vrfKeyHash",
     "inputs": [],
     "outputs": [
@@ -921,6 +1002,32 @@ export const drawV2Abi = [
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vrfMaxFeeGasPrice",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vrfMinFeeGasPrice",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
       }
     ],
     "stateMutability": "view"
@@ -1172,6 +1279,31 @@ export const drawV2Abi = [
     "anonymous": false
   },
   {
+    "type": "event",
+    "name": "VrfFeePaid",
+    "inputs": [
+      {
+        "name": "payer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "fee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
     "type": "error",
     "name": "AlreadyBound",
     "inputs": []
@@ -1315,6 +1447,11 @@ export const drawV2Abi = [
   },
   {
     "type": "error",
+    "name": "RefundFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "SafeERC20FailedOperation",
     "inputs": [
       {
@@ -1328,6 +1465,22 @@ export const drawV2Abi = [
     "type": "error",
     "name": "TooEarly",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VrfFeeTooLow",
+    "inputs": [
+      {
+        "name": "sent",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "required",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",

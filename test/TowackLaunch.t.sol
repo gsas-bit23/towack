@@ -27,7 +27,7 @@ contract TowackLaunchTest is Fixture {
         vm.deal(u, 1 ether);
         vm.prank(u);
         vm.expectRevert(TowackLaunch.NoAgentId.selector);
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
     }
 
     function test_MintGivesTokensInstantly() public {
@@ -40,10 +40,10 @@ contract TowackLaunchTest is Fixture {
 
     function test_OneMintPerAgentId() public {
         mintN(1);
-        vm.deal(user(0), PRICE);
+        vm.deal(user(0), PRICE + launchFee);
         vm.prank(user(0));
         vm.expectRevert(TowackLaunch.AlreadyMinted.selector);
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
     }
 
     function test_WrongPriceReverts() public {
@@ -52,9 +52,12 @@ contract TowackLaunchTest is Fixture {
         vm.startPrank(u);
         vm.expectRevert(TowackLaunch.WrongPrice.selector);
         launch.mint{value: 0.09 ether}();
-        vm.expectRevert(TowackLaunch.WrongPrice.selector);
-        launch.mint{value: 0.2 ether}();
+        // exactly 0.1 BNB is no longer enough: the VRF fee is on top
+        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, launchFee));
+        launch.mint{value: PRICE}();
         vm.stopPrank();
+        assertEq(u.balance, 1 ether);
+        assertEq(launch.mintCount(), 0);
     }
 
     function test_MintWindow() public {
@@ -63,7 +66,7 @@ contract TowackLaunchTest is Fixture {
         vm.warp(mintEnd);
         vm.prank(u);
         vm.expectRevert(TowackLaunch.MintNotOpen.selector);
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
     }
 
     function test_DirectBnbRejected() public {
@@ -76,10 +79,10 @@ contract TowackLaunchTest is Fixture {
         mintN(5000);
         assertEq(launch.mintCount(), 5000);
         address late = newAgent("late");
-        vm.deal(late, PRICE);
+        vm.deal(late, PRICE + launchFee);
         vm.prank(late);
         vm.expectRevert(TowackLaunch.SoldOut.selector);
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
         // sellout allows close before mintEnd
         launch.closeMint();
         assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Closed));
@@ -114,10 +117,10 @@ contract TowackLaunchTest is Fixture {
     function test_EachMintRequestsVrfWithConfig() public {
         mintN(2);
         agentId.registerFor(user(2));
-        vm.deal(user(2), PRICE);
+        vm.deal(user(2), PRICE + launchFee);
         vm.recordLogs();
         vm.prank(user(2));
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
         VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
         for (uint256 i; i < 3; ++i) {
             uint256 rid = requestOf(user(i));
@@ -128,7 +131,7 @@ contract TowackLaunchTest is Fixture {
         assertEq(r.keyHash, KEY_HASH);
         assertEq(r.subId, subId);
         assertEq(r.confirmations, 3);
-        assertEq(r.callbackGasLimit, CALLBACK_GAS);
+        assertEq(r.callbackGasLimit, LAUNCH_CALLBACK_GAS);
         assertEq(r.numWords, 1);
         assertEq(r.sender, address(launch));
         assertEq(r.extraArgs, abi.encodeWithSelector(bytes4(0x92fd1338), true)); // nativePayment: true
@@ -137,11 +140,11 @@ contract TowackLaunchTest is Fixture {
 
     function test_MintEmitsPrizeRequested() public {
         address u = newAgent("u");
-        vm.deal(u, PRICE);
+        vm.deal(u, PRICE + launchFee);
         vm.expectEmit(true, true, false, true, address(launch));
         emit TowackLaunch.PrizeRequested(u, 1, 1);
         vm.prank(u);
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
     }
 
     function test_OnlyCoordinatorCanFulfill() public {
@@ -185,9 +188,9 @@ contract TowackLaunchTest is Fixture {
 
         uint256[] memory empty = new uint256[](0);
         address u2 = newAgent("u2");
-        vm.deal(u2, PRICE);
+        vm.deal(u2, PRICE + launchFee);
         vm.prank(u2);
-        launch.mint{value: PRICE}();
+        launch.mint{value: PRICE + launchFee}();
         uint256 rid2 = requestOf(u2);
         vm.prank(address(vrf));
         launch.rawFulfillRandomWords(rid2, empty); // no words: ignored
@@ -198,9 +201,9 @@ contract TowackLaunchTest is Fixture {
         mintN(1);
         uint256 first = requestOf(user(0));
         vm.expectRevert(TowackLaunch.TooEarly.selector);
-        launch.retryPrize(user(0));
+        launch.retryPrize{value: launchFee}(user(0));
         vm.warp(block.timestamp + launch.VRF_RETRY_DELAY());
-        launch.retryPrize(user(0)); // permissionless
+        launch.retryPrize{value: launchFee}(user(0)); // permissionless
         uint256 second = requestOf(user(0));
         assertTrue(second != first);
         assertEq(launch.requestMinter(first), address(0));
@@ -217,9 +220,9 @@ contract TowackLaunchTest is Fixture {
 
         vm.warp(block.timestamp + 1 days);
         vm.expectRevert(TowackLaunch.AlreadyAssigned.selector);
-        launch.retryPrize(user(0));
+        launch.retryPrize{value: launchFee}(user(0));
         vm.expectRevert(TowackLaunch.NotMinter.selector);
-        launch.retryPrize(makeAddr("rando"));
+        launch.retryPrize{value: launchFee}(makeAddr("rando"));
     }
 
     function test_RetryWorksAfterClose() public {
@@ -229,7 +232,7 @@ contract TowackLaunchTest is Fixture {
         vm.expectRevert(abi.encodeWithSelector(TowackLaunch.PrizesPending.selector, 1));
         launch.finalizeListing();
         vm.warp(block.timestamp + 1 hours);
-        launch.retryPrize(user(1));
+        launch.retryPrize{value: launchFee}(user(1));
         fulfillTo(address(launch), requestOf(user(1)), 2);
         launch.finalizeListing();
         assertEq(uint256(launch.phase()), uint256(TowackLaunch.Phase.Finalized));
@@ -547,7 +550,7 @@ contract TowackLaunchTest is Fixture {
 
     // ------------------------------------------------------------ helpers
     function _harness() internal returns (DeckHarness) {
-        return new DeckHarness(vrfCfg());
+        return new DeckHarness(vrfCfg(LAUNCH_CALLBACK_GAS));
     }
 
     function _claimIfAny(address u, uint256 paidB, uint256 paidT) internal returns (uint256, uint256) {

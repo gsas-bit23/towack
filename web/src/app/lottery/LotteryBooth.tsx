@@ -30,6 +30,7 @@ import {
 } from "@/lib/poolPrizes";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
+import { useVrfFee } from "@/lib/vrfFee";
 
 const WHEEL_SIZE = 400;
 const E18 = 10n ** 18n;
@@ -285,6 +286,9 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
   const tx = useTx();
   const now = useNow(5_000);
   const [fresh, setFresh] = useState(false);
+  // Every entry / retry is a VRF request: the player sends the Chainlink VRF fee in BNB (excess refunded).
+  // It goes to the VRF subscription, never into the BNB pot.
+  const vrf = useVrfFee(draw, chainId);
 
   const c = { address: draw, abi: drawV2Abi, chainId } as const;
   const { data, refetch } = useReadContracts({
@@ -367,18 +371,19 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
   const tooBig = amountIn !== undefined && maxEntry !== undefined && amountIn > maxEntry;
   const tooMuch = amountIn !== undefined && myTwak !== undefined && amountIn > myTwak;
   const needsApproval = amountIn !== undefined && (allowance ?? 0n) < amountIn;
-  const canEnter = Boolean(account && bound && !paused && poolOpen && amountIn && !tooSmall && !tooBig && !tooMuch && status !== "waiting");
+  const canEnter = Boolean(account && bound && !paused && poolOpen && amountIn && !tooSmall && !tooBig && !tooMuch && status !== "waiting" && vrf.value !== undefined);
   const hasOwed = owedTwak > 0n || owedBnb > 0n;
 
   async function enter() {
-    if (!canEnter || !amountIn || !token) return;
+    if (!canEnter || !amountIn || !token || vrf.value === undefined) return;
+    const value = vrf.value;
     if (needsApproval) {
       const ok = await tx.run("Approve exact amount", () =>
         writeContractAsync({ address: token, abi: towackTokenAbi, functionName: "approve", args: [draw, amountIn], chainId }),
       );
       if (!ok) return;
     }
-    const ok = await tx.run("Enter + spin", () => writeContractAsync({ ...c, functionName: "enter", args: [amountIn] }));
+    const ok = await tx.run("Enter + spin", () => writeContractAsync({ ...c, functionName: "enter", args: [amountIn], value }));
     if (ok) {
       setFresh(true);
       void refetchMe();
@@ -387,7 +392,10 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
     }
   }
   const claim = () => tx.run("Claim prizes", () => writeContractAsync({ ...c, functionName: "claim" })).then(() => void refetchMe());
-  const retry = () => lastSpin && tx.run("Retry VRF", () => writeContractAsync({ ...c, functionName: "retrySpin", args: [lastSpin] }));
+  const retry = () =>
+    lastSpin &&
+    vrf.value !== undefined &&
+    tx.run("Retry VRF", () => writeContractAsync({ ...c, functionName: "retrySpin", args: [lastSpin], value: vrf.value }));
 
   const chips: { label: string; v: bigint | undefined }[] = [
     { label: "100", v: MIN_WEI },
@@ -427,8 +435,8 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
               {lastSpin ? <Pill tone="sky">SPIN #{lastSpin.toString()}</Pill> : null} {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago.` : ""}
               {canRetry ? (
                 <div className="mt-3 flex justify-center">
-                  <Button tone="white" size="sm" className="min-h-11" disabled={tx.busy} onClick={retry}>
-                    Retry VRF request
+                  <Button tone="white" size="sm" className="min-h-11" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
+                    {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
                   </Button>
                 </div>
               ) : null}
@@ -489,7 +497,10 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
               <Button tone="candy" size="lg" className="mt-4 min-h-14 w-full" disabled={!canEnter || tx.busy} onClick={enter}>
                 {tx.busy ? "Check your wallet…" : needsApproval && amountIn ? "Approve exact amount, then spin" : "Enter + spin"}
               </Button>
-              <p className="mt-2 text-center text-sm font-bold text-navy/60">Your entry joins the pool. Most spins pay back less than you put in.</p>
+              <p className="mt-2 text-center text-sm font-bold text-navy/60">
+                Your entry joins the pool. Most spins pay back less than you put in.
+                {vrf.supported === false ? null : ` Each spin also sends a Chainlink VRF fee of about ${vrf.label} in BNB (pays for the random draw, not the pot; any extra is refunded).`}
+              </p>
             </>
           )}
           {hasOwed && status !== "assigned" ? (

@@ -26,7 +26,9 @@ import {IVRFCoordinatorV2Plus} from "../src/interfaces/IVRFCoordinatorV2Plus.sol
 /// Optional env:
 ///   AGENT_ID          Agent ID registry (default: deploy MockAgentId)
 ///   VRF_COORDINATOR   default: official Chainlink VRF v2.5 BSC testnet coordinator
-///   VRF_KEY_HASH      default: official 50 gwei lane; VRF_NATIVE (default true); VRF_CALLBACK_GAS (default 250k)
+///   VRF_KEY_HASH      default: official 50 gwei lane; native payment only (users pay the VRF fee);
+///                     VRF_CALLBACK_GAS_DRAW (default 200k), VRF_CALLBACK_GAS_LAUNCH (default 165k);
+///                     VRF_FEE_MIN_GAS_PRICE (default 1 gwei), VRF_FEE_MAX_GAS_PRICE (default 50 gwei lane)
 ///   TEAM_WALLET, SEASONS_WALLET, ECOSYSTEM_WALLET, POL_WALLET, DEV_WALLET (default: deployer)
 ///   MINT_DURATION     seconds (default 3 days); mint starts at deploy
 ///   TIMELOCK_DELAY    seconds (default 48h)
@@ -75,8 +77,10 @@ contract DeployTestnet is Script {
             keyHash: vm.envOr("VRF_KEY_HASH", OFFICIAL_KEY_HASH_50GWEI),
             subId: vm.envUint("VRF_SUB_ID"),
             requestConfirmations: 3,
-            callbackGasLimit: uint32(vm.envOr("VRF_CALLBACK_GAS", uint256(250_000))),
-            nativePayment: vm.envOr("VRF_NATIVE", true)
+            callbackGasLimit: uint32(vm.envOr("VRF_CALLBACK_GAS_DRAW", uint256(200_000))),
+            nativePayment: true, // users pay the VRF fee in native; the consumer requires it
+            minFeeGasPrice: uint64(vm.envOr("VRF_FEE_MIN_GAS_PRICE", uint256(1 gwei))),
+            maxFeeGasPrice: uint64(vm.envOr("VRF_FEE_MAX_GAS_PRICE", uint256(50 gwei)))
         });
 
         address[] memory admins = new address[](1);
@@ -84,8 +88,11 @@ contract DeployTestnet is Script {
         d.timelock = address(new TimelockController(tlDelay, admins, admins, address(0)));
 
         d.drawV2 = address(new DrawV2(d.timelock, address(0), cfg));
-        d.launch =
-            address(new TowackLaunch(d.agentId, WBNB, d.drawV2, block.timestamp, block.timestamp + mintDuration, cfg));
+        VRFConsumerV25.VRFConfig memory launchCfg = cfg;
+        launchCfg.callbackGasLimit = uint32(vm.envOr("VRF_CALLBACK_GAS_LAUNCH", uint256(165_000)));
+        d.launch = address(
+            new TowackLaunch(d.agentId, WBNB, d.drawV2, block.timestamp, block.timestamp + mintDuration, launchCfg)
+        );
         d.rebates = address(new RebateDistributor());
         d.team = address(new TeamVesting(teamWallet));
 

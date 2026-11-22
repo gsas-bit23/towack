@@ -15,8 +15,9 @@ import {TowackToken} from "./TowackToken.sol";
 /// contract.
 ///
 /// Flow:
-///  1. mint(): 0.1 BNB -> 80,000 TWAK instantly. One per Agent ID holder, cap 5000. Each mint makes its
-///     own Chainlink VRF v2.5 request.
+///  1. mint(): 0.1 BNB + the VRF fee (`vrfFeeAt(gasPrice)`) -> 80,000 TWAK instantly. One per Agent ID
+///     holder, cap 5000. Each mint makes its own Chainlink VRF v2.5 request; the fee is forwarded to the
+///     subscription and any excess over 0.1 BNB + fee is refunded. Only the 0.1 BNB stays in this contract.
 ///  2. VRF callback: pops ONE slot uniformly at random from the remaining fixed 5,000-slot prize deck and
 ///     assigns it to that minter (event `PrizeAssigned`). Prizes are mutually exclusive: a BNB refund
 ///     tier, a TWAK bonus tier, or "better luck next time".
@@ -39,8 +40,7 @@ import {TowackToken} from "./TowackToken.sol";
 ///    The only thing ordering can affect is WHICH remaining deck state a fulfilment sees, which does not
 ///    bias any individual draw: every draw is uniform over whatever slots remain.
 ///  - The callback is O(number of tiers) = O(11), never O(mints), so it fits comfortably in the
-///    configured callbackGasLimit (measured ~58k with cold storage on the worst-case walk; first-ever
-///    zero-to-nonzero accumulator writes add up to ~40k; 300k configured).
+///    configured callbackGasLimit (see docs/ARCHITECTURE.md for the measured worst case and the tight limit).
 ///  - `retryPrize` (after VRF_RETRY_DELAY without an answer) re-requests and invalidates the old request.
 ///    Chainlink advises against re-requests because a fulfilment that is still pending at that point could
 ///    in theory be front-run with a retry (a re-roll). The delay makes that only possible during a VRF
@@ -192,29 +192,35 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
         if (agentId.balanceOf(msg.sender) == 0) revert NoAgentId();
         Ticket storage t = tickets[msg.sender];
         if (t.index != 0) revert AlreadyMinted();
-        if (msg.value != MINT_PRICE) revert WrongPrice();
+        if (msg.value < MINT_PRICE) revert WrongPrice();
         if (mintCount >= MAX_MINTS) revert SoldOut();
 
         uint256 idx = ++mintCount;
         t.index = uint32(idx);
         token.safeTransfer(msg.sender, TOKENS_PER_MINT);
         emit Minted(msg.sender, idx);
-        _request(msg.sender, t);
+        // MINT_PRICE stays here (launch accounting); the VRF fee goes to the subscription; the rest is refunded.
+        uint256 available = msg.value - MINT_PRICE;
+        uint256 fee = _request(msg.sender, t, available);
+        _refund(available - fee);
     }
 
     /// @notice If a minter's VRF request has not been answered for VRF_RETRY_DELAY, anyone can re-request
     /// for that minter. The previous request id is invalidated, so a late fulfilment of it is ignored.
-    function retryPrize(address minter) external nonReentrant {
+    /// The caller pays the VRF fee of the new request (`msg.value >= vrfFeeAt(gasprice)`, excess refunded).
+    function retryPrize(address minter) external payable nonReentrant {
         Ticket storage t = tickets[minter];
         if (t.index == 0) revert NotMinter();
         if (t.assigned) revert AlreadyAssigned();
         if (block.timestamp < uint256(t.requestedAt) + VRF_RETRY_DELAY) revert TooEarly();
         delete requestMinter[t.requestId];
-        _request(minter, t);
+        uint256 fee = _request(minter, t, msg.value);
+        _refund(msg.value - fee);
     }
 
-    function _request(address minter, Ticket storage t) internal {
-        uint256 id = _requestRandomWord();
+    function _request(address minter, Ticket storage t, uint256 available) internal returns (uint256 fee) {
+        uint256 id;
+        (id, fee) = _requestRandomWordPaid(available);
         t.requestId = id;
         t.requestedAt = uint64(block.timestamp);
         requestMinter[id] = minter;

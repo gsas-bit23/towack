@@ -34,7 +34,7 @@ contract ForkPancakeTest is Test {
         vm.deal(address(this), 1 ether);
         vrf.fundSubscriptionWithNative{value: 0.04 ether}(sub);
         VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(
-            address(vrf), 0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26, sub, 3, 250_000, true
+            address(vrf), 0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26, sub, 3, 250_000, true, 1 gwei, 50 gwei
         );
         DrawV2 drawV2 = new DrawV2(address(this), address(0), cfg);
         TowackLaunch launch =
@@ -61,13 +61,18 @@ contract ForkPancakeTest is Test {
         assertEq(subOwner, address(this));
         assertEq(consumers.length, 2);
 
+        // users pay 0.1 BNB + the VRF fee quoted from the REAL coordinator's s_config (1 gwei floor)
+        uint256 fee = launch.vrfFeeAt(1 gwei);
+        assertGt(fee, 0);
         for (uint256 i; i < 20; ++i) {
             address u = address(uint160(0xA0000 + i));
             agentId.registerFor(u);
-            vm.deal(u, 0.1 ether);
+            vm.deal(u, 0.1 ether + fee);
             vm.prank(u);
-            launch.mint{value: 0.1 ether}();
+            launch.mint{value: 0.1 ether + fee}();
         }
+        (, uint96 nbAfter,,,) = vrf.getSubscription(sub);
+        assertEq(nbAfter, 0.04 ether + 20 * fee, "fees credited to the real sub");
         for (uint256 i; i < 20; ++i) {
             (,,,,, uint256 rid) = launch.tickets(address(uint160(0xA0000 + i)));
             uint256[] memory w = new uint256[](1);

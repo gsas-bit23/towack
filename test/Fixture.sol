@@ -21,7 +21,15 @@ contract Fixture is Test {
     VRFCoordinatorV2_5Mock vrf;
     uint256 subId;
     bytes32 constant KEY_HASH = 0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26;
-    uint32 constant CALLBACK_GAS = 250_000;
+    /// Per-contract callback gas limits (production values; see docs/ARCHITECTURE.md for the measurements).
+    /// Worst case cold, incl. the official mock's own overhead: Launch 131,772 (first 1.1x draw), Genesis 135,600,
+    /// DrawV2 158,463 (first jackpot + BNB). Limits leave >= 20% headroom over those (more over the bare callback).
+    uint32 constant LAUNCH_CALLBACK_GAS = 165_000;
+    uint32 constant GENESIS_CALLBACK_GAS = 170_000;
+    uint32 constant DRAW_CALLBACK_GAS = 200_000;
+    /// Fee quote clamp (BSC testnet: the Chainlink node fulfils at 1 gwei; 50 gwei lane cap).
+    uint64 constant FEE_MIN_GAS_PRICE = 1 gwei;
+    uint64 constant FEE_MAX_GAS_PRICE = 50 gwei;
     // Mock billing: flat 0.0001 BNB + 1 gwei per callback gas, paid from the sub's native balance.
     uint96 constant MOCK_BASE_FEE = 1e14;
     uint96 constant MOCK_GAS_PRICE = 1e9;
@@ -48,6 +56,10 @@ contract Fixture is Test {
     uint256 mintStart;
     uint256 mintEnd;
     uint256 constant PRICE = 0.1 ether;
+    /// VRF fee quotes, cached after deploy (the official mock bills a fixed i_gas_price, so they are constant).
+    /// Cached so tests can use them right after vm.prank without an extra external call eating the prank.
+    uint256 launchFee;
+    uint256 drawFee;
 
     function setUp() public virtual {
         vm.warp(1_700_000_000);
@@ -64,13 +76,13 @@ contract Fixture is Test {
         admins[0] = address(this);
         timelock = new TimelockController(2 days, admins, admins, address(0));
 
-        VRFConsumerV25.VRFConfig memory cfg = vrfCfg();
-
         mintStart = block.timestamp;
         mintEnd = block.timestamp + 7 days;
 
-        drawV2 = new DrawV2(address(timelock), address(0), cfg);
-        launch = new TowackLaunch(address(agentId), address(wbnb), address(drawV2), mintStart, mintEnd, cfg);
+        drawV2 = new DrawV2(address(timelock), address(0), vrfCfg(DRAW_CALLBACK_GAS));
+        launch = new TowackLaunch(
+            address(agentId), address(wbnb), address(drawV2), mintStart, mintEnd, vrfCfg(LAUNCH_CALLBACK_GAS)
+        );
         rebates = new RebateDistributor();
         team = new TeamVesting(teamWallet);
 
@@ -96,19 +108,28 @@ contract Fixture is Test {
         rebates.bind(address(token), address(router));
         vrf.addConsumer(subId, address(drawV2));
         vrf.addConsumer(subId, address(launch));
+        launchFee = launch.vrfFeeAt(0);
+        drawFee = drawV2.vrfFeeAt(0);
     }
 
     // ---------------------------------------------------------------- VRF helpers
     /// Production-shaped config against the official mock: 50 gwei lane key hash, native payment, 3 conf.
-    function vrfCfg() internal view returns (VRFConsumerV25.VRFConfig memory) {
+    function vrfCfg(uint32 callbackGas) internal view returns (VRFConsumerV25.VRFConfig memory) {
         return VRFConsumerV25.VRFConfig({
             coordinator: address(vrf),
             keyHash: KEY_HASH,
             subId: subId,
             requestConfirmations: 3,
-            callbackGasLimit: CALLBACK_GAS,
-            nativePayment: true
+            callbackGasLimit: callbackGas,
+            nativePayment: true,
+            minFeeGasPrice: FEE_MIN_GAS_PRICE,
+            maxFeeGasPrice: FEE_MAX_GAS_PRICE
         });
+    }
+
+    /// Expected quote against the official mock: (i_base_fee + (100k overhead + limit) * i_gas_price) * 1.15.
+    function mockFee(uint32 callbackGas) internal pure returns (uint256) {
+        return (uint256(MOCK_BASE_FEE) + (100_000 + uint256(callbackGas)) * MOCK_GAS_PRICE) * 11_500 / 10_000;
     }
 
     /// Delivers `word` for request `id` to `consumer` through the official mock (the mock forwards exactly
@@ -178,9 +199,9 @@ contract Fixture is Test {
         for (uint256 i; i < n; ++i) {
             address u = user(i);
             agentId.registerFor(u);
-            vm.deal(u, PRICE);
+            vm.deal(u, PRICE + launchFee);
             vm.prank(u);
-            launch.mint{value: PRICE}();
+            launch.mint{value: PRICE + launchFee}();
         }
     }
 

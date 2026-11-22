@@ -9,8 +9,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {VRFConsumerV25} from "./VRFConsumerV25.sol";
 
 /// @title TowackGenesis ("Genesis 300")
-/// @notice 300 FREE mints for Agent ID holders, separate from the 5,000 paid TowackLaunch mints. TWAK only:
-/// no BNB is ever accepted, held or refunded.
+/// @notice 300 FREE mints for Agent ID holders, separate from the 5,000 paid TowackLaunch mints. No mint
+/// price: the only BNB a minter sends is the Chainlink VRF fee (`vrfFeeAt(gasPrice)`), forwarded straight into
+/// the VRF subscription in the same tx (excess refunded). The contract never holds BNB.
 ///
 /// Design numbers:
 ///  - Cap 300 free mints. Base grant 20,000 TWAK per mint (paid mint: 80,000), sent instantly on mint.
@@ -174,7 +175,8 @@ contract TowackGenesis is VRFConsumerV25, Ownable2Step, ReentrancyGuard {
 
     // ================================================================= mint + VRF request
     /// @notice Free mint. Caller must own Agent ID `agentTokenId`. 20,000 TWAK now + one wheel spin.
-    function mint(uint256 agentTokenId) external nonReentrant {
+    /// `msg.value` must cover the VRF fee (no mint price); excess is refunded.
+    function mint(uint256 agentTokenId) external payable nonReentrant {
         if (!isOpen) revert NotOpen();
         if (mintCount >= MAX_MINTS) revert SoldOut();
         Ticket storage t = tickets[msg.sender];
@@ -192,27 +194,30 @@ contract TowackGenesis is VRFConsumerV25, Ownable2Step, ReentrancyGuard {
         baseGranted += BASE_TOKENS;
         token.safeTransfer(msg.sender, BASE_TOKENS);
         emit GenesisMinted(msg.sender, idx, agentTokenId, BASE_TOKENS);
-        _request(msg.sender, t);
+        (, uint256 fee) = _request(msg.sender, t);
         if (idx == MAX_MINTS) {
             isOpen = false;
             emit WindowClosed(idx);
         }
+        _refund(msg.value - fee);
     }
 
     /// @notice Re-request a stalled VRF draw (anyone, after VRF_RETRY_DELAY). The old request is invalidated.
-    function retryPrize(address minter) external nonReentrant {
+    /// The caller pays the new request's VRF fee (excess refunded).
+    function retryPrize(address minter) external payable nonReentrant {
         Ticket storage t = tickets[minter];
         if (t.index == 0) revert NotMinter();
         if (t.assigned) revert AlreadyAssigned();
         if (block.timestamp < uint256(t.requestedAt) + VRF_RETRY_DELAY) revert TooEarly();
         uint256 old = t.requestId;
         delete requestMinter[old];
-        uint256 id = _request(minter, t);
+        (uint256 id, uint256 fee) = _request(minter, t);
         emit PrizeRetried(minter, old, id);
+        _refund(msg.value - fee);
     }
 
-    function _request(address minter, Ticket storage t) internal returns (uint256 id) {
-        id = _requestRandomWord();
+    function _request(address minter, Ticket storage t) internal returns (uint256 id, uint256 fee) {
+        (id, fee) = _requestRandomWordPaid(msg.value);
         t.requestId = id;
         t.requestedAt = uint64(block.timestamp);
         requestMinter[id] = minter;

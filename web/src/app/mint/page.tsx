@@ -10,7 +10,7 @@ export default function MintPage() {
   return (
     <>
       <PageHeader
-        kicker="Agent ID holders only · 0.1 BNB"
+        kicker="Agent ID holders only · 0.1 BNB + VRF fee"
         title="Mint. Spin. See what you pull."
         art={
           <>
@@ -19,8 +19,8 @@ export default function MintPage() {
           </>
         }
       >
-        One mint per Agent ID wallet. Exactly 0.1 BNB gets you 80,000 TWAK on the spot plus one spin of the Draw V1 prize wheel, drawn by Chainlink
-        VRF. 5,000 slots, then the booth closes.
+        One mint per Agent ID wallet. 0.1 BNB (plus a small Chainlink VRF fee for your random draw, excess refunded) gets you 80,000 TWAK on the
+        spot plus one spin of the Draw V1 prize wheel, drawn by Chainlink VRF. 5,000 slots, then the booth closes.
       </PageHeader>
       <div className="mx-auto max-w-[1220px] px-6 pt-6">
         <GenesisCard />

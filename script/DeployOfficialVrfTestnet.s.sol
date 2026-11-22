@@ -115,7 +115,9 @@ contract DeployOfficialVrfTestnet is Script {
             subId: subId,
             requestConfirmations: CONFIRMATIONS,
             callbackGasLimit: cbGas,
-            nativePayment: true
+            nativePayment: true,
+            minFeeGasPrice: 1 gwei,
+            maxFeeGasPrice: 50 gwei
         });
 
         // ---- subscription funding (tBNB goes to the coordinator, credited to this subId)

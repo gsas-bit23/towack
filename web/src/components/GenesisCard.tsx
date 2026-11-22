@@ -10,6 +10,7 @@ import { GENESIS_BASE, GENESIS_NO_BONUS_ID, GENESIS_PRIZES, GENESIS_SLICES, gene
 import { fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
+import { useVrfFee } from "@/lib/vrfFee";
 import { AnimatedNumber, Confetti, ProgressFill } from "./motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "./PrizeBooth";
 import { SpinWheel } from "./SpinWheel";
@@ -133,13 +134,17 @@ function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: num
   const status: WheelStatus = !prize?.minted ? "none" : prize.assigned ? "assigned" : "waiting";
   const canRetry = status === "waiting" && now > 0 && requestedAt !== undefined && requestedAt > 0 && now >= requestedAt + retryDelay;
   const hasExtra = Boolean(prize && prize.extra > 0n);
+  const vrf = useVrfFee(genesis, chainId); // a retry is a new VRF request: the caller pays its fee
 
   const claim = () =>
     genesis && tx.run("Claim Genesis bonus", () => writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "claim", chainId }));
   const retry = () =>
     genesis &&
     account &&
-    tx.run("Retry VRF", () => writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "retryPrize", args: [account], chainId }));
+    vrf.value !== undefined &&
+    tx.run("Retry VRF", () =>
+      writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "retryPrize", args: [account], value: vrf.value, chainId }),
+    );
 
   return (
     <div>
@@ -153,8 +158,8 @@ function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: num
             {mintIndex ? <Pill tone="sky">GENESIS #{mintIndex}</Pill> : null} {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago.` : ""}
             {canRetry ? (
               <div className="mt-3 flex justify-center">
-                <Button tone="white" size="sm" className="min-h-11" disabled={tx.busy} onClick={retry}>
-                  Retry VRF request
+                <Button tone="white" size="sm" className="min-h-11" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
+                  {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
                 </Button>
               </div>
             ) : null}
@@ -218,12 +223,17 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   const owns = tokenId === undefined ? undefined : ownerErr ? false : owner === undefined ? undefined : owner.toLowerCase() === account?.toLowerCase();
   const minted = prize?.minted;
   const soldOut = mintCount !== undefined ? mintCount >= cap : undefined;
-  const canMint = Boolean(genesis && account && tokenId !== undefined && owns && used === false && minted === false && isOpen && !soldOut);
+  // No mint price. The only BNB sent is the Chainlink VRF fee for the spin (excess refunded in the same tx).
+  const vrf = useVrfFee(genesis, chainId);
+  const canMint = Boolean(
+    genesis && account && tokenId !== undefined && owns && used === false && minted === false && isOpen && !soldOut && vrf.value !== undefined,
+  );
 
   async function mint() {
-    if (!genesis || !canMint || tokenId === undefined) return;
+    if (!genesis || !canMint || tokenId === undefined || vrf.value === undefined) return;
+    const value = vrf.value;
     const ok = await tx.run("Genesis mint", () =>
-      writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "mint", args: [tokenId], chainId }),
+      writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "mint", args: [tokenId], value, chainId }),
     );
     if (ok) onMinted();
   }
@@ -263,7 +273,11 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
       <Button tone="candy" size="lg" className="mt-5 w-full min-h-14" disabled={!canMint || tx.busy} onClick={mint}>
         {tx.busy ? "Check your wallet…" : minted ? "Already claimed" : "Claim free + spin"}
       </Button>
-      <p className="mt-2 text-center text-sm font-bold text-navy/60">Free: you only pay gas. Your wallet asks you to confirm.</p>
+      <p className="mt-2 text-center text-sm font-bold text-navy/60">
+        {vrf.supported === false
+          ? "Free: you only pay gas. Your wallet asks you to confirm."
+          : `No mint price. You pay gas plus a Chainlink VRF fee of about ${vrf.label} for your spin (not a mint price; any extra is refunded). Your wallet asks you to confirm.`}
+      </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
     </div>
   );
@@ -327,7 +341,7 @@ export function GenesisCard() {
             <h2 className="mt-2 font-display text-[30px] font-extrabold leading-[1.05] sm:text-[40px]">300 free spins for Agent ID holders</h2>
             <p className="mt-3 font-bold text-navy/75">
               One free mint per Agent ID and per wallet: <b className="text-navy">{BASE_TEXT}</b> on the spot plus one spin of a TWAK-only wheel (up to 5×,
-              i.e. 100,000 TWAK). No BNB in, no BNB refunds. Funded from the 5% ecosystem allocation (8M TWAK budget) and separate from the paid 5,000.
+              i.e. 100,000 TWAK). No mint price and no BNB prizes: the only BNB you send is the small Chainlink VRF fee that pays for your random spin. Funded from the 5% ecosystem allocation (8M TWAK budget) and separate from the paid 5,000.
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-3">

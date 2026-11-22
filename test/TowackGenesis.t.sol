@@ -19,6 +19,7 @@ contract GenesisDeckHarness is TowackGenesis {
 contract TowackGenesisTest is Fixture {
     TowackGenesis genesis;
     MockAgentIdNFT nft;
+    uint256 genesisFee; // VRF fee per mint / retry (no mint price)
 
     uint256 constant BASE = 20_000e18;
     uint256 constant BUDGET = 8_000_000e18;
@@ -28,8 +29,9 @@ contract TowackGenesisTest is Fixture {
     function setUp() public override {
         super.setUp();
         nft = new MockAgentIdNFT();
-        genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this), vrfCfg());
+        genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS));
         vrf.addConsumer(subId, address(genesis));
+        genesisFee = genesis.vrfFeeAt(0);
     }
 
     // ---------------------------------------------------------------- helpers
@@ -55,8 +57,9 @@ contract TowackGenesisTest is Fixture {
     }
 
     function _mint(address u, uint256 id) internal {
+        vm.deal(u, genesisFee);
         vm.prank(u);
-        genesis.mint(id);
+        genesis.mint{value: genesisFee}(id);
     }
 
     function _req(address u) internal view returns (uint256 id) {
@@ -233,17 +236,23 @@ contract TowackGenesisTest is Fixture {
         assertEq(token.balanceOf(ecosystem), ecoBal - BUDGET);
     }
 
-    function test_NoBnbAccepted() public {
+    /// No mint price and no BNB kept: plain BNB is rejected; a mint pays only the VRF fee into the
+    /// subscription and any extra msg.value comes straight back.
+    function test_NoBnbKept_OnlyVrfFee() public {
         vm.deal(address(this), 1 ether);
         (bool ok,) = address(genesis).call{value: 1 ether}("");
         assertFalse(ok, "plain BNB rejected");
         _fundAndOpen();
         (address u, uint256 id) = _newHolder(0);
         vm.deal(u, 1 ether);
+        uint96 sub0 = subNativeBalance();
         vm.prank(u);
         (ok,) = address(genesis).call{value: 0.1 ether}(abi.encodeCall(TowackGenesis.mint, (id)));
-        assertFalse(ok, "mint is not payable");
-        assertEq(address(genesis).balance, 0);
+        assertTrue(ok, "mint pays only the VRF fee");
+        assertEq(address(genesis).balance, 0, "no BNB kept");
+        assertEq(u.balance, 1 ether - genesisFee, "excess refunded");
+        assertEq(subNativeBalance() - sub0, genesisFee, "fee credited to the sub");
+        assertEq(genesisFee, mockFee(GENESIS_CALLBACK_GAS));
     }
 
     function test_MintGivesBaseAndRequestsVrf() public {
@@ -254,7 +263,7 @@ contract TowackGenesisTest is Fixture {
         vm.recordLogs();
         _mint(u, id);
         VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
-        assertEq(r.callbackGasLimit, CALLBACK_GAS);
+        assertEq(r.callbackGasLimit, GENESIS_CALLBACK_GAS);
         assertEq(r.subId, subId);
         assertEq(r.keyHash, KEY_HASH);
         assertEq(r.confirmations, 3);
@@ -304,9 +313,9 @@ contract TowackGenesisTest is Fixture {
         _mint(u, id);
         uint256 r1 = _req(u);
         vm.expectRevert(TowackGenesis.TooEarly.selector);
-        genesis.retryPrize(u);
+        genesis.retryPrize{value: genesisFee}(u);
         vm.warp(block.timestamp + 1 hours);
-        genesis.retryPrize(u);
+        genesis.retryPrize{value: genesisFee}(u);
         uint256 r2 = _req(u);
         assertTrue(r2 != r1);
         fulfillTo(address(genesis), r1, 0); // stale: ignored
@@ -314,9 +323,9 @@ contract TowackGenesisTest is Fixture {
         fulfillTo(address(genesis), r2, 0);
         assertEq(genesis.assignedCount(), 1);
         vm.expectRevert(TowackGenesis.AlreadyAssigned.selector);
-        genesis.retryPrize(u);
+        genesis.retryPrize{value: genesisFee}(u);
         vm.expectRevert(TowackGenesis.NotMinter.selector);
-        genesis.retryPrize(makeAddr("nobody"));
+        genesis.retryPrize{value: genesisFee}(makeAddr("nobody"));
     }
 
     function test_Cap_300Succeed_301stReverts_ContractEmptiesAfterClaims() public {
@@ -437,7 +446,7 @@ contract TowackGenesisTest is Fixture {
     // ---------------------------------------------------------------- fuzz
     function testFuzz_DeckInvariants(uint256 k, uint256 salt) public {
         k = bound(k, 1, 300);
-        GenesisDeckHarness h = new GenesisDeckHarness(address(token), address(nft), ecosystem, vrfCfg());
+        GenesisDeckHarness h = new GenesisDeckHarness(address(token), address(nft), ecosystem, vrfCfg(GENESIS_CALLBACK_GAS));
         uint256[7] memory drawn;
         uint256 extra;
         for (uint256 i; i < k; ++i) {

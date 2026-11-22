@@ -172,8 +172,14 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
     }
 
     function availableBnb() public view returns (uint256) {
+        return _availableBnb(0);
+    }
+
+    /// @dev `pending` = msg.value of the current call (the VRF fee + refund), which is not pot money.
+    function _availableBnb(uint256 pending) internal view returns (uint256) {
+        uint256 bal = address(this).balance - pending;
         uint256 locked = reservedBnb + outstandingBnb;
-        return address(this).balance > locked ? address(this).balance - locked : 0;
+        return bal > locked ? bal - locked : 0;
     }
 
     /// @notice Largest entry right now (0.5% of available TWAK). Below MIN_ENTRY means entries are closed.
@@ -220,7 +226,15 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
     }
 
     /// @notice Deposit `amount` TWAK into the pool and spin. Reserves 10 × amount TWAK and 2% of free BNB.
-    function enter(uint256 amount) external nonReentrant whenBound returns (uint256 spinId, uint256 requestId) {
+    /// `msg.value` pays the Chainlink VRF fee (`vrfFeeAt(gasPrice)`); it never enters the BNB pot and any
+    /// excess is refunded.
+    function enter(uint256 amount)
+        external
+        payable
+        nonReentrant
+        whenBound
+        returns (uint256 spinId, uint256 requestId)
+    {
         if (entriesPaused) revert EntriesPaused();
         if (amount < MIN_ENTRY) revert EntryTooSmall(amount, MIN_ENTRY);
         uint256 avail = availableTwak();
@@ -228,7 +242,7 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
         if (twakRes > avail) revert PoolTooSmall(twakRes, avail);
         uint256 maxE = avail * MAX_PAYOUT_BPS / MAX_MULT_BPS;
         if (amount > maxE) revert EntryTooLarge(amount, maxE);
-        uint256 bnbRes = availableBnb() * BNB_BONUS_BPS_10X / BPS;
+        uint256 bnbRes = _availableBnb(msg.value) * BNB_BONUS_BPS_10X / BPS;
 
         reservedTwak += twakRes;
         reservedBnb += bnbRes;
@@ -244,31 +258,36 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
         lastSpinOf[msg.sender] = spinId;
 
         token.safeTransferFrom(msg.sender, address(this), amount);
-        requestId = _requestRandomWord();
+        uint256 fee;
+        (requestId, fee) = _requestRandomWordPaid(msg.value);
         s.requestId = requestId;
         spinOfRequest[requestId] = spinId;
         emit Entered(spinId, msg.sender, amount, twakRes, bnbRes);
         emit SpinRequested(spinId, requestId);
+        _refund(msg.value - fee);
     }
 
     /// @notice Re-request VRF for a spin stuck for VRF_RETRY_DELAY. Anyone. The reservation stays in place;
     /// the old request id is invalidated (unmapped, and no longer the spin's live id) so a late fulfil is ignored.
-    function retrySpin(uint256 spinId) external nonReentrant returns (uint256 requestId) {
+    /// The caller pays the new request's VRF fee (excess refunded).
+    function retrySpin(uint256 spinId) external payable nonReentrant returns (uint256 requestId) {
         Spin storage s = spins[spinId];
         if (s.status != PENDING) revert NotPending();
         if (block.timestamp < uint256(s.requestedAt) + VRF_RETRY_DELAY) revert TooEarly();
         uint256 old = s.requestId;
         delete spinOfRequest[old];
-        requestId = _requestRandomWord();
+        uint256 fee;
+        (requestId, fee) = _requestRandomWordPaid(msg.value);
         s.requestId = requestId;
         s.requestedAt = uint64(block.timestamp);
         spinOfRequest[requestId] = spinId;
         emit SpinRetried(spinId, old, requestId);
         emit SpinRequested(spinId, requestId);
+        _refund(msg.value - fee);
     }
 
     /// @dev Lands the wheel, books the prize as owed, releases the whole reservation. Never reverts on
-    /// unknown / stale requests (they are ignored). Kept to a few SSTOREs (callback gas limit 300k).
+    /// unknown / stale requests (they are ignored). Kept to a few SSTOREs (tight callback gas limit, see docs/ARCHITECTURE.md).
     function _fulfillRandomWords(uint256 requestId, uint256[] calldata words) internal override {
         uint256 spinId = spinOfRequest[requestId];
         if (spinId == 0 || words.length == 0) return;

@@ -25,6 +25,10 @@ contract DrawV2Test is Fixture, WheelWords {
         super.setUp();
         alice = makeAddr("alice");
         bob = makeAddr("bob");
+        // players pay the VRF fee in native on every enter / retry
+        vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
+        vm.deal(seasons, 100 ether);
         vm.startPrank(seasons);
         token.transfer(alice, 5_000_000e18);
         token.transfer(bob, 5_000_000e18);
@@ -37,7 +41,7 @@ contract DrawV2Test is Fixture, WheelWords {
 
     /// Stand-alone pool on the shared official-mock subscription (consumer added, like the deploy script).
     function _newPool(address preset) internal returns (DrawV2 d) {
-        d = new DrawV2(address(timelock), preset, vrfCfg());
+        d = new DrawV2(address(timelock), preset, vrfCfg(DRAW_CALLBACK_GAS));
         vrf.addConsumer(subId, address(d));
     }
 
@@ -50,7 +54,7 @@ contract DrawV2Test is Fixture, WheelWords {
 
     function _enter(address who, uint256 amt) internal returns (uint256 spinId, uint256 req) {
         vm.prank(who);
-        (spinId, req) = drawV2.enter(amt);
+        (spinId, req) = drawV2.enter{value: drawFee}(amt);
     }
 
     function _spin(uint256 spinId)
@@ -116,7 +120,7 @@ contract DrawV2Test is Fixture, WheelWords {
     function test_MinEntry() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(DrawV2.EntryTooSmall.selector, 100e18 - 1, 100e18));
-        drawV2.enter(100e18 - 1);
+        drawV2.enter{value: drawFee}(100e18 - 1);
         (uint256 id,) = _enter(alice, 100e18);
         assertEq(id, 1);
     }
@@ -126,7 +130,7 @@ contract DrawV2Test is Fixture, WheelWords {
         assertEq(drawV2.maxEntry(), 350_000e18, "0.5% of 70M");
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(DrawV2.EntryTooLarge.selector, 350_000e18 + 1, 350_000e18));
-        drawV2.enter(350_000e18 + 1);
+        drawV2.enter{value: drawFee}(350_000e18 + 1);
         _enter(alice, 350_000e18);
         // a 10x win would be 3.5M = exactly 5% of the 70M that was available.
         assertEq(drawV2.reservedTwak(), 3_500_000e18);
@@ -139,14 +143,14 @@ contract DrawV2Test is Fixture, WheelWords {
         token.approve(address(d), type(uint256).max);
         d.seed(999e18); // 10 x 100 = 1,000 > 999
         vm.expectRevert(abi.encodeWithSelector(DrawV2.PoolTooSmall.selector, 1_000e18, 999e18));
-        d.enter(100e18);
+        d.enter{value: drawFee}(100e18);
         // covers 10x but the 5% cap still blocks it (needs 20,000 available for a 100 entry)
         d.seed(18_000e18);
         vm.expectRevert(abi.encodeWithSelector(DrawV2.EntryTooLarge.selector, 100e18, 94_995e15));
-        d.enter(100e18);
+        d.enter{value: drawFee}(100e18);
         d.seed(1_001e18); // 20,000 available
         assertEq(d.maxEntry(), 100e18);
-        d.enter(100e18);
+        d.enter{value: drawFee}(100e18);
         vm.stopPrank();
         assertEq(d.reservedTwak(), 1_000e18);
     }
@@ -156,7 +160,7 @@ contract DrawV2Test is Fixture, WheelWords {
         vm.startPrank(alice);
         token.approve(address(d), 100e18);
         vm.expectRevert(abi.encodeWithSelector(DrawV2.PoolTooSmall.selector, 1_000e18, 0));
-        d.enter(100e18);
+        d.enter{value: drawFee}(100e18);
         vm.stopPrank();
     }
 
@@ -189,7 +193,7 @@ contract DrawV2Test is Fixture, WheelWords {
         uint256 cap = drawV2.maxEntry();
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(DrawV2.EntryTooLarge.selector, cap + 1, cap));
-        drawV2.enter(cap + 1);
+        drawV2.enter{value: drawFee}(cap + 1);
         _enter(alice, cap);
 
         // all three hit 10x, fulfilled out of order: everyone is paid in full
@@ -216,7 +220,7 @@ contract DrawV2Test is Fixture, WheelWords {
         d.seed(1_000_000e18);
         uint256 n;
         while (d.maxEntry() >= 100e18) {
-            d.enter(d.maxEntry());
+            d.enter{value: drawFee}(d.maxEntry());
             ++n;
         }
         vm.stopPrank();
@@ -361,9 +365,9 @@ contract DrawV2Test is Fixture, WheelWords {
         (uint256 id, uint256 oldReq) = _enter(alice, 10_000e18);
         uint256 res = drawV2.reservedTwak();
         vm.expectRevert(DrawV2.TooEarly.selector);
-        drawV2.retrySpin(id);
+        drawV2.retrySpin{value: drawFee}(id);
         vm.warp(block.timestamp + 1 hours);
-        uint256 newReq = drawV2.retrySpin(id);
+        uint256 newReq = drawV2.retrySpin{value: drawFee}(id);
         assertEq(drawV2.reservedTwak(), res, "reservation kept");
         assertEq(drawV2.spinOfRequest(oldReq), 0);
         fulfillTo(address(drawV2), oldReq, WORD[6]); // stale: ignored
@@ -379,7 +383,7 @@ contract DrawV2Test is Fixture, WheelWords {
         _rawFulfil(drawV2, newReq, WORD[6]); // double fulfil (mock already deleted it): ignored
         assertEq(drawV2.owedTwak(alice), 10_000e18);
         vm.expectRevert(DrawV2.NotPending.selector);
-        drawV2.retrySpin(id);
+        drawV2.retrySpin{value: drawFee}(id);
     }
 
     function test_OnlyCoordinatorCanFulfil() public {
@@ -433,7 +437,7 @@ contract DrawV2Test is Fixture, WheelWords {
         drawV2.setEntriesPaused(true);
         vm.prank(bob);
         vm.expectRevert(DrawV2.EntriesPaused.selector);
-        drawV2.enter(1_000e18);
+        drawV2.enter{value: drawFee}(1_000e18);
         fulfillTo(address(drawV2), req, WORD[3]);
         vm.prank(alice);
         drawV2.claim();
@@ -449,7 +453,7 @@ contract DrawV2Test is Fixture, WheelWords {
         vm.expectRevert(abi.encodeWithSelector(TokenBound.BadAllocation.selector, 0, 70_000_000e18));
         fresh.bindToken(address(token));
         vm.expectRevert(TokenBound.NotBound.selector);
-        fresh.enter(100e18);
+        fresh.enter{value: drawFee}(100e18);
     }
 
     function test_StandalonePresetAndSeed() public {
@@ -520,7 +524,7 @@ contract DrawV2Test is Fixture, WheelWords {
                     uint256 amt = bound(r >> 16, 100e18, maxE);
                     if (token.balanceOf(p) >= amt) {
                         vm.prank(p);
-                        (uint256 id,) = d.enter(amt);
+                        (uint256 id,) = d.enter{value: drawFee}(amt);
                         (,,,,, uint256 tRes, uint256 bRes,) = d.spins(id);
                         assertEq(tRes, amt * 10);
                         bookedMaxTwak += tRes;
@@ -594,6 +598,7 @@ contract DrawV2Handler is Test {
     uint256 public bookedTwak;
     uint256 public bookedBnb;
     uint256 public maxOverTenX; // must stay 0
+    uint256 public fee; // VRF fee per request (constant against the official mock)
     uint256 public callbackFailures; // live-request fulfils that did not assign (revert / OOG): must stay 0
 
     constructor(IERC20 token_) {
@@ -610,10 +615,13 @@ contract DrawV2Handler is Test {
                 keyHash: bytes32(uint256(0x8596)),
                 subId: sub,
                 requestConfirmations: 3,
-                callbackGasLimit: 250_000,
-                nativePayment: true
+                callbackGasLimit: 200_000, // production DrawV2 limit
+                nativePayment: true,
+                minFeeGasPrice: 1 gwei,
+                maxFeeGasPrice: 50 gwei
             })
         );
+        fee = d.vrfFeeAt(0);
         vrf.addConsumer(sub, address(d));
         for (uint256 i; i < 3; ++i) {
             players[i] = address(uint160(0xA11CE0 + i));
@@ -639,8 +647,9 @@ contract DrawV2Handler is Test {
         address p = players[who % 3];
         amt = bound(amt, 100e18, maxE);
         if (token.balanceOf(p) < amt) return;
+        vm.deal(p, fee);
         vm.prank(p);
-        (uint256 id,) = d.enter(amt);
+        (uint256 id,) = d.enter{value: fee}(amt);
         (,,,,, uint256 tRes, uint256 bRes,) = d.spins(id);
         bookedTwak += tRes;
         bookedBnb += bRes;
@@ -666,7 +675,8 @@ contract DrawV2Handler is Test {
         uint256 id = pending[k % pending.length];
         (,,, uint64 at,,,, uint256 oldReq) = d.spins(id);
         vm.warp(uint256(at) + 1 hours);
-        d.retrySpin(id);
+        vm.deal(address(this), fee);
+        d.retrySpin{value: fee}(id);
         _fulfil(oldReq, word); // stale fulfil must be a no-op
     }
 

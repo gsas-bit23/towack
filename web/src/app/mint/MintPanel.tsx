@@ -14,6 +14,7 @@ import { DEMO_SPINS, LAUNCH_PHASES, useDemoWheel, useLaunchState, useRecentSpins
 import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
+import { useVrfFee } from "@/lib/vrfFee";
 const MINT_PRICE_FALLBACK = parseEther("0.1");
 const CAP_FALLBACK = 5000n;
 
@@ -71,6 +72,9 @@ export function MintPanel() {
   const demo = useDemoWheel(legacy);
   const spins = useRecentSpins(!legacy);
   const [fresh, setFresh] = useState(false);
+  // Chainlink VRF fee on top of the 0.1 BNB price (forwarded to the VRF subscription; excess refunded).
+  const vrf = useVrfFee(launch, chainId);
+  const mintValue = vrf.value !== undefined ? price + vrf.value : undefined;
 
   const hasAgent = agentBal === undefined ? undefined : agentBal > 0n;
   const timeKnown = now > 0 && mintStart !== undefined && mintEnd !== undefined;
@@ -79,7 +83,7 @@ export function MintPanel() {
   const windowOpen = timeKnown ? !beforeStart && !afterEnd : undefined;
   const soldOut = mintCount !== undefined ? mintCount >= cap : undefined;
   const phaseOk = phase === undefined ? undefined : phase === 0;
-  const enoughBnb = bal ? bal.value > price : undefined; // a little headroom for gas
+  const enoughBnb = bal && mintValue !== undefined ? bal.value > mintValue : undefined; // a little headroom for gas
 
   const canMint =
     Boolean(account) &&
@@ -89,15 +93,18 @@ export function MintPanel() {
     windowOpen === true &&
     soldOut === false &&
     bound === true &&
+    mintValue !== undefined &&
     !legacy;
 
   const pct = mintCount !== undefined ? Math.min(100, (Number(mintCount) / Number(cap)) * 100) : 0;
 
   async function mint() {
     if (!launch || !canMint) return;
-    // Exactly MINT_PRICE (0.1 BNB). The wallet asks the user to confirm; nothing is auto-signed.
+    if (mintValue === undefined) return;
+    // MINT_PRICE (0.1 BNB) + the quoted VRF fee (+ a small cushion the contract refunds). The wallet asks the
+    // user to confirm; nothing is auto-signed. Pre-fee contracts (vrf.supported === false) get exactly 0.1 BNB.
     const ok = await tx.run("Mint", () =>
-      writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "mint", value: price, chainId }),
+      writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "mint", value: mintValue, chainId }),
     );
     if (ok) setFresh(true); // confirmed: the wheel starts its anticipation spin right away
   }
@@ -173,7 +180,11 @@ export function MintPanel() {
                 <ProgressFill pct={pct} className="bg-candy" />
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <Stat label="Price" value={`${fmt18(price)} BNB`} sub="exactly, no extra" />
+                <Stat
+                  label="Price"
+                  value={`${fmt18(price)} BNB`}
+                  sub={vrf.supported === false ? "exactly, no extra" : `+ VRF fee ~${vrf.label} (excess refunded)`}
+                />
                 <Stat label="Window" value={windowText} sub={mintEnd ? `ends ${fmtDate(mintEnd)}` : undefined} />
                 <Stat label="You get" value="80,000 TWAK" sub="instantly, plus one spin" />
               </div>
@@ -191,7 +202,11 @@ export function MintPanel() {
           <h2 className="font-display text-[24px] font-extrabold">How the mint works</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
             <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App on mainnet).</li>
-            <li>Send exactly 0.1 BNB with <code className="rounded bg-white px-1">mint()</code>. You confirm it in your own wallet.</li>
+            <li>
+              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-white px-1">mint()</code>. The fee goes
+              straight to the VRF subscription that pays for your random draw, and anything above 0.1 BNB + fee is refunded in the same
+              transaction. You confirm it in your own wallet.
+            </li>
             <li>80,000 TWAK arrives in the same transaction, and the contract requests one Chainlink VRF v2.5 random word for you.</li>
             <li>
               When the VRF answer lands, the contract pops one slot from the remaining 5,000-slot deck and the wheel stops on it. Exactly one outcome:
@@ -200,7 +215,7 @@ export function MintPanel() {
             <li>Claim your prize whenever you like (within 180 days of listing). Prizes are pulled, never pushed.</li>
           </ol>
           <p className="mt-4 font-semibold text-navy/70">
-            You can lose some or all of the 0.1 BNB. Most slots get back less than they paid. This is a game of chance, not an investment.
+            You can lose some or all of the 0.1 BNB (the VRF fee is never refunded by prizes). Most slots get back less than they paid. This is a game of chance, not an investment.
           </p>
         </Panel>
       </div>
@@ -227,7 +242,7 @@ export function MintPanel() {
                   {phase !== undefined && phase !== 0 ? "Mint is closed" : windowOpen === false ? `Mint window: ${windowText}` : "Mint window open"}
                 </Check>
                 <Check ok={launch ? (soldOut === undefined ? undefined : !soldOut) : undefined}>{soldOut ? "Sold out" : "Slots left"}</Check>
-                <Check ok={enoughBnb}>{bal ? `Balance ${fmt18(bal.value)} BNB (need 0.1 + gas)` : "Checking balance…"}</Check>
+                <Check ok={enoughBnb}>{bal ? `Balance ${fmt18(bal.value)} BNB (need 0.1 + VRF fee + gas)` : "Checking balance…"}</Check>
               </ul>
 
               {hasAgent === false ? (
@@ -239,7 +254,7 @@ export function MintPanel() {
               {launch ? (
                 <>
                   <Button tone="candy" size="lg" className="mt-6 w-full" disabled={!canMint || tx.busy} onClick={mint}>
-                    {tx.busy ? "Check your wallet…" : minted ? "Already minted" : legacy ? "Mint paused for redeploy" : "Mint for 0.1 BNB"}
+                    {tx.busy ? "Check your wallet…" : minted ? "Already minted" : legacy ? "Mint paused for redeploy" : vrf.supported === false ? "Mint for 0.1 BNB" : `Mint for 0.1 BNB + ${vrf.label} VRF fee`}
                   </Button>
                   <p className="mt-3 text-center text-sm font-bold text-navy/60">Your wallet will ask you to confirm. We never sign for you.</p>
                   <TxNotice state={tx.state} onClose={tx.reset} />

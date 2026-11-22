@@ -9,7 +9,9 @@ import { waitForTransactionReceipt } from "wagmi/actions";
 const FRIENDLY: Record<string, string> = {
   NoAgentId: "This wallet does not hold an Agent ID.",
   AlreadyMinted: "This wallet has already minted.",
-  WrongPrice: "Mint price must be exactly 0.1 BNB.",
+  WrongPrice: "Mint price is 0.1 BNB (plus the Chainlink VRF fee).",
+  VrfFeeTooLow: "Not enough BNB for the Chainlink VRF fee. Refresh the quote and try again (any extra is refunded).",
+  RefundFailed: "The contract could not refund the extra BNB to this wallet.",
   SoldOut: "All 5,000 slots are minted.",
   MintNotOpen: "The mint window is not open right now.",
   WrongPhase: "The launch is not in the right phase for that.",

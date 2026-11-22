@@ -62,6 +62,16 @@ export const towackLaunchAbi = [
             "name": "nativePayment",
             "type": "bool",
             "internalType": "bool"
+          },
+          {
+            "name": "minFeeGasPrice",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxFeeGasPrice",
+            "type": "uint64",
+            "internalType": "uint64"
           }
         ]
       }
@@ -100,6 +110,19 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
+    "name": "COORDINATOR_OVERHEAD_GAS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "DECK_BNB_TOTAL",
     "inputs": [],
     "outputs": [
@@ -114,6 +137,32 @@ export const towackLaunchAbi = [
   {
     "type": "function",
     "name": "DECK_BONUS_TOTAL",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "FEE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "FEE_BUFFER_BPS",
     "inputs": [],
     "outputs": [
       {
@@ -165,6 +214,19 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
+    "name": "MAX_CALLBACK_GAS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MAX_LP_BNB",
     "inputs": [],
     "outputs": [
@@ -191,6 +253,19 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
+    "name": "MAX_REQUEST_CONFIRMATIONS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MINT_PRICE",
     "inputs": [],
     "outputs": [
@@ -198,6 +273,32 @@ export const towackLaunchAbi = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_CALLBACK_GAS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_REQUEST_CONFIRMATIONS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
       }
     ],
     "stateMutability": "view"
@@ -761,7 +862,7 @@ export const towackLaunchAbi = [
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -868,6 +969,38 @@ export const towackLaunchAbi = [
   },
   {
     "type": "function",
+    "name": "vrfFee",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vrfFeeAt",
+    "inputs": [
+      {
+        "name": "gasPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "vrfKeyHash",
     "inputs": [],
     "outputs": [
@@ -875,6 +1008,32 @@ export const towackLaunchAbi = [
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vrfMaxFeeGasPrice",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vrfMinFeeGasPrice",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
       }
     ],
     "stateMutability": "view"
@@ -1132,6 +1291,31 @@ export const towackLaunchAbi = [
     "anonymous": false
   },
   {
+    "type": "event",
+    "name": "VrfFeePaid",
+    "inputs": [
+      {
+        "name": "payer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "fee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
     "type": "error",
     "name": "AlreadyAssigned",
     "inputs": []
@@ -1246,6 +1430,11 @@ export const towackLaunchAbi = [
   },
   {
     "type": "error",
+    "name": "RefundFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "SafeERC20FailedOperation",
     "inputs": [
       {
@@ -1269,6 +1458,22 @@ export const towackLaunchAbi = [
     "type": "error",
     "name": "TransferFailed",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VrfFeeTooLow",
+    "inputs": [
+      {
+        "name": "sent",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "required",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
