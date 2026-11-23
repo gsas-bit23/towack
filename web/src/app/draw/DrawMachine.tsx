@@ -35,13 +35,13 @@ export function DrawMachine() {
         <DeployingSoon keys={["launch"]}>
           <StepRail active={-1} />
           {demo.allowed ? (
-            <p className="mt-4 text-sm font-bold text-navy/60">
+            <p className="mt-4 text-sm font-medium text-muted">
               Preview only: <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
             </p>
           ) : null}
         </DeployingSoon>
         <Panel>
-          <h2 className="font-display text-[28px] font-extrabold">The 5,000-slot deck</h2>
+          <h2 className="font-display text-[28px] font-semibold">The 5,000-slot deck</h2>
           <div className="mt-5">
             <PrizeLegend />
           </div>
@@ -68,7 +68,7 @@ export function DrawMachine() {
       {/* Wheel */}
       <Panel className="relative col-span-12 lg:col-span-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-[28px] font-extrabold">{isMinter ? "Your spin" : "The wheel"}</h2>
+          <h2 className="font-display text-[28px] font-semibold">{isMinter ? "Your spin" : "The wheel"}</h2>
           <ChainNote />
         </div>
         {s.legacy ? <LegacyLaunchNote /> : null}
@@ -102,22 +102,22 @@ export function DrawMachine() {
           )}
         </div>
         {demo.allowed && !demo.active ? (
-          <p className="mt-2 text-center text-xs font-bold text-navy/50">
+          <p className="mt-2 text-center text-xs font-medium text-muted">
             Preview only: <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=wheel">play a demo spin</a> (no transaction, not a real prize).
           </p>
         ) : null}
       </Panel>
 
       {/* Live feed */}
-      <Panel className="col-span-12 lg:col-span-5" tone="navy">
+      <Panel className="col-span-12 lg:col-span-5" tone="raised">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-[28px] font-extrabold text-sun">Recent spins</h2>
-          <span className="flex items-center gap-2 text-xs font-black text-white/70">
-            <span className="bulb h-2.5 w-2.5 rounded-full bg-candy" /> LIVE
+          <h2 className="font-display text-[28px] font-semibold text-gold">Recent spins</h2>
+          <span className="flex items-center gap-2 text-xs font-semibold text-sub">
+            <span className=" h-2.5 w-2.5 rounded-full bg-gold/10" /> LIVE
           </span>
         </div>
-        <p className="mt-1 text-sm font-bold text-white/70">Every PrizeAssigned event from the launch contract, as it lands.</p>
-        <div className="mt-4 text-navy">
+        <p className="mt-1 text-sm font-medium text-sub">Every PrizeAssigned event from the launch contract, as it lands.</p>
+        <div className="mt-4 text-fg">
           <SpinFeed spins={demo.active ? DEMO_SPINS : spins} />
         </div>
       </Panel>
@@ -125,7 +125,7 @@ export function DrawMachine() {
       {/* Machine status */}
       <Panel className="col-span-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-[28px] font-extrabold">Booth status</h2>
+          <h2 className="font-display text-[28px] font-semibold">Booth status</h2>
         </div>
         <div className="mt-6">
           <StepRail active={phase ?? -1} />
@@ -155,18 +155,18 @@ export function DrawMachine() {
         </div>
 
         {canClose || canFinalize ? (
-          <div className="mt-6 rounded-3xl border-[3px] border-dashed border-navy bg-ice p-5">
-            <div className="font-display text-[20px] font-extrabold">Pull the lever</div>
-            <p className="mt-1 font-semibold text-navy/70">These steps are permissionless — anyone can push the machine forward and pays only gas.</p>
+          <div className="mt-6 rounded-2xl border border-dashed border-line bg-card-2 p-5">
+            <div className="font-display text-[20px] font-semibold">Pull the lever</div>
+            <p className="mt-1 font-semibold text-sub">These steps are permissionless — anyone can push the machine forward and pays only gas.</p>
             <NeedsWallet>
               <div className="mt-4 flex flex-wrap gap-3">
                 {canClose ? (
-                  <Button tone="sun" size="sm" disabled={tx.busy} onClick={() => send("Close mint", "closeMint")}>
+                  <Button tone="soft" size="sm" disabled={tx.busy} onClick={() => send("Close mint", "closeMint")}>
                     Close mint
                   </Button>
                 ) : null}
                 {canFinalize ? (
-                  <Button tone="sky" size="sm" disabled={tx.busy} onClick={() => send("Finalize listing", "finalizeListing")}>
+                  <Button tone="soft" size="sm" disabled={tx.busy} onClick={() => send("Finalize listing", "finalizeListing")}>
                     Finalize listing
                   </Button>
                 ) : null}
@@ -174,7 +174,7 @@ export function DrawMachine() {
             </NeedsWallet>
           </div>
         ) : phase === 1 && pending !== undefined && pending > 0 ? (
-          <p className="mt-6 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+          <p className="mt-6 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
             Mint closed. Listing unlocks when the last {pending} VRF spin{pending === 1 ? "" : "s"} land.
           </p>
         ) : null}
@@ -182,10 +182,10 @@ export function DrawMachine() {
       </Panel>
 
       {/* Deck legend */}
-      <Panel className="col-span-12" tone="sunPale" shadow={false}>
+      <Panel className="col-span-12" tone="gold" shadow={false}>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-display text-[28px] font-extrabold">The 5,000-slot deck</h2>
-          <span className="text-sm font-black text-navy/60">true odds per mint at the start · live remaining counts</span>
+          <h2 className="font-display text-[28px] font-semibold">The 5,000-slot deck</h2>
+          <span className="text-sm font-semibold text-muted">true odds per mint at the start · live remaining counts</span>
         </div>
         <div className="mt-5">
           <PrizeLegend remaining={s.remaining} />
@@ -204,16 +204,16 @@ function StepRail({ active }: { active: number }) {
         return (
           <li
             key={st.label}
-            className={`rounded-3xl border-[3px] border-navy p-4 text-left transition-colors ${on ? "bg-candy text-white shadow-[0_6px_0_#13204A]" : done ? "bg-sky" : "bg-white text-navy/60"}`}
+            className={`rounded-2xl border border-line p-4 text-left transition-colors ${on ? "bg-gold/10 text-fg" : done ? "bg-card-2" : "bg-card text-muted"}`}
             aria-current={on ? "step" : undefined}
           >
             <div className="flex items-center gap-2">
-              <span className={`grid h-8 w-8 place-items-center rounded-full border-[3px] border-navy font-display font-extrabold ${on ? "bg-sun text-navy" : "bg-white text-navy"}`}>
+              <span className={`grid h-8 w-8 place-items-center rounded-full border border-line font-display font-semibold ${on ? "bg-gold/15 text-fg" : "bg-card text-fg"}`}>
                 {done ? "✓" : i + 1}
               </span>
-              <span className="font-display text-[16px] font-extrabold">{st.label}</span>
+              <span className="font-display text-[16px] font-semibold">{st.label}</span>
             </div>
-            <div className="mt-1 text-sm font-bold opacity-80">{st.desc}</div>
+            <div className="mt-1 text-sm font-medium opacity-80">{st.desc}</div>
           </li>
         );
       })}

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Rebates" };
 export default function RebatesPage() {
   return (
     <>
-      <PageHeader kicker="Weekly epochs · 104 weeks" title="Trader rebates." tone="sun">
+      <PageHeader kicker="Weekly epochs · 104 weeks" title="Trader rebates.">
         Rebates come from trading through the Towack router — not sit-and-earn staking. Each week, 100M ÷ 104 TWAK plus the 50% BNB fee share is split
         pro-rata to the router fees each trader paid that week. No trades, no rebate.
       </PageHeader>

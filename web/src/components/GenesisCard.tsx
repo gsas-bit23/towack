@@ -12,7 +12,7 @@ import { fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
 import { useVrfFee } from "@/lib/vrfFee";
-import { AnimatedNumber, Confetti, ProgressFill } from "./motion";
+import { AnimatedNumber, Confetti, ProgressFill, SuccessCheck } from "./motion";
 import { ShareButton, useWheelMachine, type WheelStatus } from "./PrizeBooth";
 import { SpinWheel } from "./SpinWheel";
 import { ConnectPill } from "./ConnectPill";
@@ -51,12 +51,12 @@ function GenesisWheelStage({
     <div className="relative">
       {demo ? (
         <div className="mb-4 flex justify-center">
-          <Pill tone="sun" className="border-[3px] border-navy text-[13px]">
+          <Pill tone="gold" className="border border-line text-[13px]">
             DEMO SPIN · not a real mint or prize
           </Pill>
         </div>
       ) : null}
-      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-[28px]" aria-hidden="true">
+      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-2xl" aria-hidden="true">
         <Confetti fire={burst} big={Boolean(prize?.jackpot)} />
       </div>
       <SpinWheel mode={mode} prizeId={prizeId} salt={salt} onLanded={onLanded} size={WHEEL_SIZE} prizes={GENESIS_PRIZES} slices={GENESIS_SLICES} />
@@ -64,26 +64,30 @@ function GenesisWheelStage({
       <div className="mt-6 min-h-[110px]" aria-live="polite">
         {status === "waiting" || (status === "assigned" && !landed) ? (
           <div className="text-center">
-            <div className="font-display text-[22px] font-extrabold sm:text-[26px]">{status === "waiting" ? "Spinning… waiting for VRF" : "Here it comes…"}</div>
-            {waitingNote ? <div className="mt-2 font-bold text-navy/70">{waitingNote}</div> : null}
+            <div className="inline-flex items-center gap-2 text-[18px] font-semibold sm:text-[20px]">
+              <span className="blink h-2 w-2 rounded-full bg-gold" aria-hidden="true" />
+              {status === "waiting" ? "Spinning… waiting for VRF" : "Here it comes…"}
+            </div>
+            {waitingNote ? <div className="mt-2 text-[14px] text-sub">{waitingNote}</div> : null}
           </div>
         ) : showResult ? (
           <motion.div
-            initial={{ y: 18, scale: 0.9 }}
-            animate={{ y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 220, damping: 18 }}
-            className={`stub rounded-[28px] px-5 py-5 text-center ${prize.kind === "none" ? "bg-ice" : prize.jackpot ? "bg-sun" : "bg-sky-pale"}`}
+            initial={{ y: 12, opacity: 0.6 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            className={`rounded-2xl border px-5 py-5 text-center ${prize.kind === "none" ? "border-line bg-card-2" : prize.jackpot ? "gold-hairline border-gold/40 bg-gold/[.06]" : "border-line-2 bg-card-2"}`}
           >
-            <div className="text-[13px] font-black uppercase tracking-[.2em] text-navy/60">{demo ? "Demo landed on" : prize.kind === "none" ? "The wheel says" : "You pulled"}</div>
-            <div className="mt-1 font-display text-[30px] font-extrabold leading-tight sm:text-[34px]">{prize.label}</div>
-            <div className="mt-1 text-[18px] font-black">{prize.total.toLocaleString("en-US")} TWAK total</div>
-            <div className="mt-1 text-sm font-bold text-navy/60">
+            {prize.kind !== "none" && !demo ? <SuccessCheck className="mx-auto mb-2 h-9 w-9" /> : null}
+            <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{demo ? "Demo landed on" : prize.kind === "none" ? "The wheel says" : "You pulled"}</div>
+            <div className={`mt-1 text-[26px] font-semibold leading-tight tracking-tight sm:text-[28px] ${prize.jackpot ? "text-gold" : ""}`}>{prize.label}</div>
+            <div className="mt-1 text-[18px] font-semibold">{prize.total.toLocaleString("en-US")} TWAK total</div>
+            <div className="mt-1 text-sm font-medium text-muted">
               {prize.kind === "none" ? `No bonus slot. Your ${BASE_TEXT} base is already in your wallet.` : `${BASE_TEXT} base (already sent) + ${prize.extra.toLocaleString("en-US")} TWAK to claim`}
             </div>
             {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
           </motion.div>
         ) : (
-          <div className="text-center font-bold text-navy/70">{idleNote}</div>
+          <div className="text-center font-medium text-sub">{idleNote}</div>
         )}
       </div>
     </div>
@@ -110,7 +114,7 @@ function GenesisDemoWheel() {
       waitingNote="Demo only — no transaction, no VRF."
       actions={
         <Button
-          tone="white"
+          tone="line"
           size="sm"
           className="min-h-11"
           onClick={() => {
@@ -157,10 +161,10 @@ function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: num
         fresh={fresh}
         waitingNote={
           <>
-            {mintIndex ? <Pill tone="sky">GENESIS #{mintIndex}</Pill> : null} {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago.` : ""}
+            {mintIndex ? <Pill tone="neutral">GENESIS #{mintIndex}</Pill> : null} {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago.` : ""}
             {canRetry ? (
               <div className="mt-3 flex justify-center">
-                <Button tone="white" size="sm" className="min-h-11" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
+                <Button tone="line" size="sm" className="min-h-11" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
                   {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
                 </Button>
               </div>
@@ -171,11 +175,11 @@ function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: num
           prize && status === "assigned" ? (
             <>
               {hasExtra && !prize.claimed ? (
-                <Button tone="candy" size="sm" className="min-h-11" disabled={tx.busy} onClick={claim}>
+                <Button tone="gold" size="sm" className="min-h-11" disabled={tx.busy} onClick={claim}>
                   {tx.busy ? "Check your wallet…" : "Claim bonus TWAK"}
                 </Button>
               ) : null}
-              {hasExtra && prize.claimed ? <Pill tone="sun" className="border-[3px] border-navy px-4 py-2 text-sm">CLAIMED ✓</Pill> : null}
+              {hasExtra && prize.claimed ? <Pill tone="gold" className="border border-line px-4 py-2 text-sm">CLAIMED ✓</Pill> : null}
               <ShareButton prizeId={prize.prizeId} text={genesisShareText(prize.prizeId)} />
             </>
           ) : undefined
@@ -279,8 +283,8 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
 
   if (!account) {
     return (
-      <div className="rounded-2xl border-[3px] border-navy bg-white px-4 py-4 text-center">
-        <p className="font-bold text-navy/70">Connect the wallet that holds your Agent ID.</p>
+      <div className="rounded-2xl border border-line bg-card px-4 py-4 text-center">
+        <p className="font-medium text-sub">Connect the wallet that holds your Agent ID.</p>
         <div className="mt-3 flex justify-center">
           <ConnectPill />
         </div>
@@ -291,7 +295,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
 
   return (
     <div>
-      <label className="block text-[13px] font-black uppercase tracking-[.15em] text-navy/60" htmlFor="genesis-token-id">
+      <label className="block text-[13px] font-semibold uppercase tracking-[.15em] text-muted" htmlFor="genesis-token-id">
         Agent ID handle or token id
       </label>
       <input
@@ -305,7 +309,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
         }
         value={typed}
         onChange={(e) => setTyped(e.target.value)}
-        className="mt-2 h-12 w-full min-w-0 rounded-2xl border-[3px] border-navy bg-white px-4 font-display text-[18px] font-extrabold placeholder:font-bold placeholder:text-navy/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-sun"
+        className="mt-2 h-12 w-full min-w-0 rounded-2xl border border-line bg-card px-4 font-display text-[18px] font-semibold placeholder:font-medium placeholder:text-dim focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40"
       />
       <ul className="mt-4 space-y-2.5">
         <Check ok={tokenId === undefined ? false : owns}>
@@ -321,10 +325,10 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
         <Check ok={minted === undefined ? undefined : !minted}>{minted ? "This wallet already claimed — see your spin" : "Wallet not used yet"}</Check>
         <Check ok={isOpen === undefined ? undefined : isOpen && !soldOut}>{soldOut ? "All 300 claimed" : isOpen ? "Genesis window open" : "Genesis window closed"}</Check>
       </ul>
-      <Button tone="candy" size="lg" className="mt-5 w-full min-h-14" disabled={!canMint || tx.busy} onClick={mint}>
+      <Button tone="gold" size="lg" className="mt-5 w-full min-h-14" disabled={!canMint || tx.busy} onClick={mint}>
         {tx.busy ? "Check your wallet…" : minted ? "Already claimed" : "Claim free + spin"}
       </Button>
-      <p className="mt-2 text-center text-sm font-bold text-navy/60">
+      <p className="mt-2 text-center text-sm font-medium text-muted">
         {vrf.supported === false
           ? "Free: you only pay gas. Your wallet asks you to confirm."
           : `No mint price. You pay gas plus a Chainlink VRF fee of about ${vrf.label} for your spin (not a mint price; any extra is refunded). Your wallet asks you to confirm.`}
@@ -339,19 +343,19 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
 function GenesisLegend({ remaining }: { remaining?: number[] }) {
   return (
     <>
-    <div className="mt-5 text-[12px] font-black uppercase tracking-[.15em] text-navy/55">Total TWAK per slot · slots of 300</div>
+    <div className="mt-5 text-[12px] font-semibold uppercase tracking-[.15em] text-muted">Total TWAK per slot · slots of 300</div>
     <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 [&>*]:min-w-0" aria-label="Genesis wheel: total TWAK per slot and odds">
       {GENESIS_PRIZES.map((p) => (
-        <li key={p.id} className="flex items-center gap-2 rounded-2xl border-[3px] border-navy bg-white px-2.5 py-2">
+        <li key={p.id} className="flex items-center gap-2 rounded-2xl border border-line bg-card px-2.5 py-2">
           <span
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-[3px] border-navy font-display text-[11px] font-extrabold"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line font-display text-[11px] font-semibold"
             style={{ background: p.fill, color: p.ink }}
           >
             {p.kind === "none" ? "1×" : p.wheel}
           </span>
           <span className="min-w-0 leading-tight">
-            <span className="block whitespace-nowrap font-display text-[15px] font-extrabold">{(p.total / 1000).toLocaleString("en-US")}K</span>
-            <span className="block whitespace-nowrap text-[12px] font-black text-navy/55">
+            <span className="block whitespace-nowrap font-mono text-[14px] font-medium">{(p.total / 1000).toLocaleString("en-US")}K</span>
+            <span className="block whitespace-nowrap text-[12px] font-semibold text-muted">
               {remaining ? `${remaining[p.id]} left` : `${p.slots} / 300`}
             </span>
           </span>
@@ -381,37 +385,37 @@ export function GenesisCard() {
 
   return (
     <section id="genesis" className="scroll-mt-24">
-      <Panel tone="sunPale" className="relative">
+      <Panel tone="gold" className="relative">
         <div className="grid grid-cols-1 gap-x-10 gap-y-6 lg:grid-cols-2 lg:grid-rows-[auto_1fr] [&>*]:min-w-0">
           {/* copy + counter */}
           <div className="lg:col-start-1">
             <div className="flex flex-wrap items-center gap-2">
               <Kicker>Genesis 300 · free</Kicker>
-              <Pill tone="sky" className="border-[3px] border-navy">TWAK ONLY</Pill>
+              <Pill tone="neutral" className="border border-line">TWAK ONLY</Pill>
               <VrfSource consumer={genesis} />
             </div>
-            <h2 className="mt-2 font-display text-[30px] font-extrabold leading-[1.05] sm:text-[40px]">300 free spins for Agent ID holders</h2>
-            <p className="mt-3 font-bold text-navy/75">
-              One free mint per Agent ID and per wallet: <b className="text-navy">{BASE_TEXT}</b> on the spot plus one spin of a TWAK-only wheel (up to 5×,
+            <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">300 free spins for Agent ID holders</h2>
+            <p className="mt-3 font-medium text-sub">
+              One free mint per Agent ID and per wallet: <b className="text-fg">{BASE_TEXT}</b> on the spot plus one spin of a TWAK-only wheel (up to 5×,
               i.e. 100,000 TWAK). No mint price and no BNB prizes: the only BNB you send is the small Chainlink VRF fee that pays for your random spin. Funded from the 5% ecosystem allocation (8M TWAK budget) and separate from the paid 5,000.
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-3">
-              <div className="font-display text-[46px] font-extrabold leading-none sm:text-[54px]">
+              <div className="font-display text-[46px] font-semibold leading-none sm:text-[54px]">
                 <AnimatedNumber value={mintCount !== undefined ? Number(mintCount) : undefined} />
-                <span className="text-[24px] text-navy/50 sm:text-[28px]"> / {Number(cap)}</span>
+                <span className="text-[24px] text-muted sm:text-[28px]"> / {Number(cap)}</span>
               </div>
-              <Pill tone="navy" className="shrink-0">CLAIMED</Pill>
+              <Pill tone="neutral" className="shrink-0">CLAIMED</Pill>
             </div>
             <div
-              className="mt-3 h-7 overflow-hidden rounded-full border-4 border-navy bg-white"
+              className="mt-3 h-7 overflow-hidden rounded-full border border-line bg-card"
               role="progressbar"
               aria-valuenow={Number(mintCount ?? 0)}
               aria-valuemin={0}
               aria-valuemax={Number(cap)}
               aria-label="Genesis spots claimed"
             >
-              <ProgressFill pct={pct} className="bg-sky" />
+              <ProgressFill pct={pct} className="rounded-full bg-gold" />
             </div>
             <GenesisLegend remaining={remaining} />
           </div>
@@ -420,7 +424,7 @@ export function GenesisCard() {
           <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1" data-genesis-wheel>
             {wheel}
             {demo.allowed && !demo.active ? (
-              <p className="mt-1 text-center text-xs font-bold text-navy/50">
+              <p className="mt-1 text-center text-xs font-medium text-muted">
                 Preview only:{" "}
                 <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=genesis#genesis">
                   play a Genesis demo spin
@@ -434,9 +438,9 @@ export function GenesisCard() {
             {genesis ? (
               <GenesisClaim onMinted={() => setFresh(true)} />
             ) : (
-              <div className="rounded-2xl border-4 border-dashed border-navy bg-white px-4 py-5 text-center">
-                <div className="font-display text-[20px] font-extrabold">Genesis 300 launching soon</div>
-                <p className="mt-1 text-sm font-bold text-navy/70">Not deployed on this network yet. Nothing to sign or send.</p>
+              <div className="rounded-2xl border border-dashed border-line bg-card px-4 py-5 text-center">
+                <div className="font-display text-[20px] font-semibold">Genesis 300 launching soon</div>
+                <p className="mt-1 text-sm font-medium text-sub">Not deployed on this network yet. Nothing to sign or send.</p>
                 <AgentPathToggle flow="genesis" className="mt-4" />
               </div>
             )}

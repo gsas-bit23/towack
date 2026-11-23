@@ -158,7 +158,7 @@ export function MintPanel() {
       <div className="col-span-12 space-y-8 lg:col-span-7">
         <Panel className="relative">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[28px] font-extrabold">The prize wheel</h2>
+            <h2 className="font-display text-[28px] font-semibold">The prize wheel</h2>
             <ChainNote />
           </div>
           {legacy ? <LegacyLaunchNote /> : null}
@@ -167,7 +167,7 @@ export function MintPanel() {
           </div>
           <div className="mt-6">{wheel}</div>
           {demo.allowed && !demo.active ? (
-            <p className="mt-2 text-center text-xs font-bold text-navy/50">
+            <p className="mt-2 text-center text-xs font-medium text-muted">
               Preview only:{" "}
               <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=wheel">
                 play a demo spin
@@ -178,28 +178,28 @@ export function MintPanel() {
 
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[28px] font-extrabold">Slot counter</h2>
+            <h2 className="font-display text-[28px] font-semibold">Slot counter</h2>
           </div>
           <div className="mt-6">
           {launchErr ? <RpcErrorNotice onRetry={() => void refetchLaunch()} label="Could not load mint contract state." /> : null}
           <NeedsContracts keys={["launch"]}>
             <div>
               <div className="flex items-end justify-between">
-                <div className="font-display text-[54px] font-extrabold leading-none">
+                <div className="font-display text-[54px] font-semibold leading-none">
                   <AnimatedNumber value={mintCount !== undefined ? Number(mintCount) : undefined} />
-                  <span className="text-[28px] text-navy/50"> / {Number(cap).toLocaleString("en-US")}</span>
+                  <span className="text-[28px] text-muted"> / {Number(cap).toLocaleString("en-US")}</span>
                 </div>
-                <Pill tone={phase === 0 ? "sky" : "sun"}>{phase !== undefined ? (LAUNCH_PHASES[phase] ?? "—").toUpperCase() : "LOADING"}</Pill>
+                <Pill tone={phase === 0 ? "neutral" : "gold"}>{phase !== undefined ? (LAUNCH_PHASES[phase] ?? "—").toUpperCase() : "LOADING"}</Pill>
               </div>
               <div
-                className="mt-4 h-8 overflow-hidden rounded-full border-4 border-navy bg-ice"
+                className="mt-4 h-8 overflow-hidden rounded-full border border-line bg-card-2"
                 role="progressbar"
                 aria-valuenow={Number(mintCount ?? 0)}
                 aria-valuemin={0}
                 aria-valuemax={Number(cap)}
                 aria-label="Slots minted"
               >
-                <ProgressFill pct={pct} className="bg-candy" />
+                <ProgressFill pct={pct} className="rounded-full bg-gold" />
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Stat
@@ -211,7 +211,7 @@ export function MintPanel() {
                 <Stat label="You get" value="80,000 TWAK" sub="instantly, plus one spin" />
               </div>
               {bound === false ? (
-                <p className="mt-4 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+                <p className="mt-4 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
                   The launch contract is deployed but not wired to the token yet. Mint opens once setup finishes.
                 </p>
               ) : null}
@@ -220,12 +220,12 @@ export function MintPanel() {
           </div>
         </Panel>
 
-        <Panel tone="skyPale" shadow={false}>
-          <h2 className="font-display text-[24px] font-extrabold">How the mint works</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
+        <Panel tone="raised" shadow={false}>
+          <h2 className="font-display text-[24px] font-semibold">How the mint works</h2>
+          <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
             <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App on mainnet).</li>
             <li>
-              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-white px-1">mint(address referrer)</code> (referrer is optional: address(0) means none). Exactly
+              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-card px-1">mint(address referrer)</code> (referrer is optional: address(0) means none). Exactly
               Chainlink&apos;s price for your random draw goes straight to the Chainlink VRF wrapper, and anything above 0.1 BNB + that price is
               refunded in the same transaction. You confirm it in your own wallet.
             </li>
@@ -243,7 +243,7 @@ export function MintPanel() {
               .
             </li>
           </ol>
-          <p className="mt-4 font-semibold text-navy/70">
+          <p className="mt-4 font-semibold text-sub">
             You can lose some or all of the 0.1 BNB (the VRF fee is never refunded by prizes). Most slots get back less than they paid. This is a game of chance, not an investment.
           </p>
         </Panel>
@@ -251,7 +251,7 @@ export function MintPanel() {
 
       <div className="col-span-12 space-y-8 lg:col-span-5">
         <Panel>
-          <h2 className="font-display text-[28px] font-extrabold">Your ticket</h2>
+          <h2 className="font-display text-[28px] font-semibold">Your ticket</h2>
           <div className="mt-5">
             <NeedsWallet why="Connect to check your Agent ID and mint." agent="launch" referral={urlRef}>
               <ul className="space-y-3">
@@ -275,7 +275,7 @@ export function MintPanel() {
               </ul>
 
               {hasAgent === false ? (
-                <p className="mt-5 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
+                <p className="mt-5 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
                   Minting needs an Agent ID. Get one in the official Binance App (mainnet), then come back with that wallet.
                 </p>
               ) : null}
@@ -284,17 +284,17 @@ export function MintPanel() {
 
               {launch ? (
                 <>
-                  <Button tone="candy" size="lg" className="mt-6 w-full" disabled={!canMint || tx.busy} onClick={mint}>
+                  <Button tone="gold" size="lg" className="mt-6 w-full" disabled={!canMint || tx.busy} onClick={mint}>
                     {tx.busy ? "Check your wallet…" : minted ? "Already minted" : legacy ? "Mint paused for redeploy" : vrf.supported === false ? "Mint for 0.1 BNB" : `Mint for 0.1 BNB + ${vrf.label} VRF fee`}
                   </Button>
-                  <p className="mt-3 text-center text-sm font-bold text-navy/60">Your wallet will ask you to confirm. We never sign for you.</p>
+                  <p className="mt-3 text-center text-sm font-medium text-muted">Your wallet will ask you to confirm. We never sign for you.</p>
                   <TxNotice state={tx.state} onClose={tx.reset} />
                   <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </>
               ) : (
-                <div className="mt-6 rounded-2xl border-4 border-dashed border-navy bg-sun-pale px-4 py-5 text-center">
-                  <div className="font-display text-[20px] font-extrabold">Launching soon on BNB Smart Chain</div>
-                  <p className="mt-1 text-sm font-bold text-navy/70">Protocol contracts are not deployed yet. Nothing to sign or send.</p>
+                <div className="mt-6 rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-5 text-center">
+                  <div className="font-display text-[20px] font-semibold">Launching soon on BNB Smart Chain</div>
+                  <p className="mt-1 text-sm font-medium text-sub">Protocol contracts are not deployed yet. Nothing to sign or send.</p>
                   <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </div>
               )}
@@ -302,14 +302,14 @@ export function MintPanel() {
           </div>
         </Panel>
 
-        <Panel tone="navy">
+        <Panel tone="raised">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-[24px] font-extrabold text-sun">Recent spins</h2>
-            <span className="flex items-center gap-2 text-xs font-black text-white/70">
-              <span className="bulb h-2.5 w-2.5 rounded-full bg-candy" /> LIVE
+            <h2 className="font-display text-[24px] font-semibold text-gold">Recent spins</h2>
+            <span className="flex items-center gap-2 text-xs font-semibold text-sub">
+              <span className=" h-2.5 w-2.5 rounded-full bg-gold/10" /> LIVE
             </span>
           </div>
-          <div className="mt-4 text-navy">
+          <div className="mt-4 text-fg">
             <SpinFeed spins={demo.active ? DEMO_SPINS : spins} />
           </div>
         </Panel>
@@ -321,20 +321,20 @@ export function MintPanel() {
 /** Who this mint credits (from the referral link), or why it credits nobody. */
 function ReferrerNote({ label, selfRef, noAgent, checking }: { label?: string; selfRef: boolean; noAgent: boolean; checking: boolean }) {
   if (!label) {
-    return <p className="mt-5 text-sm font-bold text-navy/60">No referrer: this mint credits nobody (referrer = address(0)).</p>;
+    return <p className="mt-5 text-sm font-medium text-muted">No referrer: this mint credits nobody (referrer = address(0)).</p>;
   }
   if (selfRef || noAgent) {
     return (
-      <p className="mt-5 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
-        <Pill tone="candy">REFERRAL NOT APPLIED</Pill>{" "}
+      <p className="mt-5 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
+        <Pill tone="gold">REFERRAL NOT APPLIED</Pill>{" "}
         {selfRef ? "That referral link is your own wallet, and you can't refer yourself." : `${label} holds no Agent ID, so it can't earn referrals.`} This
         mint credits nobody (address(0)).
       </p>
     );
   }
   return (
-    <p className="mt-5 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
-      <Pill tone="navy">REFERRED BY</Pill> <span className="break-all">{label}</span>
+    <p className="mt-5 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
+      <Pill tone="neutral">REFERRED BY</Pill> <span className="break-all">{label}</span>
       {checking ? " (checking Agent ID…)" : ". They earn 0.005 BNB from this mint; your price stays 0.1 BNB."}
     </p>
   );

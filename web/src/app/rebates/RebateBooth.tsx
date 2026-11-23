@@ -21,17 +21,17 @@ export function RebateBooth() {
         </NeedsContracts>
       </div>
       <div className="col-span-12 lg:col-span-4">
-        <Panel tone="candyPale" shadow={false}>
-          <h2 className="font-display text-[24px] font-extrabold">How rebates work</h2>
-          <ul className="mt-3 space-y-2 font-bold text-navy/80">
-            <li>★ Every swap through the Towack router pays 1% on the BNB leg.</li>
-            <li>★ Half of that fee goes into this week&apos;s BNB rebate pot.</li>
-            <li>★ The week&apos;s TWAK budget (~961,538 TWAK) is added on top.</li>
-            <li>★ At the end of the week, your share = your fees ÷ all fees.</li>
-            <li>★ Weeks with no trades roll their budget into the next week.</li>
-            <li>★ Claim any finished week, any time, on-chain.</li>
+        <Panel tone="raised" shadow={false}>
+          <h2 className="font-display text-[24px] font-semibold">How rebates work</h2>
+          <ul className="mt-3 space-y-2 font-medium text-sub">
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Every swap through the Towack router pays 1% on the BNB leg.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Half of that fee goes into this week&apos;s BNB rebate pot.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />The week&apos;s TWAK budget (~961,538 TWAK) is added on top.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />At the end of the week, your share = your fees ÷ all fees.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Weeks with no trades roll their budget into the next week.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Claim any finished week, any time, on-chain.</li>
           </ul>
-          <p className="mt-4 text-sm font-semibold text-navy/70">
+          <p className="mt-4 text-sm font-semibold text-sub">
             Holding TWAK earns nothing here. Rebates return only part of the fees you paid plus a share of a fixed budget, and other traders dilute it.
             Not a yield product.
           </p>
@@ -127,7 +127,7 @@ function EpochTable() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-extrabold">Epochs</h2>
+        <h2 className="font-display text-[28px] font-semibold">Epochs</h2>
         <ChainNote />
       </div>
       {metaErr ? <RpcErrorNotice onRetry={() => void refetchMeta()} label="Could not load rebate epochs." /> : null}
@@ -137,11 +137,11 @@ function EpochTable() {
         <Stat label="Started" value={start ? fmtDate(start).split(",")[0] : "—"} sub="epoch 0" />
       </div>
       {pendingCheckpoint ? (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
           <span>Some finished weeks haven&apos;t been tallied yet. Anyone can run the checkpoint (gas only); claiming also runs it.</span>
           {account ? (
             <Button
-              tone="white"
+              tone="line"
               size="sm"
               disabled={tx.busy}
               onClick={() => tx.run("Checkpoint", () => writeContractAsync({ address: dist, abi: rebateDistributorAbi, functionName: "checkpoint", chainId }))}
@@ -155,11 +155,11 @@ function EpochTable() {
       <div className="mt-6">
         <NeedsWallet why="Connect to see the fees you paid and the rebates you can claim.">
           {visible.length === 0 ? (
-            <p className="rounded-2xl bg-ice px-4 py-6 text-center font-bold">No trading activity found for this wallet yet.</p>
+            <p className="rounded-2xl bg-card-2 px-4 py-6 text-center font-medium">No trading activity found for this wallet yet.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-left font-bold">
-                <thead className="text-[12px] uppercase tracking-widest text-navy/60">
+              <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-left font-medium">
+                <thead className="text-[12px] uppercase tracking-widest text-muted">
                   <tr>
                     <th className="px-3">Pick</th>
                     <th className="px-3">Epoch</th>
@@ -174,18 +174,18 @@ function EpochTable() {
                     const can = claimableRows.includes(r);
                     const share = r.total > 0n ? Number((r.myFees * 10000n) / r.total) / 100 : 0;
                     return (
-                      <tr key={r.e} className="bg-ice">
+                      <tr key={r.e} className="bg-card-2">
                         <td className="rounded-l-2xl px-3 py-3">
                           <input
                             type="checkbox"
-                            className="h-5 w-5 accent-[#FF4FA3]"
+                            className="h-5 w-5 accent-gold"
                             disabled={!can}
                             checked={selected.has(r.e)}
                             onChange={() => toggle(r.e)}
                             aria-label={`Select epoch ${r.e}`}
                           />
                         </td>
-                        <td className="px-3 py-3 font-display font-extrabold">#{r.e}</td>
+                        <td className="px-3 py-3 font-display font-semibold">#{r.e}</td>
                         <td className="px-3 py-3">{fmt18(r.myFees, 6)} BNB</td>
                         <td className="px-3 py-3">{share.toFixed(2)}%</td>
                         <td className="px-3 py-3">
@@ -193,14 +193,14 @@ function EpochTable() {
                             <>
                               {fmt18(r.tokens, 2)} TWAK
                               <br />
-                              <span className="text-sm text-navy/60">+ {fmt18(r.bnb, 6)} BNB</span>
+                              <span className="text-sm text-muted">+ {fmt18(r.bnb, 6)} BNB</span>
                             </>
                           ) : (
-                            <span className="text-navy/50">after week ends</span>
+                            <span className="text-muted">after week ends</span>
                           )}
                         </td>
                         <td className="rounded-r-2xl px-3 py-3">
-                          {r.live ? <Pill tone="sky">LIVE</Pill> : r.claimed ? <Pill tone="ice">CLAIMED</Pill> : r.finalized ? can ? <Pill tone="sun">READY</Pill> : <Pill tone="ice">—</Pill> : <Pill tone="white">TALLYING</Pill>}
+                          {r.live ? <Pill tone="neutral">LIVE</Pill> : r.claimed ? <Pill tone="line">CLAIMED</Pill> : r.finalized ? can ? <Pill tone="gold">READY</Pill> : <Pill tone="line">—</Pill> : <Pill tone="line">TALLYING</Pill>}
                         </td>
                       </tr>
                     );
@@ -209,15 +209,15 @@ function EpochTable() {
               </table>
             </div>
           )}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-3xl border-[3px] border-navy bg-white p-4">
-            <div className="font-bold">
-              Selected: <span className="font-display font-extrabold">{fmt18(sumT, 2)} TWAK</span> + <span className="font-display font-extrabold">{fmt18(sumB, 6)} BNB</span>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-card p-4">
+            <div className="font-medium">
+              Selected: <span className="font-display font-semibold">{fmt18(sumT, 2)} TWAK</span> + <span className="font-display font-semibold">{fmt18(sumB, 6)} BNB</span>
             </div>
             <div className="flex gap-3">
-              <Button tone="white" size="sm" disabled={!claimableRows.length} onClick={() => setSelected(new Set(claimableRows.map((r) => r.e)))}>
+              <Button tone="line" size="sm" disabled={!claimableRows.length} onClick={() => setSelected(new Set(claimableRows.map((r) => r.e)))}>
                 Select all
               </Button>
-              <Button tone="candy" size="sm" disabled={!sel.length || tx.busy} onClick={claim}>
+              <Button tone="gold" size="sm" disabled={!sel.length || tx.busy} onClick={claim}>
                 {tx.busy ? "Check your wallet…" : `Claim ${sel.length || ""} epoch${sel.length === 1 ? "" : "s"}`}
               </Button>
             </div>

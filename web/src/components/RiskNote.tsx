@@ -10,11 +10,14 @@ export const RISK_NOTE = RISK_NOTE_BASE;
 export function RiskNote({ className = "" }: { className?: string }) {
   const { meta } = useTowack();
   return (
-    <div className={`rounded-[36px] border-4 border-navy bg-white p-7 ${className}`}>
-      <div className="mb-3 flex items-center gap-3">
-        <span className="rounded-full bg-candy px-3 py-1 text-xs font-black text-white">PLAIN-LANGUAGE RISK NOTE</span>
+    <div className={`rounded-2xl border border-line bg-card p-6 ${className}`}>
+      <div className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] text-gold">
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+          <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        </svg>
+        Plain-language risk note
       </div>
-      <p className="text-[15px] font-semibold leading-relaxed text-navy/85">
+      <p className="text-[13.5px] leading-relaxed text-muted">
         {RISK_NOTE_BASE}{" "}
         {meta.testnet
           ? "You are viewing BSC Testnet — test BNB has no monetary value."

@@ -2,15 +2,18 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
-const PILL_BASE =
-  "press rounded-full text-white font-extrabold whitespace-nowrap focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sun";
-const PILL_FULL = "text-[15px] px-5 py-3 min-h-10";
-const PILL_COMPACT = "text-[14px] px-4 py-2.5 min-h-10 sm:px-5 sm:text-[15px]";
+const BASE =
+  "press inline-flex items-center justify-center rounded-[10px] border font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60";
+const FULL = "h-11 px-5 text-[14.5px]";
+const COMPACT = "h-10 px-3.5 text-[13.5px] sm:px-4 sm:text-[14px]";
 
-/** `compact`: smaller pill for the top bar; shows just "Connect" on phones. */
+/** `compact`: Atlas outline button for the top bar (shows just "Connect" on phones). Full size = the gold in-page CTA. */
 export function ConnectPill({ label = "Connect wallet", compact = false }: { label?: string; compact?: boolean }) {
-  const cls = `${PILL_BASE} ${compact ? PILL_COMPACT : PILL_FULL}`;
-  const normal = `${cls} bg-navy shadow-[0_5px_0_#FF4FA3]`;
+  const cls = `${BASE} ${compact ? COMPACT : FULL}`;
+  const normal = compact
+    ? `${cls} border-line-2 bg-transparent text-fg hover:border-[#4A525E] hover:bg-card`
+    : `${cls} border-transparent bg-gold text-on-gold hover:bg-gold-2`;
+  const connectedCls = `${cls} border-line-2 bg-card text-fg hover:bg-card-2`;
   const text = compact ? (
     <>
       <span className="sm:hidden">Connect</span>
@@ -40,14 +43,14 @@ export function ConnectPill({ label = "Connect wallet", compact = false }: { lab
         }
         if (chain.unsupported) {
           return (
-            <button type="button" onClick={openChainModal} className={`${cls} bg-candy shadow-[0_5px_0_#13204A]`}>
+            <button type="button" onClick={openChainModal} className={`${cls} border-down/40 bg-down/10 text-down`}>
               Wrong network
             </button>
           );
         }
         return (
-          <button type="button" onClick={openAccountModal} className={`${normal} max-w-[44vw] truncate sm:max-w-none`}>
-            <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-sun align-middle" aria-hidden="true" />
+          <button type="button" onClick={openAccountModal} className={`${connectedCls} max-w-[44vw] truncate font-mono sm:max-w-none`}>
+            <span className="mr-2 inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-up" aria-hidden="true" />
             {account.displayName}
           </button>
         );

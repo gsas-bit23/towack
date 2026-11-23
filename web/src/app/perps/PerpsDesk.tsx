@@ -93,10 +93,10 @@ export function PerpsDesk() {
 
 function NetBar({ net, setNet }: { net: AsterNet; setNet: (n: AsterNet) => void }) {
   return (
-    <Panel tone="ice" shadow={false} className="!p-4 sm:!p-5">
+    <Panel tone="flat" shadow={false} className="!p-4 sm:!p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-full border-4 border-navy bg-white p-1" role="tablist" aria-label="Aster network">
+          <div className="inline-flex rounded-full border border-line bg-card p-1" role="tablist" aria-label="Aster network">
             {(["mainnet", "testnet"] as const).map((n) => (
               <button
                 key={n}
@@ -104,15 +104,15 @@ function NetBar({ net, setNet }: { net: AsterNet; setNet: (n: AsterNet) => void 
                 role="tab"
                 aria-selected={net === n}
                 onClick={() => setNet(n)}
-                className={`rounded-full px-4 py-1.5 font-display text-[15px] font-extrabold ${net === n ? (n === "mainnet" ? "bg-sun" : "bg-sky") : "text-navy/60"}`}
+                className={`rounded-full px-4 py-1.5 font-display text-[15px] font-semibold ${net === n ? (n === "mainnet" ? "bg-gold/15" : "bg-card-2") : "text-muted"}`}
               >
                 {n === "mainnet" ? "Aster mainnet" : "Aster testnet"}
               </button>
             ))}
           </div>
-          <Pill tone="white">PUBLIC DATA · NO KEY</Pill>
+          <Pill tone="line">PUBLIC DATA · NO KEY</Pill>
         </div>
-        <p className="min-w-0 text-sm font-bold text-navy/70">
+        <p className="min-w-0 text-sm font-medium text-sub">
           {net === "testnet" ? "Test USDT from Aster's faucet, no real value. " : "Real money. Only trade what you can afford to lose. "}
           <a className="underline" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
             Open Aster ↗
@@ -133,15 +133,15 @@ function MarketStats({ net, symbol, row }: { net: AsterNet; symbol: string; row:
   const hms = left === undefined ? "—" : `${String(Math.floor(left / 3600)).padStart(2, "0")}:${String(Math.floor((left % 3600) / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
   const up = (row?.changePct ?? 0) >= 0;
   return (
-    <Panel tone="sunPale">
+    <Panel tone="gold">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[13px] font-black uppercase tracking-widest text-navy/60">{net === "testnet" ? "Aster testnet" : "Aster"} · perpetual</div>
-          <h2 className="break-words font-display text-[34px] font-extrabold leading-tight sm:text-[40px]">{symbol}</h2>
+          <div className="text-[13px] font-semibold uppercase tracking-widest text-muted">{net === "testnet" ? "Aster testnet" : "Aster"} · perpetual</div>
+          <h2 className="break-words font-display text-[34px] font-semibold leading-tight sm:text-[40px]">{symbol}</h2>
         </div>
         <div className="text-right">
-          <div className="font-display text-[30px] font-extrabold leading-tight">{trimDecimal(row?.lastPrice)}</div>
-          <div className={`font-black ${up ? "text-sky-deep" : "text-candy-deep"}`}>{row?.changePct === undefined ? "" : `${up ? "+" : ""}${row.changePct.toFixed(2)}% 24h`}</div>
+          <div className="font-mono text-[28px] font-medium leading-tight tracking-tight">{trimDecimal(row?.lastPrice)}</div>
+          <div className={`font-semibold ${up ? "text-up" : "text-down"}`}>{row?.changePct === undefined ? "" : `${up ? "+" : ""}${row.changePct.toFixed(2)}% 24h`}</div>
         </div>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -167,12 +167,12 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
   const hasAgent = bal === undefined ? undefined : bal > 0n;
 
   return (
-    <Panel tone="skyPale" shadow={false}>
+    <Panel tone="raised" shadow={false}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[24px] font-extrabold">Agent ID perks</h2>
-        {hasAgent ? <Pill tone="sky">AGENT ID ✓</Pill> : hasAgent === false ? <Pill tone="candy">NO AGENT ID</Pill> : null}
+        <h2 className="font-display text-[24px] font-semibold">Agent ID perks</h2>
+        {hasAgent ? <Pill tone="neutral">AGENT ID ✓</Pill> : hasAgent === false ? <Pill tone="gold">NO AGENT ID</Pill> : null}
       </div>
-      <ul className="mt-3 space-y-2 font-bold text-navy/80">
+      <ul className="mt-3 space-y-2 font-medium text-sub">
         <li>Anyone can view markets and trade here with their own wallet.</li>
         <li>
           Agent ID holders unlock the <b>Give this to your AI agent</b> path for Binance Agentic Wallet.
@@ -185,21 +185,21 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
 
       <div className="mt-5">
         {!isConnected ? (
-          <div className="rounded-[28px] border-4 border-navy bg-white p-5 text-center">
-            <p className="font-bold text-navy/70">Connect to check your Agent ID ({meta.name}).</p>
+          <div className="rounded-2xl border border-line bg-card p-5 text-center">
+            <p className="font-medium text-sub">Connect to check your Agent ID ({meta.name}).</p>
             <div className="mt-4 flex justify-center">
               <ConnectPill />
             </div>
           </div>
         ) : !addresses.agentId ? (
-          <p className="rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">The Agent ID registry isn&apos;t configured on {meta.name}.</p>
+          <p className="rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">The Agent ID registry isn&apos;t configured on {meta.name}.</p>
         ) : hasAgent === undefined ? (
-          <p className="font-bold text-navy/60">Checking Agent ID…</p>
+          <p className="font-medium text-muted">Checking Agent ID…</p>
         ) : hasAgent ? (
           <AgentPathToggle flow="perps" perps={intent} />
         ) : (
-          <div className="rounded-2xl border-[3px] border-dashed border-navy bg-white px-4 py-4 font-bold">
-            <Pill tone="candy">AGENT PATH LOCKED</Pill>
+          <div className="rounded-2xl border border-dashed border-line bg-card px-4 py-4 font-medium">
+            <Pill tone="gold">AGENT PATH LOCKED</Pill>
             <p className="mt-2">
               The AI-agent path is for Agent ID wallets. This wallet holds none on {meta.name}. You can still trade with the order ticket. Agent IDs are
               issued in the official Binance App (mainnet).

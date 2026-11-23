@@ -1,152 +1,111 @@
-// Arcade Sky illustration pieces (pure SVG, decorative, aria-hidden).
-import type { CSSProperties } from "react";
+// Atlas illustration pieces (pure SVG, decorative, aria-hidden).
 
-export function CoinMark({ size = 46, className }: { size?: number; className?: string }) {
+/** Towack mark: a ring with a gold arc and a T. */
+export function CoinMark({ size = 28, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" className={className} aria-hidden="true">
-      <circle cx="24" cy="26" r="20" fill="#E6AE00" />
-      <circle cx="24" cy="22" r="20" fill="#FFCD2E" />
-      <circle cx="24" cy="22" r="14.5" fill="none" stroke="#13204A" strokeWidth="2.5" strokeDasharray="3 3" />
-      <text x="24" y="27.5" textAnchor="middle" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize="14" fill="#13204A">
-        TW
-      </text>
+    <svg width={size} height={size} viewBox="0 0 28 28" className={className} aria-hidden="true">
+      <circle cx="14" cy="14" r="12" fill="none" stroke="#2E353F" strokeWidth="2.5" />
+      <path d="M14 2a12 12 0 0 1 10.4 18" fill="none" stroke="#F0B90B" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M8.5 9h11v2.6h-4.2V20h-2.6v-8.4H8.5z" fill="#EAECEF" />
     </svg>
   );
 }
 
-export function Bulbs({ count = 20 }: { count?: number }) {
-  return (
-    <div className="absolute inset-x-10 top-5 flex justify-between" aria-hidden="true">
-      {Array.from({ length: count }, (_, i) => (
-        <span key={i} className={`bulb w-3.5 h-3.5 rounded-full ${i % 2 ? "bg-white" : "bg-sun"}`} />
-      ))}
-    </div>
-  );
+const C = 280;
+function pt(r: number, deg: number) {
+  const a = (deg * Math.PI) / 180;
+  return [C + r * Math.sin(a), C - r * Math.cos(a)] as const;
+}
+function arc(r: number, from: number, to: number) {
+  const [x1, y1] = pt(r, from);
+  const [x2, y2] = pt(r, to);
+  const large = to - from > 180 ? 1 : 0;
+  return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
 }
 
-const RAYS = [
-  "M100 100 L100 0 L112 0Z", "M100 100 L170.7 29.3 L179.2 37.8Z", "M100 100 L200 100 L200 112Z",
-  "M100 100 L170.7 170.7 L162.2 179.2Z", "M100 100 L100 200 L88 200Z", "M100 100 L29.3 170.7 L20.8 162.2Z",
-  "M100 100 L0 100 L0 88Z", "M100 100 L29.3 29.3 L37.8 20.8Z", "M100 100 L138.3 7.6 L149.2 12.2Z",
-  "M100 100 L192.4 138.3 L187.8 149.2Z", "M100 100 L61.7 192.4 L50.8 187.8Z", "M100 100 L7.6 61.7 L12.2 50.8Z",
-  "M100 100 L192.4 61.7 L195.8 73Z", "M100 100 L138.3 192.4 L127 195.8Z", "M100 100 L7.6 138.3 L4.2 127Z",
-  "M100 100 L61.7 7.6 L73 4.2Z",
-];
+const TICKS = Array.from({ length: 120 }, (_, i) => {
+  const deg = i * 3;
+  const major = i % 15 === 0;
+  const [x1, y1] = pt(270, deg);
+  const [x2, y2] = pt(major ? 254 : 264, deg);
+  return { x1, y1, x2, y2, major };
+});
 
-export function Sunburst({ className = "" }: { className?: string }) {
+/**
+ * Hero instrument: tick ring + gold progress arc. `progress` (0..1) sets the gold sweep (e.g. slots minted / 5,000);
+ * the ring itself drifts very slowly (CSS, removed under reduced motion).
+ */
+export function InstrumentArc({ progress = 0.62, className = "" }: { progress?: number; className?: string }) {
+  const p = Math.max(0.02, Math.min(0.999, progress));
+  const start = 215;
+  const sweep = 290;
+  const end = start + sweep * p;
+  const [kx, ky] = pt(218, end % 360);
   return (
-    <svg
-      className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1400px] max-w-none opacity-[.18] ${className}`}
-      viewBox="0 0 200 200"
-      aria-hidden="true"
-    >
-      <g fill="#fff">
-        {RAYS.map((d) => (
-          <path key={d} d={d} />
+    <svg viewBox="0 0 560 560" className={className} aria-hidden="true">
+      <g className="arc-spin">
+        {TICKS.map((t, i) => (
+          <line
+            key={i}
+            x1={t.x1.toFixed(2)}
+            y1={t.y1.toFixed(2)}
+            x2={t.x2.toFixed(2)}
+            y2={t.y2.toFixed(2)}
+            stroke={t.major ? "#3A414B" : "#20262D"}
+            strokeWidth={t.major ? 1.6 : 1}
+          />
         ))}
       </g>
+      <path d={arc(218, start, start + sweep)} fill="none" stroke="#2B3139" strokeWidth="6" strokeLinecap="round" />
+      <path d={arc(218, start, end)} fill="none" stroke="#F0B90B" strokeWidth="6" strokeLinecap="round" opacity=".9" />
+      <circle cx={C} cy={C} r="160" fill="none" stroke="#1E2329" />
+      <circle cx={C} cy={C} r="110" fill="none" stroke="#1E2329" strokeDasharray="2 6" />
+      <circle cx={kx.toFixed(2)} cy={ky.toFixed(2)} r="6" fill="#0B0E11" stroke="#F0B90B" strokeWidth="2" />
     </svg>
   );
 }
 
-export function CoinStack({ className = "", style }: { className?: string; style?: CSSProperties }) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 160 200" aria-hidden="true">
-      <g stroke="#13204A" strokeWidth="5">
-        <ellipse cx="80" cy="176" rx="64" ry="18" fill="#E6AE00" />
-        <rect x="16" y="150" width="128" height="26" fill="#E6AE00" stroke="none" />
-        <path d="M16 150 V176 M144 150 V176" />
-        <ellipse cx="80" cy="150" rx="64" ry="18" fill="#FFCD2E" />
-        <ellipse cx="80" cy="132" rx="64" ry="18" fill="#E6AE00" />
-        <rect x="16" y="106" width="128" height="26" fill="#E6AE00" stroke="none" />
-        <path d="M16 106 V132 M144 106 V132" />
-        <ellipse cx="80" cy="106" rx="64" ry="18" fill="#FFCD2E" />
-        <ellipse cx="80" cy="88" rx="64" ry="18" fill="#E6AE00" />
-        <rect x="16" y="62" width="128" height="26" fill="#E6AE00" stroke="none" />
-        <path d="M16 62 V88 M144 62 V88" />
-        <ellipse cx="80" cy="62" rx="64" ry="18" fill="#FFCD2E" />
-      </g>
-      <text x="80" y="68" textAnchor="middle" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize="18" fill="#13204A">
-        TWAK
-      </text>
-    </svg>
-  );
-}
-
-export function StarCoin({ className = "", style }: { className?: string; style?: CSSProperties }) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 100 100" aria-hidden="true">
-      <g className="coin-spin">
-        <circle cx="50" cy="54" r="42" fill="#E6AE00" stroke="#13204A" strokeWidth="5" />
-        <circle cx="50" cy="48" r="42" fill="#FFCD2E" stroke="#13204A" strokeWidth="5" />
-        <path
-          d="M50 26 l6 14 15 2 -11 10 3 15 -13 -8 -13 8 3 -15 -11 -10 15 -2z"
-          fill="#FF4FA3"
-          stroke="#13204A"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-      </g>
-    </svg>
-  );
-}
-
-export function TwCoin({ className = "", style }: { className?: string; style?: CSSProperties }) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 100 100" aria-hidden="true">
-      <circle cx="50" cy="54" r="42" fill="#E6AE00" stroke="#13204A" strokeWidth="5" />
-      <circle cx="50" cy="48" r="42" fill="#FFCD2E" stroke="#13204A" strokeWidth="5" />
-      <text x="50" y="60" textAnchor="middle" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize="30" fill="#13204A">
-        TW
-      </text>
-    </svg>
-  );
-}
-
-const TICKET_PATH =
-  "M14 6 H226 a8 8 0 0 1 8 8 V40 a15 15 0 0 0 0 30 V96 a8 8 0 0 1 -8 8 H14 a8 8 0 0 1 -8 -8 V70 a15 15 0 0 0 0 -30 V14 a8 8 0 0 1 8 -8Z";
-
-export function AdmitTicket({ className = "", style, serial = "0427" }: { className?: string; style?: CSSProperties; serial?: string }) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 240 110" aria-hidden="true">
-      <path d={TICKET_PATH} fill="#FF4FA3" stroke="#13204A" strokeWidth="5" />
-      <line x1="172" y1="14" x2="172" y2="96" stroke="#13204A" strokeWidth="4" strokeDasharray="6 7" />
-      <text x="30" y="52" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize="16" fill="#fff">ADMIT ONE</text>
-      <text x="30" y="84" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize="26" fill="#13204A">AGENT ID</text>
-      <text x="203" y="62" textAnchor="middle" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize="20" fill="#fff" transform="rotate(-90 203 56)">
-        {serial}
-      </text>
-    </svg>
-  );
-}
-
-export function LabelTicket({
-  label,
-  className = "",
-  style,
-  fill = "#FFCD2E",
-  fontSize = 36,
-}: {
-  label: string;
-  className?: string;
-  style?: CSSProperties;
-  fill?: string;
-  fontSize?: number;
-}) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 240 110" aria-hidden="true">
-      <path d={TICKET_PATH} fill={fill} stroke="#13204A" strokeWidth="6" />
-      <text x="120" y={56 + fontSize * 0.38} textAnchor="middle" fontFamily="var(--font-sora), Sora" fontWeight="800" fontSize={fontSize} fill="#13204A">
-        {label}
-      </text>
-    </svg>
-  );
-}
-
+/** Thin chevron used between flow steps. */
 export function Arrow() {
   return (
-    <svg width="70" height="30" viewBox="0 0 70 30" aria-hidden="true" className="shrink-0">
-      <path d="M2 15 H58 M48 4 L64 15 L48 26" stroke="#13204A" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="40" height="16" viewBox="0 0 40 16" aria-hidden="true" className="shrink-0 text-line-2">
+      <path d="M2 8 H34 M28 3 L35 8 L28 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/* Line icons (24px grid, currentColor) */
+const ICONS = {
+  launch: "M12 3c3.2 2 4.6 5.1 4.6 8.7L14.4 15H9.6l-2.2-3.3C7.4 8.1 8.8 5 12 3Z M9.6 15 8 19.5l2.6-.8L12 21l1.4-2.3 2.6.8-1.6-4.5",
+  swap: "M4 8h14l-3.5-3.5M20 16H6l3.5 3.5",
+  perps: "M4 18 9.5 12l3.5 3.5L20 8M15 8h5v5",
+  rebate: "M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4 M12 8v8M9.5 10.5h4a1.5 1.5 0 0 1 0 3h-3",
+  shield: "M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6z m-3 9 2.2 2.2L15.5 10",
+  id: "M6 5h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14.5 10h3.5M14.5 13.5h2.5",
+  ticket: "M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z M14 7v10",
+  book: "M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M17 20h2V6",
+} as const;
+
+export type IconName = keyof typeof ICONS | "draw";
+
+export function Icon({ name, className = "h-5 w-5" }: { name: IconName; className?: string }) {
+  if (name === "draw") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path
+          d="M12 3.5V6M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="12" cy="12" r="2" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d={ICONS[name]} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

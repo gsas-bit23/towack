@@ -162,11 +162,11 @@ function SwapCard() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-extrabold">Swap booth</h2>
+        <h2 className="font-display text-[28px] font-semibold">Swap booth</h2>
         <ChainNote />
       </div>
 
-      <div className="mt-5 inline-flex rounded-full border-4 border-navy bg-ice p-1" role="tablist" aria-label="Swap direction">
+      <div className="mt-5 inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label="Swap direction">
         {(["buy", "sell"] as const).map((s) => (
           <button
             key={s}
@@ -178,7 +178,7 @@ function SwapCard() {
               setAmount("");
               tx.reset();
             }}
-            className={`rounded-full px-6 py-2 font-display text-[17px] font-extrabold ${side === s ? (s === "buy" ? "bg-sky" : "bg-candy text-white") : "text-navy/60"}`}
+            className={`rounded-full px-6 py-2 font-display text-[17px] font-semibold ${side === s ? (s === "buy" ? "bg-card-2" : "bg-gold/10 text-fg") : "text-muted"}`}
           >
             {s === "buy" ? "Buy TWAK" : "Sell TWAK"}
           </button>
@@ -186,7 +186,7 @@ function SwapCard() {
       </div>
 
       {tradingOpen === false ? (
-        <p className="mt-5 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+        <p className="mt-5 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
           Trading opens when the draw is finalized and the pair is listed at the mint price. Until then the pool is locked.
         </p>
       ) : null}
@@ -212,20 +212,20 @@ function SwapCard() {
               aria-label={`Amount in ${inUnit}`}
             />
             {side === "sell" && twakBal ? (
-              <Button tone="white" size="sm" onClick={() => setAmount(formatEther(twakBal))}>
+              <Button tone="line" size="sm" onClick={() => setAmount(formatEther(twakBal))}>
                 Max
               </Button>
             ) : null}
           </div>
         </Field>
 
-        <div className="rounded-3xl border-[3px] border-navy bg-ice p-5">
-          <div className="text-[13px] font-black uppercase tracking-widest text-navy/60">You get (estimate)</div>
-          <div className="mt-1 font-display text-[32px] font-extrabold">
+        <div className="rounded-2xl border border-line bg-card-2 p-5">
+          <div className="text-[13px] font-semibold uppercase tracking-widest text-muted">You get (estimate)</div>
+          <div className="mt-1 font-display text-[32px] font-semibold">
             {q ? `${fmt18(q.out, side === "buy" ? 2 : 6)} ${outUnit}` : quoteError && amountIn ? "No quote" : `— ${outUnit}`}
           </div>
           {q ? (
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm font-bold text-navy/75">
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm font-medium text-sub">
               <dt>Minimum after slippage</dt>
               <dd className="text-right">
                 {fmt18(q.minOut, side === "buy" ? 2 : 6)} {outUnit}
@@ -250,28 +250,28 @@ function SwapCard() {
             <input className={inputClass} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} />
           </Field>
         </div>
-        {slipBps && slipBps > 500n ? <p className="font-bold text-candy-deep">High slippage: you may get a much worse price.</p> : null}
+        {slipBps && slipBps > 500n ? <p className="font-medium text-down">High slippage: you may get a much worse price.</p> : null}
       </div>
 
       <div className="mt-6">
         <NeedsWallet why="Connect any wallet to trade. Rebates accrue only if it holds an Agent ID." agent={side}>
           {hasAgent === false ? (
-            <div className="mb-4 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-4 font-bold">
-              <Pill tone="candy">NO REBATES FOR THIS WALLET</Pill>
+            <div className="mb-4 rounded-2xl border border-line bg-down/10 px-4 py-4 font-medium">
+              <Pill tone="gold">NO REBATES FOR THIS WALLET</Pill>
               <p className="mt-2">
                 Anyone can trade here, but this wallet doesn&apos;t hold an Agent ID, so its trades earn no rebate. You still pay the same 1%; your
                 rebate half goes to the epoch&apos;s BNB boost pot for Agent ID traders. Agent IDs are issued in the official Binance App (mainnet).
               </p>
             </div>
           ) : hasAgent ? (
-            <p className="mb-4 text-sm font-bold text-navy/70">
-              <Pill tone="sky">AGENT ID ✓</Pill> <span className="ml-1">Your trades earn weekly rebates on the Rebates page.</span>
+            <p className="mb-4 text-sm font-medium text-sub">
+              <Pill tone="neutral">AGENT ID ✓</Pill> <span className="ml-1">Your trades earn weekly rebates on the Rebates page.</span>
             </p>
           ) : null}
           <>
-            {overLimit ? <p className="mb-3 font-bold text-candy-deep">This trade would go over your daily limit.</p> : null}
-            {insufficient ? <p className="mb-3 font-bold text-candy-deep">Not enough {inUnit} in this wallet.</p> : null}
-            <Button tone={side === "buy" ? "sky" : "candy"} size="lg" className="w-full" disabled={!ready || tx.busy} onClick={submit}>
+            {overLimit ? <p className="mb-3 font-medium text-down">This trade would go over your daily limit.</p> : null}
+            {insufficient ? <p className="mb-3 font-medium text-down">Not enough {inUnit} in this wallet.</p> : null}
+            <Button tone={side === "buy" ? "soft" : "gold"} size="lg" className="w-full" disabled={!ready || tx.busy} onClick={submit}>
               {tx.busy
                 ? "Check your wallet…"
                 : side === "buy"
@@ -281,44 +281,44 @@ function SwapCard() {
                     : "Sell TWAK"}
             </Button>
             {side === "sell" ? (
-              <p className="mt-3 text-center text-sm font-bold text-navy/60">
+              <p className="mt-3 text-center text-sm font-medium text-muted">
                 Selling asks for two wallet confirmations: an approval for exactly {amountIn ? fmt18(amountIn, 2) : "the"} TWAK, then the sell. Never
                 an unlimited approval.
               </p>
             ) : (
-              <p className="mt-3 text-center text-sm font-bold text-navy/60">You confirm every swap in your wallet. We never sign for you.</p>
+              <p className="mt-3 text-center text-sm font-medium text-muted">You confirm every swap in your wallet. We never sign for you.</p>
             )}
           </>
           <TxNotice state={tx.state} onClose={tx.reset} />
           <AgentPathToggle key={side} flow={side} className="mt-4" />
         </NeedsWallet>
       </div>
-      <p className="mt-6 text-sm font-semibold text-navy/60">Trading involves risk. Prices can move fast, and you can lose money. Quotes are estimates.</p>
+      <p className="mt-6 text-sm font-semibold text-muted">Trading involves risk. Prices can move fast, and you can lose money. Quotes are estimates.</p>
     </Panel>
   );
 }
 
 function FeeSplit() {
   return (
-    <Panel tone="skyPale" shadow={false}>
-      <h2 className="font-display text-[24px] font-extrabold">Where the 1% goes</h2>
-      <div className="mt-4 flex h-6 overflow-hidden rounded-full border-[3px] border-navy" aria-hidden="true">
-        <div className="bg-candy" style={{ width: "50%" }} />
-        <div className="bg-sky" style={{ width: "30%" }} />
-        <div className="bg-sun" style={{ width: "20%" }} />
+    <Panel tone="raised" shadow={false}>
+      <h2 className="font-display text-[24px] font-semibold">Where the 1% goes</h2>
+      <div className="mt-4 flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+        <div className="bg-gold" style={{ flex: 50 }} />
+        <div className="bg-up" style={{ flex: 30 }} />
+        <div className="bg-[#4A525E]" style={{ flex: 20 }} />
       </div>
-      <ul className="mt-4 space-y-2 font-bold">
+      <ul className="mt-4 space-y-2 font-medium">
         <li>
-          <span className="font-display text-[20px] font-extrabold text-candy">50%</span> Active-trader rebate boosts (claim on Rebates)
+          <span className="font-mono text-[18px] font-medium text-gold">50%</span> Active-trader rebate boosts (claim on Rebates)
         </li>
         <li>
-          <span className="font-display text-[20px] font-extrabold text-sky-deep">30%</span> Lottery / Draw V2 treasury
+          <span className="font-mono text-[18px] font-medium text-up">30%</span> Lottery / Draw V2 treasury
         </li>
         <li>
-          <span className="font-display text-[20px] font-extrabold text-sun-deep">20%</span> Dev
+          <span className="font-mono text-[18px] font-medium text-sub">20%</span> Dev
         </li>
       </ul>
-      <p className="mt-3 text-sm font-semibold text-navy/70">Buys: 1% of the BNB you send. Sells: 1% of the BNB you get back. TWAK transfers are never taxed.</p>
+      <p className="mt-3 text-sm font-semibold text-sub">Buys: 1% of the BNB you send. Sells: 1% of the BNB you get back. TWAK transfers are never taxed.</p>
     </Panel>
   );
 }
@@ -355,8 +355,8 @@ function LimitCard() {
 
   return (
     <Panel>
-      <h2 className="font-display text-[24px] font-extrabold">Your daily limit</h2>
-      <p className="mt-1 font-semibold text-navy/70">
+      <h2 className="font-display text-[24px] font-semibold">Your daily limit</h2>
+      <p className="mt-1 font-semibold text-sub">
         A leash on how much BNB-leg volume this wallet can trade per UTC day. <b>Lowering it is immediate. Raising it takes effect after 24 hours</b>, so a
         leaked key can&apos;t lift its own leash.
       </p>
@@ -367,7 +367,7 @@ function LimitCard() {
             <Stat label="Used today" value={`${fmt18(spent)} BNB`} />
           </div>
           {hasPending ? (
-            <p className="mt-3 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-2 font-bold">
+            <p className="mt-3 rounded-2xl border border-line bg-gold/5 px-4 py-2 font-medium">
               Pending raise to {pendingLimit === maxUint256 ? "unlimited" : `${fmt18(pendingLimit)} BNB`} at {fmtDate(pendingAt)}.
             </p>
           ) : null}
@@ -377,10 +377,10 @@ function LimitCard() {
             </Field>
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button tone="navy" size="sm" disabled={!parsed || tx.busy} onClick={() => parsed && set(parsed, "Set daily limit")}>
+            <Button tone="soft" size="sm" disabled={!parsed || tx.busy} onClick={() => parsed && set(parsed, "Set daily limit")}>
               Set limit
             </Button>
-            <Button tone="white" size="sm" disabled={tx.busy || limit === maxUint256} onClick={() => set(maxUint256, "Remove limit")}>
+            <Button tone="line" size="sm" disabled={tx.busy || limit === maxUint256} onClick={() => set(maxUint256, "Remove limit")}>
               Remove limit (after 24h)
             </Button>
           </div>

@@ -224,7 +224,7 @@ export function AgentPathToggle({
   return (
     <div className={className}>
       <div className="flex justify-center">
-        <Button tone="white" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <Button tone="line" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <span aria-hidden="true">🤖</span> {open ? "Hide AI agent steps" : "Give this to your AI agent"}
         </Button>
       </div>
@@ -262,15 +262,15 @@ export function AgentPathPanel({
   }
 
   return (
-    <div className={`rounded-[28px] border-4 border-navy bg-sky-pale p-5 ${className}`}>
+    <div className={`rounded-2xl border border-line bg-card-2 p-5 ${className}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <Pill tone="navy">BINANCE AGENTIC WALLET</Pill>
-        <Pill tone="sun">MAINNET ONLY · CHAIN 56</Pill>
+        <Pill tone="neutral">BINANCE AGENTIC WALLET</Pill>
+        <Pill tone="gold">MAINNET ONLY · CHAIN 56</Pill>
       </div>
 
       {meta.testnet ? (
-        <div className="mt-4 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
-          <Pill tone="candy">NOT FOR TESTNET</Pill>
+        <div className="mt-4 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
+          <Pill tone="gold">NOT FOR TESTNET</Pill>
           <p className="mt-2">
             BAW does not support testnet, use MetaMask. Binance Agentic Wallet cannot connect to this page; to test here, use MetaMask or another
             browser wallet on {meta.name}. The steps below are for mainnet later; copy them for reference, not for this testnet.
@@ -278,7 +278,7 @@ export function AgentPathPanel({
         </div>
       ) : null}
 
-      <p className="mt-4 font-bold text-navy/80">
+      <p className="mt-4 font-medium text-sub">
         Paste this into your AI agent (e.g. Claude Code) that has Binance&apos;s official{" "}
         <a className="underline" href={BAW_SKILL_URL} target="_blank" rel="noreferrer">
           binance-agentic-wallet
@@ -287,37 +287,37 @@ export function AgentPathPanel({
         {isPerps ? (
           <>
             Aster orders are <b>not</b> a BSC contract call, so BAW can&apos;t place them directly. BAW signs one{" "}
-            <code className="rounded bg-white px-1">sign-message</code> (preview, your OK, then execute) that approves a trade-only Aster API wallet your
+            <code className="rounded bg-card px-1">sign-message</code> (preview, your OK, then execute) that approves a trade-only Aster API wallet your
             agent keeps locally; that wallet signs each order after you say yes.
           </>
         ) : (
           <>
-            It runs <code className="rounded bg-white px-1">baw contract-call preview</code> first and waits for your explicit OK before{" "}
-            <code className="rounded bg-white px-1">execute</code>.
+            It runs <code className="rounded bg-card px-1">baw contract-call preview</code> first and waits for your explicit OK before{" "}
+            <code className="rounded bg-card px-1">execute</code>.
           </>
         )}{" "}
         This site only shows text: it never signs, never sends, and never asks for keys.
       </p>
 
       {missing.length > 0 ? (
-        <p className="mt-3 rounded-2xl border-[3px] border-dashed border-navy bg-sun-pale px-4 py-3 font-bold">
+        <p className="mt-3 rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-3 font-medium">
           Mainnet contracts are not deployed yet ({missing.join(", ")}): the instruction uses placeholders. Do not send anything until Towack publishes
           the mainnet addresses.
         </p>
       ) : null}
 
       <pre
-        className={`mt-4 max-h-[320px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border-[3px] border-navy bg-white p-4 font-mono text-[12.5px] leading-relaxed text-navy ${meta.testnet ? "opacity-70" : ""}`}
+        className={`mt-4 max-h-[320px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-line bg-card p-4 font-mono text-[12.5px] leading-relaxed text-fg ${meta.testnet ? "opacity-70" : ""}`}
         aria-label="Instruction for your AI agent"
       >
         {text}
       </pre>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button tone="sun" size="sm" onClick={copy}>
+        <Button tone="soft" size="sm" onClick={copy}>
           {copied === "ok" ? "Copied ✓" : copied === "fail" ? "Copy failed: select the text" : meta.testnet ? "Copy mainnet steps" : "Copy for my agent"}
         </Button>
-        <a className="inline-flex min-h-10 items-center text-sm font-black underline" href={TOWACK_SKILL_PATH} target="_blank" rel="noreferrer">
+        <a className="inline-flex min-h-10 items-center text-sm font-semibold underline" href={TOWACK_SKILL_PATH} target="_blank" rel="noreferrer">
           Towack agent skill (SKILL.md)
         </a>
       </div>

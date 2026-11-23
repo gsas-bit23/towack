@@ -1,5 +1,7 @@
 "use client";
 
+import { Skeleton } from "@/components/motion";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { isAddress, getAddress } from "viem";
@@ -35,12 +37,12 @@ export function useAsterAgent(net: AsterNet): StoredAgent | undefined {
 
 export function AsterAccountCard({ net, agent }: { net: AsterNet; agent: StoredAgent | undefined }) {
   return (
-    <Panel tone="skyPale" shadow={false}>
+    <Panel tone="raised" shadow={false}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[24px] font-extrabold">Your Aster API wallet</h2>
-        <Pill tone="navy">STAYS IN THIS BROWSER</Pill>
+        <h2 className="font-display text-[24px] font-semibold">Your Aster API wallet</h2>
+        <Pill tone="neutral">STAYS IN THIS BROWSER</Pill>
       </div>
-      <p className="mt-2 text-sm font-bold text-navy/70">
+      <p className="mt-2 text-sm font-medium text-sub">
         Aster trades are signed by an <b>API wallet</b>: a key that can place and cancel perp orders for your account but can never withdraw. It lives
         only in this browser&apos;s storage. Towack has no server that sees it; only signatures go, straight to Aster.
       </p>
@@ -71,15 +73,15 @@ function AgentStatus({ agent }: { agent: StoredAgent }) {
         />
       </div>
       {exp ? (
-        <p className={`text-sm font-bold ${expired ? "text-candy-deep" : "text-navy/70"}`}>
+        <p className={`text-sm font-medium ${expired ? "text-down" : "text-sub"}`}>
           {expired ? "Expired" : "Expires"} {exp.toLocaleString()}. Perps only, no spot, no withdrawals.
         </p>
       ) : null}
-      <div className="rounded-2xl border-[3px] border-navy bg-white px-4 py-3 font-bold">
+      <div className="rounded-2xl border border-line bg-card px-4 py-3 font-medium">
         {balance.isPending ? (
           "Checking your Aster USDT margin…"
         ) : balance.error ? (
-          <span className="text-candy-deep">{explainAsterError(balance.error)}</span>
+          <span className="text-down">{explainAsterError(balance.error)}</span>
         ) : balance.data ? (
           <>
             USDT margin: {trimDecimal(balance.data.balance)} · available {trimDecimal(balance.data.available)}
@@ -91,23 +93,23 @@ function AgentStatus({ agent }: { agent: StoredAgent }) {
       <div className="flex flex-wrap gap-3">
         {sure ? (
           <>
-            <Button tone="candy" size="sm" onClick={() => forgetAgent(agent.net)}>
+            <Button tone="gold" size="sm" onClick={() => forgetAgent(agent.net)}>
               Yes, forget this key
             </Button>
-            <Button tone="white" size="sm" onClick={() => setSure(false)}>
+            <Button tone="line" size="sm" onClick={() => setSure(false)}>
               Keep it
             </Button>
           </>
         ) : (
-          <Button tone="white" size="sm" onClick={() => setSure(true)}>
+          <Button tone="line" size="sm" onClick={() => setSure(true)}>
             Forget key on this browser
           </Button>
         )}
-        <a className="inline-flex min-h-10 items-center text-sm font-black underline" href={ASTER_API_WALLET_URL[agent.net]} target="_blank" rel="noreferrer">
+        <a className="inline-flex min-h-10 items-center text-sm font-semibold underline" href={ASTER_API_WALLET_URL[agent.net]} target="_blank" rel="noreferrer">
           Manage / revoke on Aster ↗
         </a>
       </div>
-      <p className="text-xs font-bold text-navy/60">Forgetting only deletes it here. Revoke it on Aster to switch it off everywhere.</p>
+      <p className="text-xs font-medium text-muted">Forgetting only deletes it here. Revoke it on Aster to switch it off everywhere.</p>
     </div>
   );
 }
@@ -117,7 +119,7 @@ function AgentSetup({ net }: { net: AsterNet }) {
   const [remember, setRemember] = useState(false);
   return (
     <div>
-      <div className="inline-flex rounded-full border-4 border-navy bg-ice p-1" role="tablist" aria-label="How to set up the API wallet">
+      <div className="inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label="How to set up the API wallet">
         {(
           [
             ["wallet", "Approve with my wallet"],
@@ -130,15 +132,15 @@ function AgentSetup({ net }: { net: AsterNet }) {
             role="tab"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`rounded-full px-4 py-2 font-display text-[14px] font-extrabold sm:text-[15px] ${mode === m ? "bg-sky" : "text-navy/60"}`}
+            className={`rounded-full px-4 py-2 font-display text-[14px] font-semibold sm:text-[15px] ${mode === m ? "bg-card-2" : "text-muted"}`}
           >
             {label}
           </button>
         ))}
       </div>
       <div className="mt-5">{mode === "wallet" ? <WalletApprove net={net} remember={remember} /> : <PasteKey net={net} remember={remember} />}</div>
-      <label className="mt-5 flex items-start gap-3 font-bold">
-        <input type="checkbox" className="mt-1 h-5 w-5 accent-navy" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+      <label className="mt-5 flex items-start gap-3 font-medium">
+        <input type="checkbox" className="mt-1 h-5 w-5 accent-gold" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
         <span>
           Remember on this device (localStorage). Off: kept for this tab only (sessionStorage) and gone when you close it. Don&apos;t tick this on a
           shared computer.
@@ -178,8 +180,8 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
 
   if (!isConnected) {
     return (
-      <div className="rounded-[28px] border-4 border-navy bg-white p-5 text-center">
-        <p className="font-bold text-navy/70">Connect the wallet you use on Aster (the one that holds your margin).</p>
+      <div className="rounded-2xl border border-line bg-card p-5 text-center">
+        <p className="font-medium text-sub">Connect the wallet you use on Aster (the one that holds your margin).</p>
         <div className="mt-4 flex justify-center">
           <ConnectPill />
         </div>
@@ -189,7 +191,7 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
 
   return (
     <div className="space-y-4">
-      <ol className="list-decimal space-y-1 pl-5 font-bold text-navy/80">
+      <ol className="list-decimal space-y-1 pl-5 font-medium text-sub">
         <li>This page makes a fresh API wallet key in your browser.</li>
         <li>
           Your wallet signs one EIP-712 message approving it on Aster: perps <b>yes</b>, spot <b>no</b>, withdrawals <b>no</b>, expires in{" "}
@@ -197,26 +199,26 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
         </li>
         <li>The approval goes straight to Aster. The key stays here.</li>
       </ol>
-      <p className="rounded-2xl border-[3px] border-navy bg-white px-4 py-2 text-sm font-bold">
+      <p className="rounded-2xl border border-line bg-card px-4 py-2 text-sm font-medium">
         Signing: <span className="font-mono">AsterSignTransaction</span> · chain 56 · canPerpTrade={String(AGENT_SCOPE.canPerpTrade)} · canSpotTrade=
         {String(AGENT_SCOPE.canSpotTrade)} · canWithdraw={String(AGENT_SCOPE.canWithdraw)}
       </p>
       {net === "testnet" ? (
-        <p className="text-sm font-bold text-navy/70">
+        <p className="text-sm font-medium text-sub">
           Aster testnet still expects the approval signed for chain 56 (its docs), so your wallet must be on BNB Smart Chain just for this signature.
         </p>
       ) : null}
       {!onBsc ? (
-        <Button tone="sun" size="md" disabled={switching} onClick={() => switchChainAsync({ chainId: ASTER_EVM_SIGNATURE_CHAIN_ID }).catch(() => undefined)}>
+        <Button tone="soft" size="md" disabled={switching} onClick={() => switchChainAsync({ chainId: ASTER_EVM_SIGNATURE_CHAIN_ID }).catch(() => undefined)}>
           {switching ? "Check your wallet…" : "Switch wallet to BNB Smart Chain to sign"}
         </Button>
       ) : (
-        <Button tone="navy" size="md" disabled={busy} onClick={approve}>
+        <Button tone="soft" size="md" disabled={busy} onClick={approve}>
           {busy ? "Sign in your wallet…" : "Approve a trade-only API wallet"}
         </Button>
       )}
       {err ? (
-        <p role="alert" className="rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
+        <p role="alert" className="rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
           {err}
         </p>
       ) : null}
@@ -233,7 +235,7 @@ function PasteKey({ net, remember }: { net: AsterNet; remember: boolean }) {
   const userOk = isAddress(userValue.trim());
   return (
     <div className="space-y-4">
-      <p className="font-bold text-navy/70">
+      <p className="font-medium text-sub">
         Already made an API wallet on{" "}
         <a className="underline" href={ASTER_API_WALLET_URL[net]} target="_blank" rel="noreferrer">
           Aster&apos;s API wallet page
@@ -255,7 +257,7 @@ function PasteKey({ net, remember }: { net: AsterNet; remember: boolean }) {
         />
       </Field>
       <Button
-        tone="navy"
+        tone="soft"
         size="md"
         disabled={!signer || !userOk}
         onClick={() => {
@@ -298,35 +300,38 @@ export function OpenOrders({ agent }: { agent: StoredAgent | undefined }) {
 
   return (
     <Panel>
-      <h2 className="font-display text-[24px] font-extrabold">Open orders</h2>
+      <h2 className="font-display text-[24px] font-semibold">Open orders</h2>
       {!agent ? (
-        <p className="mt-2 font-bold text-navy/60">Set up your API wallet to see and cancel your open Aster orders.</p>
+        <p className="mt-2 font-medium text-muted">Set up your API wallet to see and cancel your open Aster orders.</p>
       ) : orders.isPending ? (
-        <p className="mt-2 font-bold text-navy/60">Loading…</p>
+        <div className="mt-3 space-y-2">
+          <Skeleton className="h-10 w-full" label="Loading open orders" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       ) : orders.error ? (
-        <p className="mt-3 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">{explainAsterError(orders.error)}</p>
+        <p className="mt-3 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">{explainAsterError(orders.error)}</p>
       ) : orders.data.length === 0 ? (
-        <p className="mt-2 font-bold text-navy/60">No open orders.</p>
+        <p className="mt-2 font-medium text-muted">No open orders.</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {orders.data.map((o) => (
-            <li key={o.orderId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-[3px] border-navy bg-ice px-4 py-3 font-bold">
+            <li key={o.orderId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-card-2 px-4 py-3 font-medium">
               <span className="min-w-0 break-words">
-                <span className={o.side === "BUY" ? "text-sky-deep" : "text-candy-deep"}>{o.side === "BUY" ? "Long" : "Short"}</span> {o.symbol} · {o.type} ·{" "}
+                <span className={o.side === "BUY" ? "text-up" : "text-down"}>{o.side === "BUY" ? "Long" : "Short"}</span> {o.symbol} · {o.type} ·{" "}
                 {trimDecimal(o.origQty)} @ {trimDecimal(o.price)}
                 {o.reduceOnly ? " · reduce-only" : ""}
               </span>
               {confirm === o.orderId ? (
                 <span className="flex gap-2">
-                  <Button tone="candy" size="sm" onClick={() => cancel(o.symbol, o.orderId)}>
+                  <Button tone="gold" size="sm" onClick={() => cancel(o.symbol, o.orderId)}>
                     Confirm cancel
                   </Button>
-                  <Button tone="white" size="sm" onClick={() => setConfirm(undefined)}>
+                  <Button tone="line" size="sm" onClick={() => setConfirm(undefined)}>
                     Keep
                   </Button>
                 </span>
               ) : (
-                <Button tone="white" size="sm" onClick={() => setConfirm(o.orderId)}>
+                <Button tone="line" size="sm" onClick={() => setConfirm(o.orderId)}>
                   Cancel
                 </Button>
               )}
@@ -335,7 +340,7 @@ export function OpenOrders({ agent }: { agent: StoredAgent | undefined }) {
         </ul>
       )}
       {msg ? (
-        <p role="status" className="mt-3 font-bold">
+        <p role="status" className="mt-3 font-medium">
           {msg}
         </p>
       ) : null}

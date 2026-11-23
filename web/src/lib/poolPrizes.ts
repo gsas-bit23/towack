@@ -16,12 +16,16 @@ export type PoolPrize = {
   ink: string;
 };
 
-const CANDY = "#FF4FA3";
-const SKY = "#1FC6F2";
-const SUN = "#FFCD2E";
-const NAVY = "#13204A";
-const WHITE = "#FFFFFF";
-const ICE = "#BFEFFF";
+const SLATE = "#2B3139"; // Atlas slate
+const STEEL = "#3A414B"; // Atlas steel
+const GOLD = "#F0B90B"; // Atlas gold
+const CARD2 = "#1D2229"; // Atlas card-2
+const CARD = "#161A20"; // Atlas card
+const TEXT = "#EAECEF";
+const ON_GOLD = "#181A20";
+const MUTED = "#8B94A3";
+const GOLD_DIM = "#4A3C10"; // muted gold slab for mid tiers
+const GOLD_INK = "#FCD535";
 
 export const POOL_SLOTS = 10_000;
 export const POOL_MIN_ENTRY = 100;
@@ -45,13 +49,13 @@ const tier = (id: number, wheel: string, multBps: number, slots: number, bnbBonu
 });
 
 export const POOL_PRIZES: readonly PoolPrize[] = [
-  { ...tier(0, "0×", 0, 2_100, 0, ICE, NAVY), label: "0× — pool keeps it" },
-  tier(1, "0.5×", 5_000, 3_200, 0, WHITE, NAVY),
-  tier(2, "1×", 10_000, 2_200, 0, SKY, NAVY),
-  tier(3, "1.5×", 15_000, 1_400, 0, CANDY, WHITE),
-  tier(4, "2×", 20_000, 800, 0, SUN, NAVY),
-  tier(5, "5×", 50_000, 200, 100, CANDY, WHITE),
-  tier(6, "10×", 100_000, 100, 200, NAVY, SUN),
+  { ...tier(0, "0×", 0, 2_100, 0, CARD, MUTED), label: "0× — pool keeps it" },
+  tier(1, "0.5×", 5_000, 3_200, 0, CARD2, TEXT),
+  tier(2, "1×", 10_000, 2_200, 0, STEEL, TEXT),
+  tier(3, "1.5×", 15_000, 1_400, 0, SLATE, TEXT),
+  tier(4, "2×", 20_000, 800, 0, GOLD_DIM, GOLD_INK),
+  tier(5, "5×", 50_000, 200, 100, SLATE, TEXT),
+  tier(6, "10×", 100_000, 100, 200, GOLD, ON_GOLD),
 ] as const;
 
 /** Rim order spreads the two top tiers apart and alternates colours. */

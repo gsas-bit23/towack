@@ -1,23 +1,51 @@
 @import "tailwindcss";
 
+/* Towack Atlas: dark product system. Raw tokens live on :root so plain CSS and inline SVG can use them too. */
+:root {
+  --bg: #0b0e11;
+  --surface: #12161b;
+  --card: #161a20;
+  --card-2: #1d2229;
+  --line: #232931;
+  --line-2: #2e353f;
+  --text: #eaecef;
+  --sub: #b7bdc6;
+  --muted: #8b94a3;
+  --dim: #6b7380;
+  --gold: #f0b90b;
+  --gold-2: #fcd535;
+  --on-gold: #181a20;
+  --up: #0ecb81;
+  --down: #f6465d;
+  --r-lg: 16px;
+  --r: 12px;
+  --r-sm: 8px;
+  color-scheme: dark;
+}
+
 @theme inline {
-  --font-display: var(--font-sora), system-ui, sans-serif;
-  --font-body: var(--font-nunito), system-ui, sans-serif;
-  --font-sans: var(--font-nunito), system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
 @theme {
-  --color-ice: #eef8ff;
-  --color-sky: #1fc6f2;
-  --color-sky-deep: #0598c9;
-  --color-sky-pale: #bfefff;
-  --color-candy: #ff4fa3;
-  --color-candy-deep: #d92a80;
-  --color-candy-pale: #ffd3e8;
-  --color-sun: #ffcd2e;
-  --color-sun-deep: #e6ae00;
-  --color-sun-pale: #fff0b8;
-  --color-navy: #13204a;
+  --color-bg: #0b0e11;
+  --color-surface: #12161b;
+  --color-card: #161a20;
+  --color-card-2: #1d2229;
+  --color-line: #232931;
+  --color-line-2: #2e353f;
+  --color-fg: #eaecef;
+  --color-sub: #b7bdc6;
+  --color-muted: #8b94a3;
+  --color-dim: #6b7380;
+  --color-gold: #f0b90b;
+  --color-gold-2: #fcd535;
+  --color-on-gold: #181a20;
+  --color-up: #0ecb81;
+  --color-down: #f6465d;
 }
 
 html {
@@ -29,92 +57,196 @@ body {
   overflow-x: clip;
 }
 body {
-  background: #eef8ff;
-  color: #13204a;
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: rgba(240, 185, 11, 0.28);
 }
 .font-display {
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
+}
+.font-mono,
+.m {
+  font-variant-numeric: tabular-nums;
 }
 
-@keyframes bounce-float {
-  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
-  50% { transform: translateY(-20px) rotate(var(--r, 0deg)); }
+/* Press / lift micro-interactions: transform + shadow only, short and calm. */
+.press {
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease,
+    color 0.15s ease;
 }
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+.press:hover {
+  transform: translateY(-1px);
 }
-@keyframes coin-spin {
-  0%, 100% { transform: scaleX(1); }
-  50% { transform: scaleX(0.35); }
+.press:active {
+  transform: translateY(1px) scale(0.985);
 }
-@keyframes drop {
-  from { opacity: 0; transform: translateY(-30px) scale(0.95); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes wiggle {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
+.press:disabled,
+.press[aria-disabled="true"] {
+  transform: none;
 }
 
-.bounce { animation: bounce-float 6.5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
-.bounce-2 { animation-duration: 8s; animation-delay: -3s; }
-.bounce-3 { animation-duration: 9s; animation-delay: -5s; }
-.bulb { animation: blink 2.4s ease-in-out infinite; }
-.bulb:nth-child(2n) { animation-delay: 1.2s; }
-.coin-spin { animation: coin-spin 7s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
-.drop { animation: drop 0.8s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
-.dl1 { animation-delay: 0.08s; }
-.dl2 { animation-delay: 0.18s; }
-.dl3 { animation-delay: 0.28s; }
-.wiggle { animation: wiggle 1.6s ease-in-out infinite; }
+.lift {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.15s ease, box-shadow 0.2s ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  border-color: #3a414b;
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+}
+.nav-pill {
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.nav-pill:active {
+  transform: scale(0.97);
+}
 
-.press { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.press:hover { transform: translateY(-3px); }
-.press:active { transform: translateY(4px); }
-.press:disabled, .press[aria-disabled="true"] { transform: none; }
-
+/* Prize-tier "stub" cards: Atlas keeps the class as a plain card (no ticket notches). */
 .stub {
-  --notch: 14px;
-  -webkit-mask:
-    radial-gradient(circle var(--notch) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
-  mask:
-    radial-gradient(circle var(--notch) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+  border: 1px solid var(--line);
 }
 .checker {
-  background-image: conic-gradient(#13204a 25%, transparent 0 50%, #13204a 0 75%, transparent 0);
-  background-size: 24px 24px;
+  background-image: repeating-linear-gradient(90deg, var(--line-2) 0 2px, transparent 2px 8px);
 }
 
-/* Hover micro-interactions (transform-only, cheap to composite) */
-.lift { transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.18s ease; }
-.lift:hover { transform: translateY(-4px) rotate(-0.4deg); box-shadow: 0 8px 0 #13204A; }
-.nav-pill { transition: transform 0.15s cubic-bezier(0.3, 1.6, 0.5, 1), color 0.15s ease; display: inline-block; }
-.nav-pill:hover { transform: translateY(-2px) scale(1.06); }
+/* Featured-card gold hairline (Atlas launch card). */
+.gold-hairline {
+  position: relative;
+  overflow: hidden;
+}
+.gold-hairline::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent 70%);
+  pointer-events: none;
+}
 
-/* Wheel + stage lighting */
+/* Eyebrow dot */
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--up);
+  box-shadow: 0 0 0 4px rgba(14, 203, 129, 0.15);
+}
+
+/* Wheel + result glows (opacity/transform only) */
 @keyframes glow-pulse {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 0.95; transform: scale(1.04); }
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.03);
+  }
 }
 @keyframes win-flash {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
-.wheel-glow { background: radial-gradient(circle, rgba(255, 205, 46, 0.55) 0%, rgba(255, 79, 163, 0.25) 45%, transparent 70%); filter: blur(18px); animation: glow-pulse 3.2s ease-in-out infinite; }
-.hub-glow { background: radial-gradient(circle, rgba(255, 240, 184, 0.95) 0%, rgba(255, 205, 46, 0.4) 40%, transparent 70%); animation: glow-pulse 2.2s ease-in-out infinite; }
-.win-flash { animation: win-flash 0.5s ease-in-out 5; }
-.stage-glow { background: radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.5) 0%, transparent 60%); animation: glow-pulse 5s ease-in-out infinite; }
+@keyframes live-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.wheel-glow {
+  background: radial-gradient(circle, rgba(240, 185, 11, 0.14) 0%, rgba(240, 185, 11, 0.04) 45%, transparent 70%);
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+.win-flash {
+  animation: win-flash 0.6s ease-in-out 4;
+}
+.blink {
+  animation: live-blink 2.4s ease-in-out infinite;
+}
+
+/* Hero: slowly breathing gold radial behind the instrument arc. */
+@keyframes hero-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate3d(-2%, 1%, 0) scale(1.06);
+  }
+}
+.hero-glow {
+  background: radial-gradient(closest-side, rgba(240, 185, 11, 0.16), rgba(240, 185, 11, 0.05) 55%, transparent);
+  animation: hero-breathe 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes arc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.arc-spin {
+  animation: arc-spin 90s linear infinite;
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+}
+
+/* Skeleton shimmer: a translating highlight (transform only) over a static block. */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--card-2);
+  border-radius: var(--r-sm);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
 
 /* Number inputs: no spinners */
 input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

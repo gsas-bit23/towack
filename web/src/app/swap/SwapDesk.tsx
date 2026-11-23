@@ -34,7 +34,7 @@ import { useTx } from "@/lib/tx";
 import { PREVIEW_USER, PROVIDER_KEYS_SET, useDebounced, useRoutes } from "./useRoutes";
 
 const selectClass =
-  "w-full min-w-0 appearance-none rounded-2xl border-[3px] border-navy bg-white bg-[length:14px] bg-[right_14px_center] bg-no-repeat px-4 py-3 pr-10 font-display text-[18px] font-extrabold text-navy focus:outline-none focus:ring-4 focus:ring-sky";
+  "w-full min-w-0 appearance-none rounded-2xl border border-line bg-card bg-[length:14px] bg-[right_14px_center] bg-no-repeat px-4 py-3 pr-10 font-display text-[18px] font-semibold text-fg focus:outline-none focus:ring-4 focus:ring-gold/40";
 const CHEVRON = {
   backgroundImage:
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%2313204A' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
@@ -231,7 +231,7 @@ function SwapCard() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-extrabold">Swap &amp; bridge</h2>
+        <h2 className="font-display text-[28px] font-semibold">Swap &amp; bridge</h2>
         <ChainNote />
       </div>
 
@@ -267,7 +267,7 @@ function SwapCard() {
               aria-label={`Amount in ${tokenIn.symbol}`}
             />
             <Button
-              tone="white"
+              tone="line"
               size="sm"
               disabled={!balance}
               onClick={() => balance && setAmount(formatUnits(isNative(tokenIn) ? (balance > GAS_RESERVE ? balance - GAS_RESERVE : 0n) : balance, tokenIn.decimals))}
@@ -316,7 +316,7 @@ function SwapCard() {
         </Field>
 
         {meta.testnet ? (
-          <p className="rounded-2xl border-[3px] border-navy bg-sky-pale px-4 py-3 text-sm font-bold">
+          <p className="rounded-2xl border border-line bg-card-2 px-4 py-3 text-sm font-medium">
             Testnet: only PancakeSwap (v2 + v3) has BSC-testnet pools. Relay cross-chain and Uniswap are mainnet-only, and test pools are thin, so quotes can
             look odd. Switch the network toggle to Mainnet to compare real Relay / Uniswap quotes (you can view without signing anything).
           </p>
@@ -334,7 +334,7 @@ function SwapCard() {
             />
           </Field>
         ) : null}
-        {recipientBad ? <p className="font-bold text-candy-deep">That is not a valid EVM address.</p> : null}
+        {recipientBad ? <p className="font-medium text-down">That is not a valid EVM address.</p> : null}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Slippage %" hint="Default 0.5%.">
@@ -344,10 +344,10 @@ function SwapCard() {
             <input className={inputClass} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} aria-label="Deadline minutes" />
           </Field>
         </div>
-        {slipBps === undefined ? <p className="font-bold text-candy-deep">Slippage must be between 0.05% and 50%.</p> : null}
-        {slipLevel === "high" ? <p className="font-bold text-candy-deep">High slippage: you may get a much worse price, and bots can take the difference.</p> : null}
-        {slipLevel === "extreme" ? <p className="font-bold text-candy-deep">Slippage above 15% is blocked here. Lower it to continue.</p> : null}
-        {deadlineSec === undefined ? <p className="font-bold text-candy-deep">Deadline must be 1–60 minutes.</p> : null}
+        {slipBps === undefined ? <p className="font-medium text-down">Slippage must be between 0.05% and 50%.</p> : null}
+        {slipLevel === "high" ? <p className="font-medium text-down">High slippage: you may get a much worse price, and bots can take the difference.</p> : null}
+        {slipLevel === "extreme" ? <p className="font-medium text-down">Slippage above 15% is blocked here. Lower it to continue.</p> : null}
+        {deadlineSec === undefined ? <p className="font-medium text-down">Deadline must be 1–60 minutes.</p> : null}
       </div>
 
       <RouteList
@@ -362,7 +362,7 @@ function SwapCard() {
       />
 
       {twakPair ? (
-        <p className="mt-5 rounded-2xl border-[3px] border-navy bg-sun-pale px-4 py-3 font-bold">
+        <p className="mt-5 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
           Trading TWAK ⇄ BNB? The <Link className="underline" href="/trade">Towack desk</Link> routes through TowackRouter, where Agent ID wallets earn rebates.
           Routes on this page go straight to PancakeSwap / Uniswap / Relay and earn no Towack rebate.
         </p>
@@ -371,22 +371,22 @@ function SwapCard() {
       <div className="mt-6">
         <NeedsWallet why="Connect any wallet to swap or bridge. You sign every step in your own wallet.">
           {hasAgent ? (
-            <p className="mb-4 text-sm font-bold text-navy/70">
-              <Pill tone="sky">AGENT ID ✓</Pill>{" "}
+            <p className="mb-4 text-sm font-medium text-sub">
+              <Pill tone="neutral">AGENT ID ✓</Pill>{" "}
               <span className="ml-1">Use the AI-agent box below to run this route from your Binance Agentic Wallet. Third-party routes earn no Towack rebate.</span>
             </p>
           ) : null}
           <>
-            {insufficient ? <p className="mb-3 font-bold text-candy-deep">Not enough {tokenIn.symbol} in this wallet.</p> : null}
-            {lowGasHeadroom ? <p className="mb-3 font-bold text-candy-deep">This leaves almost no {tokenIn.symbol} for gas. Try a slightly smaller amount.</p> : null}
+            {insufficient ? <p className="mb-3 font-medium text-down">Not enough {tokenIn.symbol} in this wallet.</p> : null}
+            {lowGasHeadroom ? <p className="mb-3 font-medium text-down">This leaves almost no {tokenIn.symbol} for gas. Try a slightly smaller amount.</p> : null}
             {selected && selected.provider === "relay" && selected.priceImpactPct !== undefined && selected.priceImpactPct < -3 ? (
-              <p className="mb-3 font-bold text-candy-deep">Relay reports a {Math.abs(selected.priceImpactPct).toFixed(2)}% total impact on this route. Check it is worth it.</p>
+              <p className="mb-3 font-medium text-down">Relay reports a {Math.abs(selected.priceImpactPct).toFixed(2)}% total impact on this route. Check it is worth it.</p>
             ) : null}
             {selected && selected.vsBestBps < -100 ? (
-              <p className="mb-3 font-bold text-candy-deep">This route pays {(Math.abs(selected.vsBestBps) / 100).toFixed(2)}% less than the best one.</p>
+              <p className="mb-3 font-medium text-down">This route pays {(Math.abs(selected.vsBestBps) / 100).toFixed(2)}% less than the best one.</p>
             ) : null}
-            {selected && !builtForMe && account ? <p className="mb-3 font-bold text-navy/70">Refreshing the quote for your wallet…</p> : null}
-            <Button tone={crossChain ? "candy" : "sky"} size="lg" className="w-full" disabled={!ready} onClick={execute}>
+            {selected && !builtForMe && account ? <p className="mb-3 font-medium text-sub">Refreshing the quote for your wallet…</p> : null}
+            <Button tone={crossChain ? "gold" : "soft"} size="lg" className="w-full" disabled={!ready} onClick={execute}>
               {tx.busy
                 ? "Check your wallet…"
                 : !selected
@@ -395,7 +395,7 @@ function SwapCard() {
                     ? `Approve exact ${tokenIn.symbol}, then ${crossChain ? "bridge" : "swap"}`
                     : `${crossChain ? "Bridge" : "Swap"} via ${selected.label}`}
             </Button>
-            <p className="mt-3 text-center text-sm font-bold text-navy/60">
+            <p className="mt-3 text-center text-sm font-medium text-muted">
               {needsApproval
                 ? `Two wallet confirmations: an approval for exactly ${amountIn ? fmtAmt(amountIn, tokenIn.decimals) : "the"} ${tokenIn.symbol} to the ${selected?.label} contract, then the ${crossChain ? "bridge" : "swap"}. Never unlimited.`
                 : "You confirm every step in your own wallet. Towack never signs, holds or relays your funds."}
@@ -406,7 +406,7 @@ function SwapCard() {
         </NeedsWallet>
         <AgentPathToggle key={`${crossChain}-${selected?.provider ?? "none"}`} flow={crossChain ? "bridge" : "swap"} swap={agentCtx} className="mt-4" />
       </div>
-      <p className="mt-6 text-sm font-semibold text-navy/60">
+      <p className="mt-6 text-sm font-semibold text-muted">
         Quotes are estimates and refresh every 20 seconds. Prices move; bridges take time. Towack is not affiliated with Relay, PancakeSwap, Uniswap, 0x or 1inch.
       </p>
     </Panel>
@@ -433,26 +433,26 @@ function RouteList({
   previewOnly: boolean;
 }) {
   if (!amountIn) {
-    return <p className="mt-6 rounded-3xl border-[3px] border-dashed border-navy bg-ice px-5 py-4 font-bold text-navy/70">Enter an amount to compare routes.</p>;
+    return <p className="mt-6 rounded-2xl border border-dashed border-line bg-card-2 px-5 py-4 font-medium text-sub">Enter an amount to compare routes.</p>;
   }
   if (loading) {
     return (
-      <p className="mt-6 rounded-3xl border-[3px] border-navy bg-ice px-5 py-4 font-bold" role="status">
+      <p className="mt-6 rounded-2xl border border-line bg-card-2 px-5 py-4 font-medium" role="status">
         Asking PancakeSwap, Uniswap and Relay…
       </p>
     );
   }
-  if (queryError) return <p className="mt-6 rounded-3xl border-[3px] border-navy bg-candy-pale px-5 py-4 font-bold">Quote failed: {queryError}</p>;
+  if (queryError) return <p className="mt-6 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">Quote failed: {queryError}</p>;
   if (!result) return null;
   const { quotes, errors } = result;
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-black uppercase tracking-widest text-navy/60">Routes ({quotes.length})</h3>
-        <span className="text-xs font-bold text-navy/50">{refreshing ? "Refreshing…" : previewOnly ? "Preview quotes · connect to execute" : "Live quotes"}</span>
+        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted">Routes ({quotes.length})</h3>
+        <span className="text-xs font-medium text-muted">{refreshing ? "Refreshing…" : previewOnly ? "Preview quotes · connect to execute" : "Live quotes"}</span>
       </div>
       {quotes.length === 0 ? (
-        <p className="mt-2 rounded-3xl border-[3px] border-navy bg-candy-pale px-5 py-4 font-bold">No route found for this pair and amount. Try a different amount or token.</p>
+        <p className="mt-2 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">No route found for this pair and amount. Try a different amount or token.</p>
       ) : (
         <ul className="mt-2 space-y-3" role="radiogroup" aria-label="Routes">
           {quotes.map((q) => {
@@ -464,20 +464,20 @@ function RouteList({
                   role="radio"
                   aria-checked={on}
                   onClick={() => onPick(q.provider)}
-                  className={`w-full rounded-3xl border-[3px] border-navy p-4 text-left transition ${on ? "bg-sky-pale shadow-[0_6px_0_#13204A]" : "bg-white hover:bg-ice"}`}
+                  className={`w-full rounded-2xl border border-line p-4 text-left transition ${on ? "bg-card-2" : "bg-card hover:bg-card-2"}`}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-[3px] border-navy ${on ? "bg-navy" : "bg-white"}`} aria-hidden="true">
-                      {on ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
+                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line ${on ? "bg-card-2" : "bg-card"}`} aria-hidden="true">
+                      {on ? <span className="h-2 w-2 rounded-full bg-card" /> : null}
                     </span>
-                    <span className="font-display text-[18px] font-extrabold">{q.label}</span>
-                    {q.best ? <Pill tone="sun">BEST</Pill> : null}
-                    {q.crossChain ? <Pill tone="candy">CROSS-CHAIN</Pill> : null}
-                    <span className="ml-auto font-display text-[20px] font-extrabold">
+                    <span className="font-display text-[18px] font-semibold">{q.label}</span>
+                    {q.best ? <Pill tone="gold">BEST</Pill> : null}
+                    {q.crossChain ? <Pill tone="gold">CROSS-CHAIN</Pill> : null}
+                    <span className="ml-auto font-display text-[20px] font-semibold">
                       {fmtAmt(q.amountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
                     </span>
                   </div>
-                  <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm font-bold text-navy/70 sm:grid-cols-2">
+                  <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm font-medium text-sub sm:grid-cols-2">
                     <span className="break-words">{q.route}</span>
                     <span className="sm:text-right">
                       Min {fmtAmt(q.minAmountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
@@ -499,7 +499,7 @@ function RouteList({
         </ul>
       )}
       {errors.length > 0 ? (
-        <details className="mt-3 text-sm font-bold text-navy/60">
+        <details className="mt-3 text-sm font-medium text-muted">
           <summary className="cursor-pointer">
             {errors.length} provider{errors.length > 1 ? "s" : ""} had no quote
           </summary>
@@ -513,7 +513,7 @@ function RouteList({
         </details>
       ) : null}
       {selected ? (
-        <p className="mt-3 text-xs font-bold text-navy/50">
+        <p className="mt-3 text-xs font-medium text-muted">
           Selected: {selected.label} ·{" "}
           <a className="underline" href={PROVIDER_SITE[selected.provider]} target="_blank" rel="noreferrer">
             {PROVIDER_SITE[selected.provider].replace("https://", "")}
@@ -528,8 +528,8 @@ function RelayTracker({ status, error, dest, id }: { status?: string; error?: st
   const done = status === "success";
   const bad = status === "failure" || status === "refund" || status === "refunded";
   return (
-    <div role="status" aria-live="polite" className={`mt-4 rounded-2xl border-[3px] border-navy px-4 py-3 font-bold ${done ? "bg-white" : bad ? "bg-candy-pale" : "bg-sky-pale"}`}>
-      <span className="font-black">Relay: </span>
+    <div role="status" aria-live="polite" className={`mt-4 rounded-2xl border border-line px-4 py-3 font-medium ${done ? "bg-card" : bad ? "bg-down/10" : "bg-card-2"}`}>
+      <span className="font-semibold">Relay: </span>
       {error
         ? `Could not read the status (${error}). Your funds are not lost; check relay.link.`
         : done
@@ -546,9 +546,9 @@ function RelayTracker({ status, error, dest, id }: { status?: string; error?: st
 
 function HowRouting() {
   return (
-    <Panel tone="skyPale" shadow={false}>
-      <h2 className="font-display text-[24px] font-extrabold">How the best route is picked</h2>
-      <ol className="mt-3 list-decimal space-y-2 pl-5 font-bold text-navy/80">
+    <Panel tone="raised" shadow={false}>
+      <h2 className="font-display text-[24px] font-semibold">How the best route is picked</h2>
+      <ol className="mt-3 list-decimal space-y-2 pl-5 font-medium text-sub">
         <li>Every provider is asked in parallel for the same amount and slippage.</li>
         <li>
           <b>Net output = what you receive − estimated gas.</b> Received amounts already include each provider&apos;s fees (pool fee, Relay fee). Gas is priced in
@@ -572,18 +572,18 @@ function ProvidersPanel() {
   ];
   return (
     <Panel>
-      <h2 className="font-display text-[24px] font-extrabold">Providers</h2>
+      <h2 className="font-display text-[24px] font-semibold">Providers</h2>
       <ul className="mt-4 space-y-3">
         {rows.map((r) => (
           <li key={r.id} className="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-3 sm:gap-y-1.5">
             <div className="min-w-0">
-              <a className="font-display text-[17px] font-extrabold underline decoration-2 underline-offset-2" href={PROVIDER_SITE[r.id]} target="_blank" rel="noreferrer">
+              <a className="font-display text-[17px] font-semibold underline decoration-2 underline-offset-2" href={PROVIDER_SITE[r.id]} target="_blank" rel="noreferrer">
                 {PROVIDER_LABEL[r.id]}
               </a>
-              <div className="text-sm font-bold text-navy/60">{r.what}</div>
+              <div className="text-sm font-medium text-muted">{r.what}</div>
             </div>
             <span
-              className={`max-w-full rounded-2xl px-3 py-1 text-left text-xs font-black [overflow-wrap:anywhere] sm:text-right ${r.on ? "bg-sky text-navy" : "border-2 border-dashed border-navy bg-white text-navy/70"}`}
+              className={`max-w-full rounded-2xl px-3 py-1 text-left text-xs font-semibold [overflow-wrap:anywhere] sm:text-right ${r.on ? "bg-card-2 text-fg" : "border border-dashed border-line bg-card text-sub"}`}
             >
               {r.state}
             </span>
@@ -596,14 +596,14 @@ function ProvidersPanel() {
 
 function TwakDeskCard() {
   return (
-    <Panel tone="sunPale" shadow={false}>
-      <h2 className="font-display text-[24px] font-extrabold">Trading TWAK?</h2>
-      <p className="mt-2 font-bold text-navy/80">
+    <Panel tone="gold" shadow={false}>
+      <h2 className="font-display text-[24px] font-semibold">Trading TWAK?</h2>
+      <p className="mt-2 font-medium text-sub">
         TWAK ⇄ BNB lives on the Towack desk: it goes through TowackRouter, so Agent ID wallets earn weekly rebates. Swaps on this page go straight to
         third-party contracts and earn no Towack rebate.
       </p>
       <div className="mt-4">
-        <Link href="/trade" className="font-display text-[17px] font-extrabold underline decoration-[3px] underline-offset-4 hover:text-candy">
+        <Link href="/trade" className="font-display text-[17px] font-semibold underline decoration-[3px] underline-offset-4 hover:text-gold">
           Open the TWAK desk →
         </Link>
       </div>

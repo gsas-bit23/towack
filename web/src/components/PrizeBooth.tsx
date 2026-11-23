@@ -6,7 +6,7 @@ import type { Spin } from "@/lib/draw";
 import { shortAddr } from "@/lib/format";
 import { DECK_SIZE, NO_WIN_ID, PRIZES, prizeById, shareText } from "@/lib/prizes";
 import { useNow } from "@/lib/useNow";
-import { Confetti } from "./motion";
+import { Confetti, SuccessCheck } from "./motion";
 import { SpinWheel, type WheelMode } from "./SpinWheel";
 import { Button, Pill } from "./ui";
 
@@ -47,13 +47,13 @@ export function WheelStage({
     <div className="relative">
       {demo ? (
         <div className="mb-4 flex justify-center">
-          <Pill tone="sun" className="border-[3px] border-navy text-[13px]">
+          <Pill tone="gold">
             DEMO SPIN · not a real mint or prize
           </Pill>
         </div>
       ) : null}
       {/* Confetti gets its own clipped layer (just inside the panel) so the wheel stage itself never clips the needle or result card. */}
-      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-[28px]" aria-hidden="true">
+      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-2xl" aria-hidden="true">
         <Confetti fire={burst} big={Boolean(prize?.jackpot)} />
       </div>
       <SpinWheel mode={mode} prizeId={prizeId} salt={salt} onLanded={onLanded} size={size} />
@@ -61,26 +61,30 @@ export function WheelStage({
       <div className="mt-6 min-h-[120px]" aria-live="polite">
         {status === "waiting" || (status === "assigned" && !landed) ? (
           <div className="text-center">
-            <div className="font-display text-[26px] font-extrabold">{status === "waiting" ? "Spinning… waiting for Chainlink VRF" : "Here it comes…"}</div>
-            {waitingNote ? <div className="mt-2 font-bold text-navy/70">{waitingNote}</div> : null}
+            <div className="inline-flex items-center gap-2 text-[18px] font-semibold sm:text-[20px]">
+              <span className="blink h-2 w-2 rounded-full bg-gold" aria-hidden="true" />
+              {status === "waiting" ? "Spinning… waiting for Chainlink VRF" : "Here it comes…"}
+            </div>
+            {waitingNote ? <div className="mt-2 text-[14px] text-sub">{waitingNote}</div> : null}
           </div>
         ) : showResult ? (
           <motion.div
-            initial={{ y: 18, scale: 0.9 }}
-            animate={{ y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 220, damping: 18 }}
-            className={`stub rounded-[28px] px-6 py-5 text-center ${prize.kind === "none" ? "bg-ice" : prize.jackpot ? "bg-sun" : "bg-sky-pale"}`}
+            initial={{ y: 12, opacity: 0.6 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            className={`rounded-2xl border px-6 py-5 text-center ${prize.kind === "none" ? "border-line bg-card-2" : prize.jackpot ? "gold-hairline border-gold/40 bg-gold/[.06]" : "border-line-2 bg-card-2"}`}
           >
-            <div className="text-[13px] font-black uppercase tracking-[.2em] text-navy/60">{demo ? "Demo landed on" : prize.kind === "none" ? "The wheel says" : "You won"}</div>
-            <div className="mt-1 font-display text-[34px] font-extrabold leading-tight">{prize.label}</div>
-            <div className="mt-1 text-[18px] font-black">
+            {prize.kind !== "none" && !demo ? <SuccessCheck className="mx-auto mb-2 h-9 w-9" /> : null}
+            <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{demo ? "Demo landed on" : prize.kind === "none" ? "The wheel says" : "You won"}</div>
+            <div className={`mt-1 text-[28px] font-semibold leading-tight tracking-tight ${prize.jackpot ? "text-gold" : ""}`}>{prize.label}</div>
+            <div className="mt-1 font-mono text-[16px] text-sub">
               {prize.kind === "none" ? "No prize this time. Your 80,000 TWAK from the mint is already yours." : prize.amount}
             </div>
-            {prize.kind === "bonus" ? <div className="mt-1 text-sm font-bold text-navy/60">on top of the 80,000 TWAK from your mint</div> : null}
+            {prize.kind === "bonus" ? <div className="mt-1 text-[13px] text-muted">on top of the 80,000 TWAK from your mint</div> : null}
             {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
           </motion.div>
         ) : (
-          <div className="text-center font-bold text-navy/70">{idleNote}</div>
+          <div className="text-center font-medium text-sub">{idleNote}</div>
         )}
       </div>
     </div>
@@ -131,7 +135,7 @@ export function useWheelMachine(status: WheelStatus, fresh: boolean, prizeId: nu
 export function ShareButton({ prizeId, text, path = "/draw" }: { prizeId: number; text?: string; path?: string }) {
   return (
     <Button
-      tone="white"
+      tone="line"
       size="sm"
       onClick={() => {
         const url = `${window.location.origin}${path}`;
@@ -149,19 +153,19 @@ export function PrizeLegend({ remaining }: { remaining?: number[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {PRIZES.map((p) => (
-        <div key={p.id} className="lift flex items-center gap-3 rounded-2xl border-[3px] border-navy bg-white px-4 py-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-[3px] border-navy font-display text-[13px] font-extrabold" style={{ background: p.fill, color: p.ink }}>
+        <div key={p.id} className="lift flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] font-mono text-[12px] font-medium" style={{ background: p.fill, color: p.ink }}>
             {p.kind === "none" ? "✕" : p.wheel.replace("FULL", "100%")}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="font-display text-[17px] font-extrabold leading-tight">{p.label}</div>
-            <div className="text-sm font-bold text-navy/60">{p.amount}</div>
+            <div className="text-[15px] font-semibold leading-tight">{p.label}</div>
+            <div className="font-mono text-[12.5px] text-muted">{p.amount}</div>
           </div>
           <div className="text-right">
-            <div className="font-display text-[15px] font-extrabold">
+            <div className="font-mono text-[13.5px] font-medium">
               {p.slots.toLocaleString("en-US")} / {DECK_SIZE.toLocaleString("en-US")}
             </div>
-            <div className="text-xs font-black text-navy/55">{remaining ? `${remaining[p.id].toLocaleString("en-US")} left` : `${((p.slots / DECK_SIZE) * 100).toFixed(p.slots < 50 ? 1 : 0)}% odds`}</div>
+            <div className="font-mono text-[11.5px] text-dim">{remaining ? `${remaining[p.id].toLocaleString("en-US")} left` : `${((p.slots / DECK_SIZE) * 100).toFixed(p.slots < 50 ? 1 : 0)}% odds`}</div>
           </div>
         </div>
       ))}
@@ -182,10 +186,10 @@ function ago(now: number, t?: number) {
 export function SpinFeed({ spins, emptyText = "No spins yet. The feed fills in live as prizes are assigned." }: { spins: Spin[]; emptyText?: string }) {
   const now = useNow(10_000);
   if (spins.length === 0) {
-    return <div className="rounded-2xl border-[3px] border-dashed border-navy/40 bg-white/60 px-4 py-6 text-center font-bold text-navy/60">{emptyText}</div>;
+    return <div className="rounded-2xl border border-dashed border-line-2 bg-card-2 px-4 py-6 text-center font-medium text-muted">{emptyText}</div>;
   }
   return (
-    <ul className="space-y-2.5">
+    <ul className="overflow-hidden rounded-xl border border-line">
       <AnimatePresence initial={false}>
         {spins.map((s) => {
           const p = PRIZES[s.prizeId] ?? PRIZES[10];
@@ -193,16 +197,16 @@ export function SpinFeed({ spins, emptyText = "No spins yet. The feed fills in l
             <motion.li
               key={s.key}
               layout
-              initial={{ opacity: 0, x: -30, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className="stub flex items-center gap-3 rounded-2xl px-5 py-2.5"
-              style={{ background: p.kind === "none" ? "#EEF8FF" : p.fill, color: p.kind === "none" ? "#13204A" : p.ink }}
+              transition={{ type: "spring", stiffness: 320, damping: 30 }}
+              className="flex items-center gap-3 border-t border-line bg-card px-4 py-2.5 first:border-t-0"
             >
-              <span className="font-mono text-sm font-bold">{shortAddr(s.minter)}</span>
-              <span className="flex-1 text-right font-display text-[16px] font-extrabold">{p.label}</span>
-              <span className="w-[62px] text-right text-xs font-black opacity-70">{s.demo ? "demo" : ago(now, s.time)}</span>
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.kind === "none" ? "#3A414B" : p.fill }} aria-hidden="true" />
+              <span className="font-mono text-[13px] text-sub">{shortAddr(s.minter)}</span>
+              <span className={`flex-1 text-right text-[14px] font-semibold ${p.jackpot ? "text-gold" : p.kind === "none" ? "text-muted" : ""}`}>{p.label}</span>
+              <span className="w-[62px] text-right font-mono text-[11.5px] text-dim">{s.demo ? "demo" : ago(now, s.time)}</span>
             </motion.li>
           );
         })}

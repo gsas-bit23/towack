@@ -80,58 +80,58 @@ export default function DocsPage() {
         How Towack works, what can go wrong, and what we will never do.
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">
-        <div className="rounded-[36px] border-4 border-navy bg-candy p-8 text-white shadow-[0_10px_0_#13204A]">
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-navy">PLAIN-LANGUAGE RISK NOTE</span>
-          <p className="mt-4 text-[19px] font-bold leading-relaxed">{RISK_NOTE}</p>
+        <div className="rounded-2xl border border-line bg-gold/10 p-8 text-fg">
+          <span className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-fg">PLAIN-LANGUAGE RISK NOTE</span>
+          <p className="mt-4 text-[19px] font-medium leading-relaxed">{RISK_NOTE}</p>
         </div>
 
         <div>
-          <h2 className="font-display text-[40px] font-extrabold">How to play</h2>
+          <h2 className="font-display text-[40px] font-semibold">How to play</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {HOWTO.map((s) => (
               <Panel key={s.n} shadow={false}>
-                <div className="grid h-14 w-14 rotate-[-4deg] place-items-center rounded-2xl border-4 border-navy bg-sun font-display text-[26px] font-extrabold shadow-[0_5px_0_#13204A]">
+                <div className="grid h-14 w-14 rotate-[-4deg] place-items-center rounded-2xl border border-line bg-gold/15 font-display text-[26px] font-semibold">
                   {s.n}
                 </div>
-                <h3 className="mt-4 font-display text-[22px] font-extrabold">{s.title}</h3>
-                <p className="mt-2 font-semibold text-navy/75">{s.body}</p>
+                <h3 className="mt-4 font-display text-[22px] font-semibold">{s.title}</h3>
+                <p className="mt-2 font-semibold text-sub">{s.body}</p>
               </Panel>
             ))}
           </div>
         </div>
 
         <div>
-          <h2 className="font-display text-[40px] font-extrabold">FAQ</h2>
+          <h2 className="font-display text-[40px] font-semibold">FAQ</h2>
           <div className="mt-6 space-y-4">
             {FAQ.map((f) => (
-              <details key={f.q} className="group rounded-[28px] border-4 border-navy bg-white p-6 open:shadow-[0_8px_0_#13204A]">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-[20px] font-extrabold">
+              <details key={f.q} className="group rounded-2xl border border-line bg-card p-6">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-[20px] font-semibold">
                   {f.q}
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-[3px] border-navy bg-sky transition group-open:rotate-45" aria-hidden="true">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-card-2 transition group-open:rotate-45" aria-hidden="true">
                     +
                   </span>
                 </summary>
-                <p className="mt-3 font-semibold text-navy/80">{f.a}</p>
+                <p className="mt-3 font-semibold text-sub">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
 
-        <Panel tone="skyPale" shadow={false}>
-          <h2 className="font-display text-[24px] font-extrabold">Safety promises</h2>
-          <ul className="mt-3 grid gap-2 font-bold text-navy/80 md:grid-cols-2">
-            <li>★ We never ask for private keys, seed phrases, or pairing codes.</li>
-            <li>★ We never sign for you or skip your wallet&apos;s confirmation.</li>
-            <li>★ Token approvals are exact amounts, never unlimited.</li>
-            <li>★ No server holds keys or funds. The site only reads public chain data.</li>
+        <Panel tone="raised" shadow={false}>
+          <h2 className="font-display text-[24px] font-semibold">Safety promises</h2>
+          <ul className="mt-3 grid gap-2 font-medium text-sub md:grid-cols-2">
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />We never ask for private keys, seed phrases, or pairing codes.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />We never sign for you or skip your wallet&apos;s confirmation.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Token approvals are exact amounts, never unlimited.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />No server holds keys or funds. The site only reads public chain data.</li>
           </ul>
-          <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-navy/70">
+          <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-sub">
             <span>Ready?</span>
-            <Link href="/mint" className="inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-candy">
+            <Link href="/mint" className="inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-gold">
               Go to Mint
             </Link>
             <span>or</span>
-            <Link href="/draw" className="inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-candy">
+            <Link href="/draw" className="inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-gold">
               see the draw
             </Link>
             <span className="-ml-2">.</span>

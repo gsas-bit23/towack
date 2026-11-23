@@ -51,7 +51,7 @@ export function ReferralDesk() {
       <div className="col-span-12 space-y-8 lg:col-span-7">
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[28px] font-extrabold">Your referral link</h2>
+            <h2 className="font-display text-[28px] font-semibold">Your referral link</h2>
             <ChainNote />
           </div>
           <div className="mt-5">
@@ -80,22 +80,22 @@ export function ReferralDesk() {
           </div>
         </Panel>
 
-        <Panel tone="skyPale" shadow={false}>
-          <h2 className="font-display text-[24px] font-extrabold">How referrals work</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-6 font-bold text-navy/80">
-            <li>Your link carries your wallet address. Friends who open it mint with <code className="rounded bg-white px-1">mint(your address)</code>.</li>
+        <Panel tone="raised" shadow={false}>
+          <h2 className="font-display text-[24px] font-semibold">How referrals work</h2>
+          <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
+            <li>Your link carries your wallet address. Friends who open it mint with <code className="rounded bg-card px-1">mint(your address)</code>.</li>
             <li>Each referred paid mint credits you 0.005 BNB (5% of the 0.1 BNB price). It comes out of the share that would otherwise go to LP / Draw V2, so your friend pays nothing extra.</li>
             <li>Your wallet must hold an Agent ID, and you can&apos;t refer yourself: the contract rejects both.</li>
-            <li>Claim any time with <code className="rounded bg-white px-1">claimReferral()</code>. Referral BNB has no deadline and is never swept.</li>
+            <li>Claim any time with <code className="rounded bg-card px-1">claimReferral()</code>. Referral BNB has no deadline and is never swept.</li>
             <li>Paid mint only. Genesis 300 has no referrals.</li>
           </ol>
-          <p className="mt-4 font-semibold text-navy/70">Minting is a game of chance, not an investment. Only share with friends who understand that.</p>
+          <p className="mt-4 font-semibold text-sub">Minting is a game of chance, not an investment. Only share with friends who understand that.</p>
         </Panel>
       </div>
 
       <div className="col-span-12 space-y-8 lg:col-span-5">
         <Panel>
-          <h2 className="font-display text-[28px] font-extrabold">Your referrals</h2>
+          <h2 className="font-display text-[28px] font-semibold">Your referrals</h2>
           <div className="mt-5">
             <NeedsContracts keys={["launch"]}>
               <NeedsWallet why="Connect to see your referrals and claim." agent="referralClaim">
@@ -136,22 +136,22 @@ function ShareBox({ origin, account, handle }: { origin: string; account: Addres
   return (
     <div>
       {agentBal === 0n ? (
-        <p className="mb-4 rounded-2xl border-[3px] border-navy bg-candy-pale px-4 py-3 font-bold">
-          <Pill tone="candy">NO AGENT ID</Pill> This wallet holds no Agent ID, so mints naming it would revert. Get an Agent ID in the official
+        <p className="mb-4 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
+          <Pill tone="gold">NO AGENT ID</Pill> This wallet holds no Agent ID, so mints naming it would revert. Get an Agent ID in the official
           Binance App (mainnet) first.
         </p>
       ) : null}
-      <div className="rounded-2xl border-[3px] border-navy bg-ice px-4 py-3 font-mono text-[13px] font-bold break-all" aria-label="Your referral link">
+      <div className="rounded-2xl border border-line bg-card-2 px-4 py-3 font-mono text-[13px] font-medium break-all" aria-label="Your referral link">
         {link || "…"}
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button tone="sun" size="sm" onClick={copy} disabled={!link}>
+        <Button tone="soft" size="sm" onClick={copy} disabled={!link}>
           {copied === "ok" ? "Copied ✓" : copied === "fail" ? "Copy failed: select the text" : "Copy link"}
         </Button>
-        {handle ? <Pill tone="navy">{handle}</Pill> : null}
+        {handle ? <Pill tone="neutral">{handle}</Pill> : null}
       </div>
-      <h3 className="mt-6 font-display text-[20px] font-extrabold">For friends with an AI agent</h3>
-      <p className="mt-1 font-bold text-navy/70">Send them this ready-made instruction. It mints on mainnet (chain 56) with your wallet as referrer.</p>
+      <h3 className="mt-6 font-display text-[20px] font-semibold">For friends with an AI agent</h3>
+      <p className="mt-1 font-medium text-sub">Send them this ready-made instruction. It mints on mainnet (chain 56) with your wallet as referrer.</p>
       <AgentPathPanel flow="launch" referral={{ address: account, handle }} className="mt-3" />
     </div>
   );
@@ -190,7 +190,7 @@ function Dashboard({ account }: { account: Address }) {
 
   if (unsupported) {
     return (
-      <p className="rounded-2xl border-[3px] border-dashed border-navy bg-sun-pale px-4 py-3 font-bold">
+      <p className="rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-3 font-medium">
         The launch contract on this network was deployed before referrals. Referral stats and claims go live with the next launch deploy.
       </p>
     );
@@ -204,25 +204,25 @@ function Dashboard({ account }: { account: Address }) {
         <Stat label="Lifetime earned" value={earned !== undefined ? `${fmt18(earned, 4)} BNB` : "—"} />
         <Stat label="Claimable" value={unclaimed !== undefined ? `${fmt18(unclaimed, 4)} BNB` : "—"} sub="never expires" className="sm:col-span-2 lg:col-span-1 xl:col-span-2" />
       </div>
-      <Button tone="candy" size="lg" className="mt-6 w-full" disabled={!unclaimed || tx.busy} onClick={claim}>
+      <Button tone="gold" size="lg" className="mt-6 w-full" disabled={!unclaimed || tx.busy} onClick={claim}>
         {tx.busy ? "Check your wallet…" : unclaimed ? `Claim ${fmt18(unclaimed, 4)} BNB` : "Nothing to claim yet"}
       </Button>
-      <p className="mt-3 text-center text-sm font-bold text-navy/60">Your wallet will ask you to confirm. We never sign for you.</p>
+      <p className="mt-3 text-center text-sm font-medium text-muted">Your wallet will ask you to confirm. We never sign for you.</p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       <AgentPathToggle flow="referralClaim" className="mt-4" />
 
-      <h3 className="mt-8 font-display text-[20px] font-extrabold">Friends who minted</h3>
+      <h3 className="mt-8 font-display text-[20px] font-semibold">Friends who minted</h3>
       {referees && referees.length > 0 ? (
         <ul className="mt-3 max-h-[280px] space-y-2 overflow-auto pr-1">
           {referees.map((r, i) => (
-            <li key={r} className="flex items-center justify-between gap-3 rounded-2xl border-[3px] border-navy bg-ice px-4 py-2 font-bold">
-              <span className="text-sm text-navy/60">#{i + 1}</span>
+            <li key={r} className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card-2 px-4 py-2 font-medium">
+              <span className="text-sm text-muted">#{i + 1}</span>
               <AddressLink address={r} />
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 font-bold text-navy/60">{referees ? "No referred mints yet. Share your link!" : "—"}</p>
+        <p className="mt-2 font-medium text-muted">{referees ? "No referred mints yet. Share your link!" : "—"}</p>
       )}
     </div>
   );
