@@ -16,25 +16,29 @@ export type Prize = {
   ink: string; // text colour on the slice
 };
 
-const CANDY = "#FF4FA3";
-const SKY = "#1FC6F2";
-const SUN = "#FFCD2E";
-const NAVY = "#13204A";
-const WHITE = "#FFFFFF";
-const ICE = "#BFEFFF";
+const SLATE = "#2B3139"; // Atlas slate
+const STEEL = "#3A414B"; // Atlas steel
+const GOLD = "#F0B90B"; // Atlas gold
+const CARD2 = "#1D2229"; // Atlas card-2
+const CARD = "#161A20"; // Atlas card
+const TEXT = "#EAECEF";
+const ON_GOLD = "#181A20";
+const MUTED = "#8B94A3";
+const GOLD_DIM = "#4A3C10"; // muted gold slab for mid tiers
+const GOLD_INK = "#FCD535";
 
 export const PRIZES: readonly Prize[] = [
-  { id: 0, label: "Full refund", wheel: "FULL", kind: "bnb", slots: 500, amount: "0.095 BNB back", jackpot: true, fill: SUN, ink: NAVY },
-  { id: 1, label: "75% refund", wheel: "75%", kind: "bnb", slots: 600, amount: "0.07125 BNB back", jackpot: false, fill: CANDY, ink: WHITE },
-  { id: 2, label: "50% refund", wheel: "50%", kind: "bnb", slots: 800, amount: "0.0475 BNB back", jackpot: false, fill: SKY, ink: NAVY },
-  { id: 3, label: "25% refund", wheel: "25%", kind: "bnb", slots: 1600, amount: "0.02375 BNB back", jackpot: false, fill: WHITE, ink: NAVY },
-  { id: 4, label: "5× TWAK", wheel: "5×", kind: "bonus", slots: 20, amount: "+320,000 TWAK", jackpot: true, fill: NAVY, ink: SUN },
-  { id: 5, label: "3× TWAK", wheel: "3×", kind: "bonus", slots: 40, amount: "+160,000 TWAK", jackpot: true, fill: CANDY, ink: WHITE },
-  { id: 6, label: "2× TWAK", wheel: "2×", kind: "bonus", slots: 80, amount: "+80,000 TWAK", jackpot: false, fill: SUN, ink: NAVY },
-  { id: 7, label: "1.5× TWAK", wheel: "1.5×", kind: "bonus", slots: 160, amount: "+40,000 TWAK", jackpot: false, fill: SKY, ink: NAVY },
-  { id: 8, label: "1.25× TWAK", wheel: "1.25×", kind: "bonus", slots: 320, amount: "+20,000 TWAK", jackpot: false, fill: CANDY, ink: WHITE },
-  { id: 9, label: "1.1× TWAK", wheel: "1.1×", kind: "bonus", slots: 400, amount: "+8,000 TWAK", jackpot: false, fill: SUN, ink: NAVY },
-  { id: 10, label: "Better luck next time", wheel: "TRY AGAIN", kind: "none", slots: 480, amount: "no prize", jackpot: false, fill: ICE, ink: NAVY },
+  { id: 0, label: "Full refund", wheel: "FULL", kind: "bnb", slots: 500, amount: "0.095 BNB back", jackpot: true, fill: GOLD, ink: ON_GOLD },
+  { id: 1, label: "75% refund", wheel: "75%", kind: "bnb", slots: 600, amount: "0.07125 BNB back", jackpot: false, fill: SLATE, ink: TEXT },
+  { id: 2, label: "50% refund", wheel: "50%", kind: "bnb", slots: 800, amount: "0.0475 BNB back", jackpot: false, fill: STEEL, ink: TEXT },
+  { id: 3, label: "25% refund", wheel: "25%", kind: "bnb", slots: 1600, amount: "0.02375 BNB back", jackpot: false, fill: CARD2, ink: TEXT },
+  { id: 4, label: "5× TWAK", wheel: "5×", kind: "bonus", slots: 20, amount: "+320,000 TWAK", jackpot: true, fill: GOLD, ink: ON_GOLD },
+  { id: 5, label: "3× TWAK", wheel: "3×", kind: "bonus", slots: 40, amount: "+160,000 TWAK", jackpot: true, fill: SLATE, ink: TEXT },
+  { id: 6, label: "2× TWAK", wheel: "2×", kind: "bonus", slots: 80, amount: "+80,000 TWAK", jackpot: false, fill: GOLD_DIM, ink: GOLD_INK },
+  { id: 7, label: "1.5× TWAK", wheel: "1.5×", kind: "bonus", slots: 160, amount: "+40,000 TWAK", jackpot: false, fill: STEEL, ink: TEXT },
+  { id: 8, label: "1.25× TWAK", wheel: "1.25×", kind: "bonus", slots: 320, amount: "+20,000 TWAK", jackpot: false, fill: SLATE, ink: TEXT },
+  { id: 9, label: "1.1× TWAK", wheel: "1.1×", kind: "bonus", slots: 400, amount: "+8,000 TWAK", jackpot: false, fill: GOLD_DIM, ink: GOLD_INK },
+  { id: 10, label: "Better luck next time", wheel: "TRY AGAIN", kind: "none", slots: 480, amount: "no prize", jackpot: false, fill: CARD, ink: MUTED },
 ] as const;
 
 export const DECK_SIZE = 5000;

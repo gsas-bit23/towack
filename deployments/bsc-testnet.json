@@ -4,6 +4,8 @@
   "explorer": "https://testnet.bscscan.com",
   "deployer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
   "deployedAtPkt": "2026-11-22 04:01:27 PKT",
+  "liveStack": "fullStackReferrals",
+  "liveStackNote": "The LIVE testnet stack used by the frontend is the \"fullStackReferrals\" key below (same addresses as web/src/config/addresses.json[\"97\"]; official Chainlink VRF v2.5 direct-funding wrapper, no subscription). The top-level \"deployedAtPkt\", \"replaces\", \"contracts\", \"notes\", \"transactions\", \"smokeTests\" and \"verification\" fields describe the SUPERSEDED early mock-VRF stack (2026-11-22 04:01:27 PKT) and are kept as history only.",
   "replaces": {
     "note": "Second testnet deploy of the instant per-mint VRF prize-wheel TowackLaunch. Supersedes the first single-seed deploy.",
     "previousDeployedAtPkt": "2026-11-22 03:11:07 PKT",
@@ -25,6 +27,7 @@
     "pancakeFactory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17"
   },
   "notes": [
+    "SUPERSEDED: this top-level \"contracts\" block is the early mock-VRF stack (history only). The live stack is \"fullStackReferrals\" (see \"liveStack\").",
     "MockAgentId and MockVRFCoordinator are testnet-only (VRF is owner-fulfilled, not Chainlink).",
     "Team/seasons/ecosystem/POL/dev wallets defaulted to the deployer.",
     "Mint window started at deploy; default duration is 3 days.",

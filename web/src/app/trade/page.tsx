@@ -14,9 +14,9 @@ export default function TradePage() {
       </PageHeader>
       <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">
         <TradeDesk />
-        <p className="mt-8 rounded-3xl border-[3px] border-navy bg-white px-5 py-4 font-bold text-navy/80">
+        <p className="mt-8 rounded-2xl border border-line bg-card px-5 py-4 font-medium text-sub">
           Swapping other tokens or bridging to another chain?{" "}
-          <Link href="/swap" className="underline decoration-[3px] underline-offset-4 hover:text-candy">
+          <Link href="/swap" className="underline decoration-[3px] underline-offset-4 hover:text-gold">
             Swap &amp; bridge
           </Link>{" "}
           compares PancakeSwap, Uniswap and Relay routes (no Towack rebates there).

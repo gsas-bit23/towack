@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="29" fill="#FFCD2E" stroke="#13204A" stroke-width="5"/>
-  <circle cx="32" cy="32" r="21" fill="#1FC6F2" stroke="#13204A" stroke-width="3"/>
-  <text x="32" y="42" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" stroke="#13204A" stroke-width="1.5">T</text>
+  <rect width="64" height="64" rx="14" fill="#0B0E11"/>
+  <circle cx="32" cy="32" r="22" fill="none" stroke="#2E353F" stroke-width="5"/>
+  <path d="M32 10a22 22 0 0 1 19 33" fill="none" stroke="#F0B90B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M22 23h20v5h-7.5v15h-5V28H22z" fill="#EAECEF"/>
 </svg>

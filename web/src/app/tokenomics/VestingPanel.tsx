@@ -16,11 +16,11 @@ const VEST_DAYS = 1460;
 function Schedule() {
   return (
     <div className="mt-5">
-      <div className="flex h-10 overflow-hidden rounded-2xl border-[3px] border-navy" aria-hidden="true">
-        <div className="checker grid place-items-center bg-ice opacity-60" style={{ width: "20%" }} />
-        <div className="bg-gradient-to-r from-sky-pale to-sky" style={{ width: "80%" }} />
+      <div className="flex h-10 overflow-hidden rounded-2xl border border-line" aria-hidden="true">
+        <div className="checker grid place-items-center bg-card-2 opacity-60" style={{ width: "20%" }} />
+        <div className="bg-gradient-to-r from-card-2 to-card" style={{ width: "80%" }} />
       </div>
-      <div className="mt-2 flex justify-between text-[13px] font-extrabold text-navy/60">
+      <div className="mt-2 flex justify-between text-[13px] font-semibold text-muted">
         <span>Deploy</span>
         <span>Cliff (1 year) — nothing unlocks</span>
         <span>then daily for 4 years →</span>
@@ -67,10 +67,10 @@ export function VestingPanel() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-extrabold">Team vesting · 50M TWAK (5%)</h2>
-        {isBeneficiary ? <Pill tone="candy">YOU ARE THE BENEFICIARY</Pill> : null}
+        <h2 className="font-display text-[28px] font-semibold">Team vesting · 50M TWAK (5%)</h2>
+        {isBeneficiary ? <Pill tone="gold">YOU ARE THE BENEFICIARY</Pill> : null}
       </div>
-      <p className="mt-1 font-semibold text-navy/70">
+      <p className="mt-1 font-semibold text-sub">
         Start = contract deploy. {CLIFF_DAYS}-day cliff with nothing unlocked, then linear daily over {VEST_DAYS} days. No listing unlock, no owner, no
         revocation. The beneficiary is fixed.
       </p>
@@ -87,16 +87,16 @@ export function VestingPanel() {
             <Stat label="Vested" value={`${fmt18(vested, 0)}`} sub={`${pct.toFixed(2)}% of 50M`} />
             <Stat label="Claimable now" value={fmt18(releasable, 0)} sub={`released ${fmt18(released, 0)}`} />
           </div>
-          <div className="mt-4 h-6 overflow-hidden rounded-full border-[3px] border-navy bg-ice" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Vested">
-            <div className="h-full bg-sky" style={{ width: `${pct}%` }} />
+          <div className="mt-4 h-6 overflow-hidden rounded-full border border-line bg-card-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Vested">
+            <div className="h-full w-full origin-left bg-gold" style={{ transform: `scaleX(${pct / 100})` }} />
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-            <div className="font-bold text-navy/70">
+            <div className="font-medium text-sub">
               Beneficiary: <AddressLink address={beneficiary} /> · Fully vested {fullAt ? fmtDate(fullAt).split(",").slice(0, 2).join(",") : "—"}
             </div>
             {account ? (
               <Button
-                tone={isBeneficiary ? "candy" : "white"}
+                tone={isBeneficiary ? "gold" : "line"}
                 size="sm"
                 disabled={!releasable || releasable === 0n || bound === false || tx.busy}
                 onClick={() =>
@@ -108,7 +108,7 @@ export function VestingPanel() {
             ) : null}
           </div>
           {account && !isBeneficiary ? (
-            <p className="mt-2 text-sm font-semibold text-navy/60">You&apos;re not the beneficiary. Anyone may trigger a release, but tokens only ever go to the beneficiary.</p>
+            <p className="mt-2 text-sm font-semibold text-muted">You&apos;re not the beneficiary. Anyone may trigger a release, but tokens only ever go to the beneficiary.</p>
           ) : null}
           <TxNotice state={tx.state} onClose={tx.reset} />
         </>

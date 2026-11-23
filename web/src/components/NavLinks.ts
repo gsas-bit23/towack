@@ -10,3 +10,6 @@ export const NAV_LINKS = [
   { href: "/lottery", label: "Lottery" },
   { href: "/docs", label: "Docs" },
 ] as const;
+
+/** Desktop pill row shows the first PRIMARY_COUNT links; the rest live under "More" so the bar never overflows. */
+export const PRIMARY_COUNT = 6;

@@ -1,7 +1,7 @@
 "use client";
 
 import "@rainbow-me/rainbowkit/styles.css";
-import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { MotionConfig } from "motion/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
@@ -10,17 +10,34 @@ import { wagmiConfig } from "@/config/wagmi";
 import { ViewChainProvider } from "@/lib/chain";
 import { DEFAULT_CHAIN_ID } from "@/config/chains";
 
-const theme = lightTheme({
-  accentColor: "#FF4FA3",
-  accentColorForeground: "#FFFFFF",
-  borderRadius: "large",
+// RainbowKit in the Atlas palette: dark surfaces, hairline borders, gold accent.
+const theme = darkTheme({
+  accentColor: "#F0B90B",
+  accentColorForeground: "#181A20",
+  borderRadius: "medium",
   fontStack: "system",
   overlayBlur: "small",
 });
-theme.colors.modalBackground = "#EEF8FF";
-theme.colors.modalText = "#13204A";
-theme.colors.modalBorder = "#13204A";
-theme.fonts.body = "var(--font-nunito), system-ui, sans-serif";
+theme.colors.modalBackground = "#161A20";
+theme.colors.modalBorder = "#2E353F";
+theme.colors.modalText = "#EAECEF";
+theme.colors.modalTextSecondary = "#8B94A3";
+theme.colors.modalTextDim = "#6B7380";
+theme.colors.generalBorder = "#232931";
+theme.colors.generalBorderDim = "#1D2229";
+theme.colors.menuItemBackground = "#1D2229";
+theme.colors.actionButtonSecondaryBackground = "#1D2229";
+theme.colors.closeButton = "#B7BDC6";
+theme.colors.closeButtonBackground = "#1D2229";
+theme.colors.connectButtonBackground = "#161A20";
+theme.colors.connectButtonInnerBackground = "#1D2229";
+theme.colors.connectButtonText = "#EAECEF";
+theme.colors.profileForeground = "#161A20";
+theme.colors.modalBackdrop = "rgba(5, 7, 9, 0.72)";
+theme.colors.error = "#F6465D";
+theme.colors.connectionIndicator = "#0ECB81";
+theme.fonts.body = "var(--font-inter), ui-sans-serif, system-ui, sans-serif";
+theme.shadows.dialog = "0 24px 60px -20px rgba(0, 0, 0, 0.8)";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(

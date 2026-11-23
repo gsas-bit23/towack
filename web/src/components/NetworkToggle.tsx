@@ -8,14 +8,16 @@ const OPTIONS: { id: SupportedChainId; label: string }[] = [
   { id: 56, label: "Mainnet" },
 ];
 
+/** BSC network switch styled as the Atlas network pill (gold dot = active chain). */
 export function NetworkToggle({ className = "hidden sm:flex" }: { className?: string }) {
   const { chainId, selectChain, isSwitching, wrongNetwork } = useTowack();
   return (
     <div
       role="radiogroup"
       aria-label="Network"
-      className={`items-center rounded-full border-[3px] border-navy bg-white p-0.5 text-[13px] font-black ${className}`}
+      className={`h-9 items-center gap-0.5 rounded-full border border-line-2 p-0.5 text-[13px] font-medium ${className}`}
     >
+      <span className="px-2 text-[12px] font-semibold text-sub">BSC</span>
       {OPTIONS.map((o) => {
         const active = !wrongNetwork && chainId === o.id;
         return (
@@ -26,11 +28,11 @@ export function NetworkToggle({ className = "hidden sm:flex" }: { className?: st
             aria-checked={active}
             disabled={isSwitching}
             onClick={() => selectChain(o.id)}
-            className={`flex min-h-10 items-center gap-1.5 rounded-full px-3 transition ${
-              active ? (o.id === 97 ? "bg-sky text-navy" : "bg-sun text-navy") : "text-navy/60 hover:text-navy"
+            className={`flex h-full items-center gap-1.5 rounded-full px-2.5 transition-colors ${
+              active ? "bg-card-2 text-fg" : "text-muted hover:text-fg"
             }`}
           >
-            <span className={`h-2 w-2 rounded-full ${active ? "bg-navy" : "bg-navy/25"}`} aria-hidden="true" />
+            <span className={`h-[7px] w-[7px] rounded-full ${active ? (o.id === 56 ? "bg-gold" : "bg-up") : "bg-line-2"}`} aria-hidden="true" />
             {o.label}
           </button>
         );

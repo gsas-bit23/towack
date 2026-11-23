@@ -1,22 +1,27 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Tone = "candy" | "white" | "sun" | "sky" | "navy";
+// Atlas primitives. Gold is the single primary action per view; everything else is line / soft.
+
+export type Tone = "gold" | "line" | "soft" | "danger";
 const TONES: Record<Tone, string> = {
-  candy: "bg-candy text-white",
-  white: "bg-white text-navy",
-  sun: "bg-sun text-navy",
-  sky: "bg-sky text-navy",
-  navy: "bg-navy text-white",
+  gold: "bg-gold text-on-gold hover:bg-gold-2 hover:shadow-[0_8px_24px_-10px_rgba(240,185,11,.65)]",
+  line: "border-line-2 bg-transparent text-fg hover:border-[#4A525E] hover:bg-card",
+  soft: "bg-card-2 text-fg hover:bg-[#262C34]",
+  danger: "border-down/40 bg-down/10 text-down hover:bg-down/15",
 };
 
 const BTN =
-  "press inline-flex items-center justify-center gap-2 rounded-full font-display font-extrabold border-4 border-navy shadow-[0_8px_0_#13204A] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-[0_4px_0_#13204A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sun";
+  "press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border border-transparent font-semibold disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
-const SIZES = { lg: "text-[21px] px-10 py-5", md: "text-[17px] px-7 py-3.5", sm: "text-[14px] px-5 py-2.5 shadow-[0_5px_0_#13204A]" };
+const SIZES = {
+  lg: "h-[52px] rounded-xl px-6 text-[15.5px]",
+  md: "h-11 px-5 text-[14.5px]",
+  sm: "h-9 px-4 text-[13.5px]",
+};
 
 export function Button({
-  tone = "candy",
+  tone = "gold",
   size = "md",
   className = "",
   ...rest
@@ -26,7 +31,7 @@ export function Button({
 
 export function ButtonLink({
   href,
-  tone = "candy",
+  tone = "gold",
   size = "md",
   className = "",
   children,
@@ -44,93 +49,80 @@ export function ButtonLink({
   );
 }
 
+export type PanelTone = "card" | "raised" | "gold" | "down" | "flat";
+
 export function Panel({
   children,
   className = "",
-  tone = "white",
-  shadow = true,
+  tone = "card",
+  shadow = false,
 }: {
   children: ReactNode;
   className?: string;
-  tone?: "white" | "candyPale" | "skyPale" | "sunPale" | "navy" | "ice";
+  tone?: PanelTone;
+  /** featured: adds the gold hairline across the top edge */
   shadow?: boolean;
 }) {
   const bg = {
-    white: "bg-white",
-    candyPale: "bg-candy-pale",
-    skyPale: "bg-sky-pale",
-    sunPale: "bg-sun-pale",
-    navy: "bg-navy text-white",
-    ice: "bg-ice",
+    card: "bg-card border-line",
+    raised: "bg-card-2 border-line-2",
+    gold: "bg-gold/5 border-gold/20",
+    down: "bg-down/5 border-down/25",
+    flat: "bg-surface border-line",
+  }[tone];
+  return <div className={`min-w-0 rounded-2xl border p-5 sm:p-6 ${bg} ${shadow ? "gold-hairline" : ""} ${className}`}>{children}</div>;
+}
+
+export function Kicker({ children, className = "text-muted" }: { children: ReactNode; className?: string }) {
+  return <div className={`inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] ${className}`}>{children}</div>;
+}
+
+export type PillTone = "neutral" | "gold" | "up" | "down" | "line";
+
+export function Pill({ children, tone = "neutral", className = "" }: { children: ReactNode; tone?: PillTone; className?: string }) {
+  const t = {
+    neutral: "border-line-2 bg-card-2 text-sub",
+    gold: "border-gold/45 bg-gold/[.06] text-gold",
+    up: "border-up/40 bg-up/10 text-up",
+    down: "border-down/40 bg-down/10 text-down",
+    line: "border-line-2 text-muted",
   }[tone];
   return (
-    <div className={`min-w-0 rounded-[30px] border-4 border-navy p-5 sm:rounded-[36px] sm:p-7 ${bg} ${shadow ? "shadow-[0_10px_0_#13204A]" : ""} ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[11px] font-semibold uppercase tracking-[.08em] ${t} ${className}`}>
       {children}
-    </div>
+    </span>
   );
-}
-
-export function Kicker({ children, className = "text-candy" }: { children: ReactNode; className?: string }) {
-  return <div className={`font-display font-extrabold text-[15px] uppercase tracking-[.25em] ${className}`}>{children}</div>;
-}
-
-export function Pill({
-  children,
-  tone = "navy",
-  className = "",
-}: {
-  children: ReactNode;
-  tone?: "navy" | "sun" | "sky" | "candy" | "white" | "ice";
-  className?: string;
-}) {
-  const t = {
-    navy: "bg-navy text-white",
-    sun: "bg-sun text-navy",
-    sky: "bg-sky text-navy",
-    candy: "bg-candy text-white",
-    white: "bg-white text-navy border-[3px] border-navy",
-    ice: "bg-ice text-navy border-2 border-navy",
-  }[tone];
-  return <span className={`inline-flex items-center gap-2 rounded-full font-black text-xs px-3 py-1 ${t} ${className}`}>{children}</span>;
 }
 
 export function Stat({ label, value, sub, className = "" }: { label: string; value: ReactNode; sub?: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-3xl bg-ice border-[3px] border-navy px-5 py-4 ${className}`}>
-      <div className="text-[13px] font-black uppercase tracking-widest text-navy/60">{label}</div>
-      <div className="mt-1 font-display font-extrabold text-[26px] leading-tight break-words">{value}</div>
-      {sub ? <div className="mt-0.5 text-sm font-bold text-navy/60">{sub}</div> : null}
+    <div className={`min-w-0 rounded-xl bg-card-2 px-4 py-3.5 ${className}`}>
+      <div className="text-[12.5px] font-medium text-muted">{label}</div>
+      <div className="mt-1 break-words font-mono text-[22px] font-medium leading-tight tracking-tight">{value}</div>
+      {sub ? <div className="mt-0.5 text-[12.5px] text-dim">{sub}</div> : null}
     </div>
   );
 }
 
-export function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: ReactNode;
-  children: ReactNode;
-}) {
+export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[13px] font-black uppercase tracking-widest text-navy/70">{label}</span>
+      <span className="block text-[13px] font-medium text-muted">{label}</span>
       <div className="mt-1.5">{children}</div>
-      {hint ? <span className="mt-1 block text-sm font-semibold text-navy/60">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-[13px] text-dim">{hint}</span> : null}
     </label>
   );
 }
 
 export const inputClass =
-  "w-full rounded-2xl border-[3px] border-navy bg-white px-4 py-3 font-display font-extrabold text-[20px] text-navy placeholder:text-navy/30 focus:outline-none focus:ring-4 focus:ring-sky";
+  "w-full rounded-xl border border-line-2 bg-card-2 px-4 py-3 font-mono text-[20px] font-medium text-fg placeholder:text-dim transition-colors hover:border-gold/50 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25";
 
 export function Check({ ok, children }: { ok: boolean | undefined; children: ReactNode }) {
   const icon = ok === undefined ? "…" : ok ? "✓" : "✕";
-  const color = ok === undefined ? "bg-ice text-navy" : ok ? "bg-sky text-navy" : "bg-candy text-white";
+  const color = ok === undefined ? "border-line-2 text-muted" : ok ? "border-up/40 bg-up/10 text-up" : "border-down/40 bg-down/10 text-down";
   return (
-    <li className="flex items-start gap-3 font-bold">
-      <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border-[3px] border-navy text-sm font-black ${color}`} aria-hidden="true">
+    <li className="flex items-start gap-3 text-sub">
+      <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[12px] font-semibold ${color}`} aria-hidden="true">
         {icon}
       </span>
       <span>{children}</span>
@@ -138,38 +130,18 @@ export function Check({ ok, children }: { ok: boolean | undefined; children: Rea
   );
 }
 
-export function PageHeader({
-  kicker,
-  title,
-  children,
-  tone = "sky",
-  art,
-}: {
-  kicker: string;
-  title: ReactNode;
-  children?: ReactNode;
-  tone?: "sky" | "candy" | "sun";
-  art?: ReactNode;
-}) {
-  const bg = { sky: "bg-sky", candy: "bg-candy", sun: "bg-sun" }[tone];
-  const text = tone === "sun" ? "text-navy" : "text-white";
+/** Atlas page header: eyebrow, large title, lead. `art` renders behind on the right (decorative). */
+export function PageHeader({ kicker, title, children, art }: { kicker: string; title: ReactNode; children?: ReactNode; art?: ReactNode }) {
   return (
-    <section className="px-4 pt-4 pb-6 sm:px-6">
-      <div className={`relative mx-auto max-w-[1220px] overflow-hidden rounded-[36px] border-[6px] border-navy ${bg} px-5 py-10 shadow-[0_12px_0_#13204A] sm:rounded-[48px] sm:px-8 sm:py-12 md:px-12`}>
-        {art}
-        <div className="relative">
-          <div className="drop inline-flex items-center gap-2 rounded-full bg-navy px-5 py-2 text-sm font-extrabold text-white">
-            <span className="h-2 w-2 rounded-full bg-sun" />
-            {kicker}
-          </div>
-          <h1
-            className={`drop dl1 mt-5 break-words font-display text-[38px] font-extrabold leading-[.95] sm:text-[44px] md:text-[64px] ${text}`}
-            style={{ textShadow: tone === "sun" ? undefined : "0 5px 0 #13204A" }}
-          >
-            {title}
-          </h1>
-          {children ? <div className="drop dl2 mt-5 max-w-[760px] text-[17px] font-bold sm:text-[18px] leading-snug text-navy">{children}</div> : null}
-        </div>
+    <section className="relative overflow-hidden border-b border-line">
+      {art}
+      <div className="relative mx-auto max-w-[1200px] px-4 pb-8 pt-10 sm:px-8 sm:pb-10 sm:pt-12">
+        <Kicker>
+          <span className="live-dot" aria-hidden="true" />
+          {kicker}
+        </Kicker>
+        <h1 className="mt-3 max-w-[860px] break-words text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[40px] md:text-[44px]">{title}</h1>
+        {children ? <div className="mt-3 max-w-[680px] text-[15.5px] leading-relaxed text-sub sm:text-[16.5px]">{children}</div> : null}
       </div>
     </section>
   );

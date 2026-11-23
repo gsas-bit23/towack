@@ -37,7 +37,7 @@ export function DemoWheel({ size }: { size?: number }) {
       waitingNote="Demo only — no transaction, no VRF."
       actions={
         <Button
-          tone="white"
+          tone="line"
           size="sm"
           onClick={() => {
             setStatus("waiting");
@@ -80,12 +80,12 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
 
   const waitingNote = (
     <>
-      {mintIndex ? <Pill tone="sky">MINT #{mintIndex}</Pill> : null}{" "}
+      {mintIndex ? <Pill tone="neutral">MINT #{mintIndex}</Pill> : null}{" "}
       {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago. ` : ""}
       The prize is drawn on-chain from the remaining deck when the VRF callback lands.
       {canRetry ? (
         <div className="mt-3 flex justify-center">
-          <Button tone="white" size="sm" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
+          <Button tone="line" size="sm" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
             {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
           </Button>
         </div>
@@ -97,11 +97,11 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
     prize && status === "assigned" ? (
       <>
         {winsSomething && !prize.claimed ? (
-          <Button tone="candy" size="sm" disabled={tx.busy} onClick={claim}>
+          <Button tone="gold" size="sm" disabled={tx.busy} onClick={claim}>
             {tx.busy ? "Check your wallet…" : "Claim prize"}
           </Button>
         ) : null}
-        {winsSomething && prize.claimed ? <Pill tone="sun" className="border-[3px] border-navy px-4 py-2 text-sm">CLAIMED ✓</Pill> : null}
+        {winsSomething && prize.claimed ? <Pill tone="gold" className="border border-line px-4 py-2 text-sm">CLAIMED ✓</Pill> : null}
         <ShareButton prizeId={prize.prizeId} />
       </>
     ) : undefined;

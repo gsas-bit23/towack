@@ -18,12 +18,16 @@ export type GenesisPrize = {
   ink: string;
 };
 
-const CANDY = "#FF4FA3";
-const SKY = "#1FC6F2";
-const SUN = "#FFCD2E";
-const NAVY = "#13204A";
-const WHITE = "#FFFFFF";
-const ICE = "#BFEFFF";
+const SLATE = "#2B3139"; // Atlas slate
+const STEEL = "#3A414B"; // Atlas steel
+const GOLD = "#F0B90B"; // Atlas gold
+const CARD2 = "#1D2229"; // Atlas card-2
+const CARD = "#161A20"; // Atlas card
+const TEXT = "#EAECEF";
+const ON_GOLD = "#181A20";
+const MUTED = "#8B94A3";
+const GOLD_DIM = "#4A3C10"; // muted gold slab for mid tiers
+const GOLD_INK = "#FCD535";
 
 export const GENESIS_BASE = 20_000;
 export const GENESIS_CAP = 300;
@@ -45,13 +49,13 @@ const tier = (id: number, mult: string, slots: number, extra: number, jackpot: b
 });
 
 export const GENESIS_PRIZES: readonly GenesisPrize[] = [
-  tier(0, "5×", 5, 80_000, true, NAVY, SUN),
-  tier(1, "3×", 10, 40_000, true, CANDY, WHITE),
-  tier(2, "2×", 20, 20_000, false, SUN, NAVY),
-  tier(3, "1.5×", 40, 10_000, false, SKY, NAVY),
-  tier(4, "1.25×", 50, 5_000, false, CANDY, WHITE),
-  tier(5, "1.1×", 75, 2_000, false, WHITE, NAVY),
-  { id: 6, label: "No bonus", wheel: "BASE", kind: "none", slots: 100, extra: 0, total: GENESIS_BASE, amount: "base only", jackpot: false, fill: ICE, ink: NAVY },
+  tier(0, "5×", 5, 80_000, true, GOLD, ON_GOLD),
+  tier(1, "3×", 10, 40_000, true, SLATE, TEXT),
+  tier(2, "2×", 20, 20_000, false, GOLD_DIM, GOLD_INK),
+  tier(3, "1.5×", 40, 10_000, false, STEEL, TEXT),
+  tier(4, "1.25×", 50, 5_000, false, SLATE, TEXT),
+  tier(5, "1.1×", 75, 2_000, false, CARD2, TEXT),
+  { id: 6, label: "No bonus", wheel: "BASE", kind: "none", slots: 100, extra: 0, total: GENESIS_BASE, amount: "base only", jackpot: false, fill: CARD, ink: MUTED },
 ] as const;
 
 export const GENESIS_WHEEL_ORDER = [0, 3, 1, 5, 6, 4, 2] as const;

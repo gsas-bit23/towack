@@ -8,24 +8,24 @@ export const CONTRACT_KEYS = [
   "router",
   "rebateDistributor",
   "teamVesting",
-  "drawV2", // DrawV2 instant pool wheel (new stand-alone deploy)
-  "drawV2Legacy", // old skeleton DrawV2: holds the 70M + TowackLaunch's immutable BNB treasury
+  "drawV2", // DrawV2 instant pool wheel (live: VRF v2.5 wrapper, holds the ~70M, = Launch.drawV2Treasury())
+  "drawV2Legacy", // old skeleton DrawV2 from the superseded mock-VRF stack (history only)
   "timelock",
   "wbnb",
   "pancakeRouter",
   "pancakeFactory",
-  "genesis", // Genesis 300 on the OFFICIAL Chainlink VRF v2.5 coordinator
+  "genesis", // Genesis 300 on the official Chainlink VRF v2.5 direct-funding wrapper
   "genesisMock", // old Genesis on MockVRFCoordinator (closed; history only)
   "drawV2Mock", // old pool wheel on MockVRFCoordinator (5M locked, no withdraw; history only)
-  "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (the LIVE testnet Genesis + DrawV2, subscription model)
-  "vrfWrapper", // official Chainlink VRF v2.5 direct-funding wrapper (redeployed stack: Launch + Genesis + DrawV2)
-  "launchVrfMock", // MockVRFCoordinator still used by the testnet TowackLaunch (owner-fulfilled)
+  "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (reference only; the live stack calls the wrapper, no subscription)
+  "vrfWrapper", // official Chainlink VRF v2.5 direct-funding wrapper (live stack: Launch + Genesis + DrawV2)
+  "launchVrfMock", // MockVRFCoordinator from the superseded mock-VRF testnet Launch (history only)
 ] as const;
 
 /**
- * Non-address VRF metadata kept next to the address book (vrfSubId, vrfKeyHash). LEGACY: only describes the live
- * subscription-model testnet deploy. The wrapper-model contracts have no subscription and their key hash lives on
- * the wrapper; drop these once the redeploy is live.
+ * Non-address VRF metadata kept next to the address book (vrfSubId, vrfKeyHash). LEGACY: only describes the retired
+ * subscription-model testnet deploy (that subscription was cancelled). The live wrapper-model contracts have no
+ * subscription and their key hash lives on the wrapper; safe to drop.
  */
 export const VRF_META: Record<SupportedChainId, { subId?: string; keyHash?: string }> = {
   97: { subId: str(97, "vrfSubId"), keyHash: str(97, "vrfKeyHash") },

@@ -2,6 +2,7 @@
 
 **Repo:** https://github.com/gsas-bit23/towack
 **Milestone:** 2 — Phase 1 mainnet readiness + DSD-5 (`/perps`, `/swap`) integrated and QA-verified; BSC testnet (97) referrals stack rehearsed end-to-end; **BSC mainnet (56) NOT DEPLOYED — awaiting Mateen's go**.
+**Current (2026-11-23):** UI is the **Atlas** design on branch `design/atlas` (live Aster `/perps` terminal included). Randomness is the official Chainlink VRF v2.5 **direct-funding wrapper** `0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94` (user-paid per request, **no subscription**). Live testnet stack = `deployments/bsc-testnet.json` → `fullStackReferrals` (= `web/src/config/addresses.json["97"]`). `script/DeployFullStackMainnet.s.sol` exists but is **unused until Mateen says go** (see `docs/MAINNET_GO.md`); **mainnet is not deployed**. Sections below are a dated log; older entries describe the state at their own date.
 
 ## Integrated QA — Phase 2 (2026-11-23, NOT DEPLOYED TO MAINNET)
 Merged `feat/mainnet-readiness` (`d08d184`, `8865c81`, `ad56bc0`) into `feat/integrated-qa` (from `origin/main` `70cda7c` with Aster `/perps` and `/swap` spot/bridge aggregator). Never broadcast to BSC mainnet (chain 56); no `vercel --prod`.
@@ -239,7 +240,7 @@ Resumed after the 5:00 AM PKT Claude Code reset. Foundry untouched. Lint + `NEXT
 New preview (not production, SSO on): https://towack-235s5xz7h-abcd-532d.vercel.app
 
 ## Next steps (product)
-1. **Needs Mateen:** more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` for a real 0.1 official-VRF paid V1 mint (need 0.1 + ~0.0006 fee; current balance **0.004258928** tBNB).
+1. ~~**Needs Mateen:** more tBNB to `0x38A0f77Dad60B34cF5cD39305687e354696a6776` for a real 0.1 official-VRF paid V1 mint (balance was **0.004258928** tBNB on 2026-11-22).~~ Done: topped up, and the referred paid mint was rehearsed on 2026-11-23 (deployer **0.103 tBNB** after, see the referrals stack section).
 2. Optional: BscScan verification once a paid API plan covers chain 97. All eight new contracts are already Sourcify **exact_match**.
 3. Do not promote the Vercel preview to production, and do not touch mainnet, until Mateen explicitly approves.
 
@@ -257,7 +258,7 @@ Taken against a local `next dev` with `NEXT_PUBLIC_DEMO_WHEEL=1` and `?demo=whee
 - Landed (needle on 3×, result card in the full-page shot): `/tmp/towack-wheel-shots/wheel-landed.png` and `wheel-landed-full.png`
 - Home hero: `/tmp/towack-wheel-shots/home.png` (also `web/shots/home-wheel.png`)
 
-## BSC testnet deploy #2 (22 Nov 2026, 04:01:27 PKT) — current
+## BSC testnet deploy #2 (22 Nov 2026, 04:01:27 PKT) — superseded (live stack: `fullStackReferrals`)
 Broadcast of `script/DeployTestnet.s.sol` on chain 97 with `--legacy --with-gas-price 1gwei --slow --start-fresh` (nonce 16). Estimated 0.014852261 tBNB; deployer started at 0.089094202 tBNB. Full record: `deployments/bsc-testnet.json`. Explorer: https://testnet.bscscan.com
 
 Default MockAgentId + MockVRFCoordinator (testnet only; VRF is owner-fulfilled, not Chainlink). `callbackGasLimit` 300,000. Mint window: **22 Nov 2026, 04:00:56 PKT** to **25 Nov 2026, 04:00:56 PKT** (3 days). Team/dev/seasons/POL wallets defaulted to the deployer.
@@ -311,13 +312,13 @@ Smoke tests (MockAgentId):
 Verification: all nine contracts are a Sourcify **exact_match** (creation + runtime). BscScan/Etherscan verification was not submitted successfully — free Etherscan API does not cover BSC testnet.
 
 ## Frontend (web/) — 2026-11-22
-Design: Arcade Sky (mockup variant C). Next.js 16 App Router, TypeScript strict, Tailwind v4, wagmi 2 + viem + RainbowKit 2.
+Design at the time: Arcade Sky (mockup variant C), **since replaced by Atlas** (`design/atlas`). Next.js 16 App Router, TypeScript strict, Tailwind v4, wagmi 2 + viem + RainbowKit 2.
 - Routes: `/` home, `/mint`, `/draw`, `/trade`, `/rebates`, `/tokenomics` (incl. TeamVesting), `/lottery` (Draw V2 instant pool wheel), `/docs` (FAQ + risk).
 - `npm run build`: **green** (all 9 routes static). `npm run lint`: clean. Smoke-tested in headless Chrome at 1280 and 768 px, no console errors.
 - Wallets: injected always; Binance Wallet + WalletConnect when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set. Without it, Binance Wallet still works as an injected provider (extension / Binance app browser).
 - Addresses: `web/src/config/addresses.json`. Chain 97 Towack addresses are filled with the **second** testnet deploy (prize-wheel Launch). Mainnet Towack addresses remain empty (official mainnet Agent ID is prefilled). After the address update, `?demo=wheel` is off unless `NEXT_PUBLIC_DEMO_WHEEL=1`.
 - ABIs: `web/src/abi/` exported from `out/` by `web/scripts/export-abi.mjs` (`npm run abi`).
-- Safety: every write goes through the user's wallet (wagmi `writeContract`); there's no server wallet, no keys, and no auto-sign. Approvals are exact amounts only (sell / pool-wheel enter). `maxUint256` is used only as the router's UNLIMITED *daily-limit* value, never as an approval.
+- Safety (as of 2026-11-22, before `/perps`): every write goes through the user's wallet (wagmi `writeContract`); there's no server wallet, no keys, and no auto-sign. Since then, `/perps` adds one opt-in exception: a trade-only Aster API wallet (`canWithdraw=false`) stored in the browser signs Aster requests without a per-order popup (see `web/README.md`). Approvals are exact amounts only (sell / pool-wheel enter). `maxUint256` is used only as the router's UNLIMITED *daily-limit* value, never as an approval.
 - Build note: wagmi's Coinbase connector pulls optional `@x402/*` deps; they are aliased to stubs in `web/next.config.ts`.
 - CI: the Foundry workflow is unchanged; no npm job was added.
 
@@ -326,10 +327,11 @@ Design: Arcade Sky (mockup variant C). Next.js 16 App Router, TypeScript strict,
 |---|---|
 | `TowackToken` | ERC-20, 1B fixed supply minted to allocation recipients in the constructor. No tax, no owner. One-way pre-listing pair guard (see docs). |
 | `TowackLaunch` | Mint (0.1 BNB → 80k TWAK, 1 per Agent ID, cap 5000). One VRF v2.5 request per mint; the callback pops one prize from a fixed 5,000-slot deck (mutually exclusive). Close burns unsold tokens. Pull claims. Lists on Pancake v2 at the mint price with LP burned to `address(0)`. Leftover BNB goes to DrawV2. 180-day claim window, then a sweep. **No owner.** |
-| `TowackRouter` | Agent ID-gated buy/sell via Pancake v2. 1% BNB-leg fee split 50/30/20 (rebates / DrawV2 / dev). Exact approvals only. Leash daily limits: decreases immediate, raises after 24h. Records volume and fees. **No owner.** |
+| `TowackRouter` | Open buy/sell via Pancake v2 for any wallet; rebates accrue only to Agent ID wallets (non-Agent rebate share goes to the unattributed boost). 1% BNB-leg fee split 50/30/20 (rebates / DrawV2 / dev). Exact approvals only. Leash daily limits: decreases immediate, raises after 24h. Records volume and fees. **No owner.** |
 | `RebateDistributor` | 100M TWAK over 104 weekly epochs, pro-rata to router fees paid, plus the 50% BNB fee boost. Empty epochs roll over. On-chain claims. |
 | `TeamVesting` | 50M TWAK. Start = deploy. 1-year cliff (nothing unlocks at the cliff), then linear daily over 4 years. |
-| `DrawV2` | Instant pool wheel: TWAK goes into the pool, one VRF spin per entry pays 0×–10× of the entry (95% expected return), with a BNB bonus on 5×/10× (1%/2% of the free pot). Min 100 TWAK, 10× win ≤ 5% of the free pool. Pending spins reserve 10×. Owner (timelock) can only pause entries; no withdraw. |
+| `DrawV2` | Instant pool wheel: TWAK goes into the pool, one VRF spin per entry pays 0×–10× of the entry (95% expected return), with a BNB bonus on 5×/10× (up to 1%/2% of the free pot, scaled by entry size: `2% × availableBnb × amount / maxEntry`). Min 100 TWAK, 10× win ≤ 5% of the free pool. Pending spins reserve 10×. Owner (timelock) can only pause entries; no withdraw. |
+| `TowackGenesis` | Genesis 300 free mint: 300 cap, 20,000 TWAK base + one VRF spin of a TWAK-only deck, 8M TWAK budget from ecosystem, Agent ID token-id gate, caller pays only the VRF fee. Owner (Ownable2Step) can open/close and sweep surplus only. |
 | `VRFConsumerV25`, `TokenBound`, `libraries/SwapOrNot` | Shared bases. SwapOrNot is no longer used by TowackLaunch (kept with its tests). |
 | `interfaces/` | `IAgentId`, Pancake v2 factory/pair/router/WBNB, VRF v2.5 coordinator. |
 | `mocks/` | `MockAgentId` (soulbound), `MockVRFCoordinator` (owner-fulfilled, **not secure**), Pancake v2 + WBNB mocks (tests only). |
@@ -358,7 +360,9 @@ Design details: `docs/ARCHITECTURE.md`.
 - `incorrect-equality` (`== 0` checks), `uninitialized-local` (zero-initialised accumulators), `unused-return` (`pair.mint`): benign.
 
 ## Deploy status
-**Redeployed on BSC testnet (chain 97)** at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch). Official Chainlink VRF v2.5 was wired for Genesis + DrawV2 at 18:30 PKT the same day (see the section at the top and `deployments/bsc-testnet.json` → `officialVrf`). The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). Remaining balance is **0.004258928 tBNB** — not enough for a 0.1 paid mint. Paid Launch is now on official VRF (needs more tBNB to rehearse).
+**Current (2026-11-23):** the live BSC testnet (chain 97) stack is `deployments/bsc-testnet.json` → `fullStackReferrals` (deployed 2026-11-23 03:23:57 PKT; Launch `0x002E…4a2a`, Genesis `0x1f9e…E195`, DrawV2 `0xEaA8…800A`), all on the official VRF v2.5 direct-funding wrapper (no subscription), with DrawV2 holding the ~70M TWAK and `Launch.drawV2Treasury()` pointing at it. Deployer balance after the referrals rehearsal: **0.103 tBNB** (2026-11-23). The deployer key remains at `/workspace/secrets/towack-deployer.env` (mode 0600, never committed). **BSC mainnet: not deployed**; `script/DeployFullStackMainnet.s.sol` exists and is only run on Mateen's go (`docs/MAINNET_GO.md`).
+
+_History:_ redeployed on testnet at 04:01:27 PKT on 22 Nov 2026 (prize-wheel Launch); official VRF v2.5 wired for Genesis + DrawV2 at 18:30 PKT the same day (`officialVrf`); balance was 0.004258928 tBNB at that point.
 
 
 ## Known gaps / decisions to confirm
@@ -366,15 +370,15 @@ Design details: `docs/ARCHITECTURE.md`.
 - The **bind step** (deployer, set-once) exists because the token mints to contracts that must exist first. After binding, the deployer has no powers.
 - **Leash** limits are keyed by holder address, on the assumption that Agent IDs are soulbound (1 address = 1 ID). Default is unlimited; users opt in.
 - **Rebates**: epoch 0 starts at deploy. Pre-listing epochs roll into the first epoch with trades. Wash trading costs 1% per leg, but if the TWAK budget is worth more than about 50% of the fees, washing can be profitable. Consider capping per-epoch emissions relative to fees.
-- **DrawV2** pool wheel: prizes never claimed stay owed forever (they still count against availability). On testnet the 70M stays locked in the old skeleton (no withdraw) and Launch's BNB still goes there; the new pool runs on a 5M seed. The pool shrinks if players win more than the 5% edge recovers — by design it cannot go insolvent, but max entry shrinks with it. `retrySpin` has the same re-roll caveat as `retryPrize`.
+- **DrawV2** pool wheel: prizes never claimed stay owed forever (they still count against availability). On the live testnet stack (`fullStackReferrals`) the pool holds the ~70M and Launch's `drawV2Treasury()` points at it; the old skeleton (70M) and mock-VRF pool (5M) are superseded and locked (no withdraw). The pool shrinks if players win more than the 5% edge recovers — by design it cannot go insolvent, but max entry shrinks with it. `retrySpin` has the same re-roll caveat as `retryPrize`.
 - Seasons/referrals, ecosystem and POL buffer are plain recipient wallets. Use multisigs on mainnet.
 - No external audit. `retryPrize` (1h without an answer) lets anyone re-request a single minter's VRF. Chainlink advises against re-requests (a still-pending fulfilment could be front-run with a retry = re-roll). This was accepted so one stuck request can't block `finalizeListing` forever.
-- `finalizeListing` waits for **every** mint's VRF answer. If the VRF subscription runs dry, listing stalls until it is funded and `retryPrize` is called for the stuck minters. There is no owner override.
-- Each mint now pays VRF fees (subscription or native). Budget ~5,000 requests for a sellout.
+- `finalizeListing` waits for **every** mint's VRF answer. There is no subscription to run dry (each request is paid via the direct-funding wrapper); if a VRF answer never arrives, listing stalls until someone calls `retryPrize` (paying a new fee) for the stuck minters. There is no owner override.
+- Each mint's VRF fee is paid in native BNB by the minter through the wrapper (no subscription to budget).
 - The section "Test results (2026-11-22, forge 1.10.0)" below describes the old single-seed model; see the Draw V1 rewrite section above for current results.
-- The mainnet deploy script is intentionally not written.
+- The mainnet deploy script `script/DeployFullStackMainnet.s.sol` exists (keyless `dryRun()` passes) but is **not broadcast**; it runs only when Mateen says go (`docs/MAINNET_GO.md`).
 
 ## Later
-1. Paid-V1 close / finalize / router trades / rebate claim on the existing mock-VRF Launch (needs more tBNB for further 0.1 mints). Official-VRF Genesis mint + DrawV2 spin already rehearsed 18:32–18:33 PKT.
-2. Plan the full stack redeploy that puts Launch on official VRF and seeds the pool with the real 70M. Review the rebate anti-wash parameters.
+1. ~~Paid-V1 close / finalize / router trades / rebate claim on the mock-VRF Launch~~ (superseded by the 2026-11-23 rehearsals on the wrapper stacks above).
+2. ~~Full stack redeploy that puts Launch on official VRF and seeds the pool with the real 70M~~ (done: `fullStackReferrals`). Still open: review the rebate anti-wash parameters.
 3. No mainnet deploy and no hackathon form submit until Mateen asks.
