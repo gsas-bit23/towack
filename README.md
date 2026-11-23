@@ -6,6 +6,8 @@ This repository is a work in progress for the Binance Wallet × BNB Chain Agent 
 
 Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music event used a similar name; this project is unrelated).
 
+Official X: [@towackxyz](https://x.com/towackxyz).
+
 ## Layout
 - `src/TowackToken.sol`: fixed 1B supply ERC-20, no tax
 - `src/TowackGenesis.sol`: Genesis 300 free mint (300 cap, 20,000 TWAK base, 8M TWAK budget, Agent ID token-id gate, caller pays only the VRF fee)

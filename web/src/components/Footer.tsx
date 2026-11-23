@@ -3,6 +3,16 @@ import { CoinMark } from "./art";
 import { NAV_LINKS } from "./NavLinks";
 import { RiskNote } from "./RiskNote";
 
+const X_URL = "https://x.com/towackxyz";
+
+function XMark({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.726-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
 export function Footer() {
   return (
     <footer className="mt-auto border-t border-line bg-bg">
@@ -23,9 +33,21 @@ export function Footer() {
           </div>
           <RiskNote className="col-span-12 md:col-span-8" />
         </div>
-        <div className="mt-10 flex flex-wrap justify-between gap-2 border-t border-line pt-6 text-[13px] text-dim">
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-6 text-[13px] text-dim">
           <span>© 2026 Towack. We never ask for keys, seed phrases, or pairing codes.</span>
-          <span className="font-mono">TWAK · BSC</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <a
+              href={X_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 items-center gap-1.5 font-medium text-muted transition-colors hover:text-fg"
+              aria-label="Towack on X, @towackxyz"
+            >
+              <XMark />
+              @towackxyz
+            </a>
+            <span className="font-mono">TWAK · BSC</span>
+          </div>
         </div>
       </div>
     </footer>

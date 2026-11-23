@@ -69,7 +69,15 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Who is behind this? Is it official?",
-    a: "Towack is an independent project. It is not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster.",
+    a: (
+      <>
+        Towack is an independent project. It is not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Official updates are posted on{" "}
+        <a href="https://x.com/towackxyz" target="_blank" rel="noopener noreferrer" className="underline decoration-2 underline-offset-2 hover:text-gold">
+          @towackxyz
+        </a>
+        .
+      </>
+    ),
   },
   {
     q: "Is the code open source?",

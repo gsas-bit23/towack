@@ -29,6 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: "@towackxyz",
+    creator: "@towackxyz",
     title: "Towack — Agent ID markets on BNB Chain",
     description: DESCRIPTION,
   },
