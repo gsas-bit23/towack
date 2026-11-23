@@ -22,28 +22,6 @@ export const towackGenesisAbi = [
         "name": "owner_",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "vrf",
-        "type": "tuple",
-        "internalType": "struct VRFConsumerV25.VRFConfig",
-        "components": [
-          {
-            "name": "wrapper",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "requestConfirmations",
-            "type": "uint16",
-            "internalType": "uint16"
-          },
-          {
-            "name": "callbackGasLimit",
-            "type": "uint32",
-            "internalType": "uint32"
-          }
-        ]
       }
     ],
     "stateMutability": "nonpayable"
@@ -51,19 +29,6 @@ export const towackGenesisAbi = [
   {
     "type": "function",
     "name": "BASE_TOKENS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "BASE_TOTAL",
     "inputs": [],
     "outputs": [
       {
@@ -89,150 +54,7 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
-    "name": "DECK_EXTRA_TOTAL",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "FEE_BPS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "FEE_BUFFER_BPS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_CALLBACK_GAS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_EXTRA",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "MAX_MINTS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_REQUEST_CONFIRMATIONS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint16",
-        "internalType": "uint16"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MIN_CALLBACK_GAS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MIN_REQUEST_CONFIRMATIONS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint16",
-        "internalType": "uint16"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "NO_BONUS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "PRIZE_TIERS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "VRF_RETRY_DELAY",
     "inputs": [],
     "outputs": [
       {
@@ -265,39 +87,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
-    "name": "assignedCount",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "baseGranted",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "claim",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "close",
     "inputs": [],
     "outputs": [],
@@ -306,19 +95,6 @@ export const towackGenesisAbi = [
   {
     "type": "function",
     "name": "committed",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "deckExtraRemaining",
     "inputs": [],
     "outputs": [
       {
@@ -344,32 +120,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
-    "name": "extraAssigned",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "extraOutstanding",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "fund",
     "inputs": [
       {
@@ -386,7 +136,7 @@ export const towackGenesisAbi = [
     "name": "hasMinted",
     "inputs": [
       {
-        "name": "minter",
+        "name": "",
         "type": "address",
         "internalType": "address"
       }
@@ -424,19 +174,38 @@ export const towackGenesisAbi = [
       }
     ],
     "outputs": [],
-    "stateMutability": "payable"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
     "name": "mintByHandle",
     "inputs": [],
     "outputs": [],
-    "stateMutability": "payable"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
     "name": "mintCount",
     "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "mintIndexOf",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
@@ -468,19 +237,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
-    "name": "pendingCount",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "pendingOwner",
     "inputs": [],
     "outputs": [
@@ -494,134 +250,7 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
-    "name": "prizeExtra",
-    "inputs": [
-      {
-        "name": "id",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
-    "name": "prizeOf",
-    "inputs": [
-      {
-        "name": "minter",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "minted",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "assigned",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "prizeId",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "extraAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "claimed",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "prizeSlots",
-    "inputs": [
-      {
-        "name": "id",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
-    "name": "rawFulfillRandomWords",
-    "inputs": [
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "randomWords",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "remaining",
-    "inputs": [
-      {
-        "name": "id",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "remainingCounts",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "counts",
-        "type": "uint256[7]",
-        "internalType": "uint256[7]"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "remainingTotal",
+    "name": "remainingMints",
     "inputs": [],
     "outputs": [
       {
@@ -638,38 +267,6 @@ export const towackGenesisAbi = [
     "inputs": [],
     "outputs": [],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "requestMinter",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "retryPrize",
-    "inputs": [
-      {
-        "name": "minter",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -696,55 +293,6 @@ export const towackGenesisAbi = [
       }
     ],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "tickets",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "index",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "prizeId",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "assigned",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "claimed",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "requestedAt",
-        "type": "uint64",
-        "internalType": "uint64"
-      },
-      {
-        "name": "agentTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -780,7 +328,7 @@ export const towackGenesisAbi = [
   },
   {
     "type": "function",
-    "name": "totalAssigned",
+    "name": "totalClaimed",
     "inputs": [],
     "outputs": [
       {
@@ -831,77 +379,6 @@ export const towackGenesisAbi = [
     "stateMutability": "nonpayable"
   },
   {
-    "type": "function",
-    "name": "vrfCallbackGasLimit",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfFee",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfFeeAt",
-    "inputs": [
-      {
-        "name": "gasPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfRequestConfirmations",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint16",
-        "internalType": "uint16"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "vrfWrapper",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IVRFV2PlusWrapper"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
     "type": "event",
     "name": "BudgetFunded",
     "inputs": [
@@ -919,31 +396,6 @@ export const towackGenesisAbi = [
       },
       {
         "name": "balance",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Claimed",
-    "inputs": [
-      {
-        "name": "minter",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "prizeId",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "extraTokens",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -974,7 +426,7 @@ export const towackGenesisAbi = [
         "internalType": "uint256"
       },
       {
-        "name": "base",
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1022,87 +474,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "event",
-    "name": "PrizeAssigned",
-    "inputs": [
-      {
-        "name": "minter",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "mintIndex",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "prizeId",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "extraTokens",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "PrizeRequested",
-    "inputs": [
-      {
-        "name": "minter",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "mintIndex",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "PrizeRetried",
-    "inputs": [
-      {
-        "name": "minter",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "oldRequestId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "newRequestId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "SurplusSwept",
     "inputs": [
       {
@@ -1113,31 +484,6 @@ export const towackGenesisAbi = [
       },
       {
         "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "VrfFeePaid",
-    "inputs": [
-      {
-        "name": "payer",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "fee",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1179,16 +525,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "error",
-    "name": "AlreadyAssigned",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "AlreadyClaimed",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "AlreadyMinted",
     "inputs": []
   },
@@ -1204,39 +540,8 @@ export const towackGenesisAbi = [
   },
   {
     "type": "error",
-    "name": "NotAssigned",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotMinter",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "NotOpen",
     "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NothingToClaim",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "OnlyVRFWrapperCanFulfill",
-    "inputs": [
-      {
-        "name": "have",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "want",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
   },
   {
     "type": "error",
@@ -1267,11 +572,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "error",
-    "name": "RefundFailed",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "RenounceDisabled",
     "inputs": []
   },
@@ -1298,11 +598,6 @@ export const towackGenesisAbi = [
   },
   {
     "type": "error",
-    "name": "TooEarly",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "Underfunded",
     "inputs": [
       {
@@ -1312,22 +607,6 @@ export const towackGenesisAbi = [
       },
       {
         "name": "need",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "VrfFeeTooLow",
-    "inputs": [
-      {
-        "name": "sent",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "required",
         "type": "uint256",
         "internalType": "uint256"
       }

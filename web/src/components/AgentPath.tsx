@@ -18,10 +18,9 @@ import { Button, Pill } from "./ui";
 
 export type AgentFlow =
   | "launch" // TowackLaunch.mint(address referrer)
-  | "genesis" // TowackGenesis.mint(uint256)
+  | "genesis" // TowackGenesis.mint(uint256) / mintByHandle(): free, gas-only, 0 BNB, instant 20,000 TWAK
   | "lottery" // DrawV2 approve + enter
   | "launchClaim"
-  | "genesisClaim"
   | "lotteryClaim"
   | "referralClaim" // TowackLaunch.claimReferral()
   | "buy" // TowackRouter.buy
@@ -122,17 +121,18 @@ ${footer(`${BASE_RULES}\n${vrfRule("TowackLaunch")}`)}`;
     }
     case "genesis": {
       const a = mainnet("agentId", "<AGENT_ID_REGISTRY>");
-      const text = `Towack Genesis 300 free mint on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
+      const text = `Towack Genesis 300 free claim on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
 Contract: TowackGenesis ${g.addr}${g.missing ? PENDING : ""}
 Agent ID registry (HandleRegistry): ${a.addr}
 Requirement: my wallet must hold an Agent ID handle (one Genesis per Agent ID and per wallet). Genesis has no referrals.
+Completely free: --value 0 (the functions are non-payable; any BNB attached reverts). I only pay network gas.
+It sends a flat 20,000 TWAK to my wallet in the same transaction. No VRF, no spin, no second claim step.
 
-1) Quote fee = TowackGenesis.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei)).
-2) Easiest on mainnet: mintByHandle() (selector ${SEL_GENESIS_MINT_BY_HANDLE}): --inputData ${SEL_GENESIS_MINT_BY_HANDLE}  --value = fee (resolves handleOf(my wallet) automatically; no mint price, VRF fee only).
-   Or mint(uint256 agentTokenId) (selector ${SEL_GENESIS_MINT}): where agentTokenId = uint256(keccak256(bytes(handle))), --value = fee.
-3) After the spin lands, when I ask: claim(): --inputData ${CLAIM_HEX}  --value 0.
+1) Easiest on mainnet: mintByHandle() (selector ${SEL_GENESIS_MINT_BY_HANDLE}): --inputData ${SEL_GENESIS_MINT_BY_HANDLE}  --value 0 (resolves handleOf(my wallet) automatically).
+   Or mint(uint256 agentTokenId) (selector ${SEL_GENESIS_MINT}): where agentTokenId = uint256(keccak256(bytes(handle))), --value 0.
+   Preview first: if it would revert (window closed, sold out, Agent ID or wallet already used), stop and tell me.
 
-${footer(`${BASE_RULES}\n${vrfRule("TowackGenesis")}`)}`;
+${footer(BASE_RULES)}`;
       return { text, missing: missingList([["TowackGenesis", g.missing]]) };
     }
     case "lottery": {
@@ -150,9 +150,8 @@ ${footer(`${BASE_RULES}\n${vrfRule("DrawV2")}`)}`;
       return { text, missing: missingList([["TWAK", t.missing], ["DrawV2", d.missing]]) };
     }
     case "launchClaim":
-    case "genesisClaim":
     case "lotteryClaim": {
-      const c = flow === "launchClaim" ? { n: "TowackLaunch", a: l, what: "my paid-mint prize (BNB refund or bonus TWAK)" } : flow === "genesisClaim" ? { n: "TowackGenesis", a: g, what: "my Genesis bonus TWAK" } : { n: "DrawV2", a: d, what: "all my owed Draw V2 pool-wheel prizes (TWAK + BNB)" };
+      const c = flow === "launchClaim" ? { n: "TowackLaunch", a: l, what: "my paid-mint prize (BNB refund or bonus TWAK)" } : { n: "DrawV2", a: d, what: "all my owed Draw V2 pool-wheel prizes (TWAK + BNB)" };
       const text = `Claim ${c.what} on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
 Contract: ${c.n} ${c.a.addr}${c.a.missing ? PENDING : ""}
 

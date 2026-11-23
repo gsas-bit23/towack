@@ -3,8 +3,8 @@
 
 Usage:
   python3 web/scripts/responsive-audit.py --base http://127.0.0.1:3126 --out web/shots/responsive/before
-  # Genesis 300 preset: 4 viewports (360x740, 768x1024, 1440x900, 1920x1080), home + mint + Genesis demo,
-  # lottery + pool demo, plus element shots of the Genesis card / wheel and the pool wheel.
+  # Genesis 300 preset: 4 viewports (360x740, 768x1024, 1440x900, 1920x1080), home + mint (Genesis card),
+  # lottery + pool demo, plus element shots of the Genesis card and the pool wheel.
   python3 web/scripts/responsive-audit.py --genesis --out web/shots/responsive/genesis
 """
 from __future__ import annotations
@@ -48,7 +48,6 @@ GENESIS_DEVICES = {"android-sm", "ipad-portrait", "mac-1440", "desktop-1920"}
 GENESIS_ROUTES = [
     ("home", "/"),
     ("mint", "/mint"),
-    ("mint-genesis-demo", "/mint?demo=genesis#genesis"),
     ("lottery", "/lottery"),
     ("lottery-pool-demo", "/lottery?demo=pool#pool"),
 ]
@@ -243,7 +242,7 @@ def main() -> None:
     ap.add_argument("--base", default="http://127.0.0.1:3126")
     ap.add_argument("--out", required=True)
     ap.add_argument("--label", default="before")
-    ap.add_argument("--genesis", action="store_true", help="Genesis 300 + pool wheel preset: 4 viewports + home, mint, Genesis demo, lottery, pool demo")
+    ap.add_argument("--genesis", action="store_true", help="Genesis 300 + pool wheel preset: 4 viewports + home, mint (Genesis card), lottery, pool demo")
     args = ap.parse_args()
     viewports = [v for v in VIEWPORTS if v[0] in GENESIS_DEVICES] if args.genesis else VIEWPORTS
     routes = GENESIS_ROUTES if args.genesis else ROUTES
@@ -298,24 +297,7 @@ def main() -> None:
                 try:
                     page.goto(url, wait_until="networkidle", timeout=30_000)
                     page.wait_for_timeout(700)
-                    if route_name == "mint-genesis-demo":
-                        mid = out / f"{name}__genesis-demo-spin.png"
-                        page.locator("#genesis").screenshot(path=str(mid))
-                        entry["shots"].append(str(mid))
-                        try:
-                            page.locator("#genesis").get_by_text("Demo landed on").wait_for(timeout=15_000)
-                            page.wait_for_timeout(1800)  # let the result-card spring settle
-                        except Exception as e:
-                            entry["issues"].append({"type": "demo-land-timeout", "detail": str(e)})
-                            page.wait_for_timeout(8000)
-                        for sel, tag in (("#genesis", "genesis-landed-card"), ("[data-genesis-wheel]", "genesis-landed-wheel")):
-                            el_shot = out / f"{name}__{tag}.png"
-                            page.locator(sel).screenshot(path=str(el_shot))
-                            entry["shots"].append(str(el_shot))
-                        shot = out / f"{name}__mint-genesis-demo-landed.png"
-                        page.screenshot(path=str(shot), full_page=True)
-                        entry["shots"].append(str(shot))
-                    elif route_name == "lottery-pool-demo":
+                    if route_name == "lottery-pool-demo":
                         mid = out / f"{name}__pool-demo-spin.png"
                         page.locator("#pool").screenshot(path=str(mid))
                         entry["shots"].append(str(mid))

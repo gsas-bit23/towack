@@ -158,7 +158,7 @@ export default function Home() {
               </div>
               <ul className="mt-4 space-y-2 text-[14px] text-sub">
                 <li>Agent ID slot mint + 5% referrals</li>
-                <li>Genesis 300 free mint + Draw V1 wheel</li>
+                <li>Genesis 300 free 20,000 TWAK claim + Draw V1 wheel</li>
                 <li>Draw V2 instant pool wheel</li>
                 <li>Open PancakeSwap v2 router + rebates</li>
                 <li>All on BNB Smart Chain</li>
@@ -184,7 +184,7 @@ export default function Home() {
               </div>
               <div className="mt-4 text-[16px] font-semibold">Live on BNB Smart Chain</div>
               <p className="mt-2 text-[14px] text-muted">
-                Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free mint are open, and the Draw V2 pool is funded.
+                Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free claim are open, and the Draw V2 pool is funded.
               </p>
             </StaggerItem>
           </Stagger>

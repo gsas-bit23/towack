@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useReadContract, useReadContracts, useWatchContractEvent } from "wagmi";
+import { useReadContract, useReadContracts } from "wagmi";
 import { towackGenesisAbi } from "@/abi";
 import { useTowack } from "@/lib/chain";
 
@@ -23,22 +22,18 @@ export const agentNftAbi = [
   },
 ] as const;
 
-export type MyGenesis = { minted: boolean; assigned: boolean; prizeId: number; extra: bigint; claimed: boolean };
-
-/** Contract-wide Genesis state. */
+/** Contract-wide Genesis state (flat 20,000 TWAK gas-only claim: no VRF, no wheel). */
 export function useGenesisState() {
   const { chainId, addresses } = useTowack();
   const genesis = addresses.genesis;
   const c = { address: genesis, abi: towackGenesisAbi, chainId } as const;
-  const { data } = useReadContracts({
+  const { data, refetch } = useReadContracts({
     contracts: [
       { ...c, functionName: "isOpen" },
       { ...c, functionName: "mintCount" },
       { ...c, functionName: "MAX_MINTS" },
       { ...c, functionName: "agentId" },
-      { ...c, functionName: "remainingCounts" },
       { ...c, functionName: "committed" },
-      { ...c, functionName: "VRF_RETRY_DELAY" },
     ],
     query: { enabled: Boolean(genesis), refetchInterval: 10_000 },
   });
@@ -49,70 +44,38 @@ export function useGenesisState() {
     mintCount: r<bigint>(1),
     cap: r<bigint>(2) ?? 300n,
     registry: r<`0x${string}`>(3),
-    remaining: r<readonly bigint[]>(4)?.map(Number),
-    committed: r<bigint>(5),
-    retryDelay: Number(r<bigint>(6) ?? 3600n),
+    committed: r<bigint>(4),
+    refetch,
   };
 }
 
-/** The connected wallet's Genesis ticket; polls fast while VRF is pending and listens for PrizeAssigned. */
+/** The connected wallet's Genesis claim: whether it claimed and its 1-based claim number. */
 export function useMyGenesis() {
   const { chainId, addresses, account } = useTowack();
   const genesis = addresses.genesis;
   const enabled = Boolean(genesis && account);
-  const q = useReadContract({
+  const minted = useReadContract({
     address: genesis,
     abi: towackGenesisAbi,
-    functionName: "prizeOf",
-    args: account ? [account] : undefined,
-    chainId,
-    query: {
-      enabled,
-      refetchInterval: (query) => {
-        const d = query.state.data;
-        return d && d[0] && !d[1] ? 4_000 : 15_000;
-      },
-    },
-  });
-  const { data: ticket } = useReadContract({
-    address: genesis,
-    abi: towackGenesisAbi,
-    functionName: "tickets",
+    functionName: "hasMinted",
     args: account ? [account] : undefined,
     chainId,
     query: { enabled, refetchInterval: 15_000 },
   });
-  useWatchContractEvent({
+  const index = useReadContract({
     address: genesis,
     abi: towackGenesisAbi,
-    eventName: "PrizeAssigned",
-    args: account ? { minter: account } : undefined,
+    functionName: "mintIndexOf",
+    args: account ? [account] : undefined,
     chainId,
-    enabled,
-    onLogs: () => void q.refetch(),
+    query: { enabled: enabled && minted.data === true, retry: false },
   });
-  const d = q.data;
-  const prize: MyGenesis | undefined = d ? { minted: d[0], assigned: d[1], prizeId: Number(d[2]), extra: d[3], claimed: d[4] } : undefined;
   return {
-    prize,
-    mintIndex: ticket ? Number(ticket[0]) : undefined,
-    requestedAt: ticket ? Number(ticket[4]) : undefined,
+    minted: minted.data,
+    mintIndex: index.data !== undefined && index.data > 0n ? Number(index.data) : undefined,
+    refetch: () => {
+      void minted.refetch();
+      void index.refetch();
+    },
   };
-}
-
-/**
- * Non-production Genesis wheel demo (`?demo=genesis`). Same gate as the paid demo: allowed only when no
- * Genesis contract is configured or NEXT_PUBLIC_DEMO_WHEEL=1. Always labelled as a demo.
- */
-export function useGenesisDemo() {
-  const { addresses } = useTowack();
-  const allowed = !addresses.genesis || process.env.NEXT_PUBLIC_DEMO_WHEEL === "1";
-  const [fromUrl, setFromUrl] = useState(false);
-  useEffect(() => {
-    const read = () => setFromUrl(new URLSearchParams(window.location.search).get("demo") === "genesis");
-    read();
-    window.addEventListener("popstate", read);
-    return () => window.removeEventListener("popstate", read);
-  }, []);
-  return { allowed, active: allowed && fromUrl };
 }

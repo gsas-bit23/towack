@@ -14,11 +14,11 @@ export const CONTRACT_KEYS = [
   "wbnb",
   "pancakeRouter",
   "pancakeFactory",
-  "genesis", // Genesis 300 on the official Chainlink VRF v2.5 direct-funding wrapper
+  "genesis", // Genesis 300: flat 20,000 TWAK gas-only claim (no VRF). Mainnet: 0x5B3028454a628F73A5fe9198DE4fddefCC43c73A. Retired VRF v1: 0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038
   "genesisMock", // old Genesis on MockVRFCoordinator (closed; history only)
   "drawV2Mock", // old pool wheel on MockVRFCoordinator (5M locked, no withdraw; history only)
   "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (reference only; the live stack calls the wrapper, no subscription)
-  "vrfWrapper", // official Chainlink VRF v2.5 direct-funding wrapper (live stack: Launch + Genesis + DrawV2)
+  "vrfWrapper", // official Chainlink VRF v2.5 direct-funding wrapper (live stack: Launch + DrawV2; the old VRF Genesis also used it)
   "launchVrfMock", // MockVRFCoordinator from the superseded mock-VRF testnet Launch (history only)
 ] as const;
 

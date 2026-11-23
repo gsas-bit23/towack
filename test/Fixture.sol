@@ -23,7 +23,6 @@ contract Fixture is Test {
     /// Measured worst case cold, gas actually used inside the wrapper's exact-gas CALL (incl. the CALL's own
     /// cold-access cost): see test_CallbackGas_* in OfficialVRF.t.sol. Limits keep >= 20% headroom over those.
     uint32 constant LAUNCH_CALLBACK_GAS = 165_000;
-    uint32 constant GENESIS_CALLBACK_GAS = 170_000;
     uint32 constant DRAW_CALLBACK_GAS = 200_000;
     /// tx.gasprice for every test call (the wrapper prices requests at tx.gasprice; 0 would make them free).
     uint256 constant TEST_GAS_PRICE = 1 gwei;

@@ -4,10 +4,8 @@ pragma solidity 0.8.24;
 import {Fixture} from "./Fixture.sol";
 import {VRFWrapperMock} from "./VRFWrapperMock.sol";
 import {DrawV2} from "../src/DrawV2.sol";
-import {TowackGenesis} from "../src/TowackGenesis.sol";
 import {TowackLaunch} from "../src/TowackLaunch.sol";
 import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
-import {MockAgentIdNFT} from "../src/mocks/MockAgentIdNFT.sol";
 import {VRFV2PlusClient} from "../src/interfaces/IVRFCoordinatorV2Plus.sol";
 import {VRFV2PlusClient as ChainlinkClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFV2PlusWrapper.sol";
@@ -46,7 +44,7 @@ contract ReentrantWrapper {
         id = nextId++;
         if (target == address(0)) return id;
         uint256[] memory w = new uint256[](1);
-        w[0] = 9_900; // would be a DrawV2 jackpot / a Genesis 1.1x if it were ever accepted
+        w[0] = 9_900; // would be a DrawV2 jackpot if it were ever accepted
         VRFConsumerV25(target).rawFulfillRandomWords(id, w);
         (bool ok, bytes memory ret) = target.call(reenterCall);
         if (ok) reenterSucceeded = true;
@@ -149,27 +147,13 @@ contract NoReceive {
 }
 
 contract OfficialVRFTest is Fixture {
-    TowackGenesis genesis;
-    MockAgentIdNFT nft;
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
-    uint256 genesisFee;
 
     uint256 constant JACKPOT_WORD = 9_900; // DrawV2 10x band start
 
     function setUp() public override {
         super.setUp();
-        nft = new MockAgentIdNFT();
-        genesis = new TowackGenesis(
-            address(token), address(nft), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS)
-        );
-        genesisFee = genesis.vrfFeeAt(TEST_GAS_PRICE);
-        vm.startPrank(ecosystem);
-        token.approve(address(genesis), 8_000_000e18);
-        genesis.fund(8_000_000e18);
-        vm.stopPrank();
-        genesis.open();
-
         vm.startPrank(seasons);
         token.transfer(alice, 5_000_000e18);
         token.transfer(bob, 5_000_000e18);
@@ -244,8 +228,6 @@ contract OfficialVRFTest is Fixture {
         assertEq(ok.vrfCallbackGasLimit(), DRAW_CALLBACK_GAS);
         assertEq(address(launch.vrfWrapper()), address(vrf));
         assertEq(launch.vrfCallbackGasLimit(), LAUNCH_CALLBACK_GAS);
-        assertEq(address(genesis.vrfWrapper()), address(vrf));
-        assertEq(genesis.vrfCallbackGasLimit(), GENESIS_CALLBACK_GAS);
     }
 
     // ================================================================ fee quote
@@ -256,7 +238,6 @@ contract OfficialVRFTest is Fixture {
         for (uint256 i; i < 4; ++i) {
             uint256 g = gps[i];
             assertEq(launch.vrfFeeAt(g), wrapperPriceAt(LAUNCH_CALLBACK_GAS, g) * 11_000 / 10_000);
-            assertEq(genesis.vrfFeeAt(g), wrapperPriceAt(GENESIS_CALLBACK_GAS, g) * 11_000 / 10_000);
             assertEq(drawV2.vrfFeeAt(g), wrapperPriceAt(DRAW_CALLBACK_GAS, g) * 11_000 / 10_000);
             assertEq(drawV2.vrfFeeAt(g), vrf.estimateRequestPriceNative(DRAW_CALLBACK_GAS, 1, g) * 11_000 / 10_000);
         }
@@ -271,13 +252,11 @@ contract OfficialVRFTest is Fixture {
         assertEq(drawV2.vrfFeeAt(1 gwei), (wrapperPriceAt(DRAW_CALLBACK_GAS, 1 gwei) + 5_000 * 1e12) * 11_000 / 10_000);
         emit log_named_uint("Launch fee quote @1 gwei (wei)", launchFee);
         emit log_named_uint("DrawV2 fee quote @1 gwei (wei)", drawFee);
-        emit log_named_uint("Genesis fee quote @1 gwei (wei)", genesisFee);
     }
 
     // ================================================================ user-paid VRF fee
     function test_Fee_TooLow_RevertsAtomically_AllConsumers() public {
         uint256 lp = wrapperPrice(LAUNCH_CALLBACK_GAS);
-        uint256 gp = wrapperPrice(GENESIS_CALLBACK_GAS);
         uint256 dp = wrapperPrice(DRAW_CALLBACK_GAS);
         // Launch: 0.1 BNB + exact price - 1
         address u = newAgent("lowfee");
@@ -294,18 +273,6 @@ contract OfficialVRFTest is Fixture {
         assertEq(token.balanceOf(u), 0, "no TWAK");
         assertEq(launch.mintCount(), 0);
         assertFalse(launch.hasMinted(u));
-
-        // Genesis: price - 1 (no mint price)
-        uint256 tid = nft.registerFor(u);
-        vm.prank(u);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, gp - 1, gp));
-        genesis.mint{value: gp - 1}(tid);
-        vm.prank(u);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, gp));
-        genesis.mint(tid);
-        assertEq(genesis.mintCount(), 0);
-        assertFalse(genesis.tokenIdUsed(tid));
-        assertEq(token.balanceOf(u), 0, "no 20k base");
 
         // DrawV2: price - 1
         uint256 a0 = token.balanceOf(alice);
@@ -342,21 +309,13 @@ contract OfficialVRFTest is Fixture {
         assertEq(launch.assignedCount(), 1);
     }
 
-    function test_Fee_ExcessRefunded_GenesisAndDrawV2_FeeNotInBnbPot() public {
+    function test_Fee_ExcessRefunded_DrawV2_FeeNotInBnbPot() public {
         uint256 w0 = address(vrf).balance;
-        uint256 gp = wrapperPrice(GENESIS_CALLBACK_GAS);
         uint256 dp = wrapperPrice(DRAW_CALLBACK_GAS);
-        uint256 tid = nft.registerFor(alice);
-        uint256 ab = alice.balance;
-        vm.prank(alice);
-        genesis.mint{value: 1 ether}(tid);
-        assertEq(ab - alice.balance, gp);
-        assertEq(address(genesis).balance, 0);
-
         vm.deal(address(drawV2), 10 ether); // BNB pot
         uint256 avail0 = drawV2.availableBnb();
         uint256 amt = drawV2.maxEntry(); // max entry => the full 2% cap
-        ab = alice.balance;
+        uint256 ab = alice.balance;
         vm.prank(alice);
         (uint256 spinId,) = drawV2.enter{value: 5 ether}(amt);
         (,,,,,, uint256 bnbCap,) = drawV2.spins(spinId);
@@ -364,7 +323,7 @@ contract OfficialVRFTest is Fixture {
         assertEq(address(drawV2).balance, 10 ether, "price forwarded, excess refunded: pot unchanged");
         assertEq(drawV2.availableBnb(), avail0 - bnbCap, "only the reservation moved");
         assertEq(ab - alice.balance, dp);
-        assertEq(address(vrf).balance - w0, gp + dp);
+        assertEq(address(vrf).balance - w0, dp);
     }
 
     function testFuzz_Fee_RefundExact(uint96 extra) public {
@@ -411,12 +370,6 @@ contract OfficialVRFTest is Fixture {
         vm.prank(u);
         vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, lq1, lp5));
         launch.mint{value: PRICE + lq1}();
-        uint256 tid = nft.registerFor(u);
-        uint256 gq1 = genesis.vrfFeeAt(1 gwei);
-        uint256 gp5 = wrapperPriceAt(GENESIS_CALLBACK_GAS, 5 gwei);
-        vm.prank(u);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, gq1, gp5));
-        genesis.mint{value: gq1}(tid);
         assertEq(vrf.requestCount(), 0);
 
         // quoted at the real 5 gwei: succeeds, charged exactly p5, buffer refunded
@@ -438,13 +391,9 @@ contract OfficialVRFTest is Fixture {
 
     function test_Fee_RetryPathsCollectFee() public {
         (uint256 spinId,) = _enter(alice, 1_000e18);
-        uint256 tid = nft.registerFor(bob);
-        vm.prank(bob);
-        genesis.mint{value: genesisFee}(tid);
         mintN(1);
         vm.warp(block.timestamp + 1 hours);
         uint256 dp = wrapperPrice(DRAW_CALLBACK_GAS);
-        uint256 gp = wrapperPrice(GENESIS_CALLBACK_GAS);
         uint256 lp = wrapperPrice(LAUNCH_CALLBACK_GAS);
 
         address r = makeAddr("retrier");
@@ -452,18 +401,15 @@ contract OfficialVRFTest is Fixture {
         vm.startPrank(r);
         vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, dp));
         drawV2.retrySpin(spinId);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, gp - 1, gp));
-        genesis.retryPrize{value: gp - 1}(bob);
         vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, lp - 1, lp));
         launch.retryPrize{value: lp - 1}(user(0));
 
         uint256 w0 = address(vrf).balance;
         drawV2.retrySpin{value: drawFee + 0.1 ether}(spinId);
-        genesis.retryPrize{value: genesisFee + 0.1 ether}(bob);
         launch.retryPrize{value: launchFee + 0.1 ether}(user(0));
         vm.stopPrank();
-        assertEq(address(vrf).balance - w0, dp + gp + lp, "each retry pays the wrapper its exact price");
-        assertEq(r.balance, 1 ether - dp - gp - lp, "retrier refunded the excess");
+        assertEq(address(vrf).balance - w0, dp + lp, "each retry pays the wrapper its exact price");
+        assertEq(r.balance, 1 ether - dp - lp, "retrier refunded the excess");
         assertEq(address(launch).balance, PRICE, "retry fee never touches launch accounting");
     }
 
@@ -528,19 +474,6 @@ contract OfficialVRFTest is Fixture {
         assertLe(used * 120 / 100, DRAW_CALLBACK_GAS, ">= 20% headroom at the tight limit");
     }
 
-    function test_CallbackGas_GenesisWorstCaseCold() public {
-        uint256 tid = nft.registerFor(alice);
-        vm.prank(alice);
-        genesis.mint{value: genesisFee}(tid);
-        (,,,,,, uint256 req) = genesis.tickets(alice);
-        vm.cool(address(genesis));
-        uint256 used = _callbackGas(address(genesis), req, 199); // last 1.1x slot: longest walk with extra
-        (,, uint8 pid,,) = genesis.prizeOf(alice);
-        assertEq(pid, 5);
-        emit log_named_uint("Genesis worst walk + extra, cold (through wrapper)", used);
-        assertLe(used * 120 / 100, GENESIS_CALLBACK_GAS, ">= 20% headroom at the tight limit");
-    }
-
     /// Launch worst case = the FIRST bonus draw on the longest walk (id 9, 1.1x: 10-tier walk + bonusAssigned /
     /// bonusOutstanding 0 -> non-zero), not the no-win last slot (11-tier walk, no accumulator writes).
     function test_CallbackGas_LaunchWorstCaseCold() public {
@@ -589,9 +522,9 @@ contract OfficialVRFTest is Fixture {
     // ================================================================ wrapper-only / stale / unknown
     function test_OnlyWrapperCanCallback_AllConsumers() public {
         uint256[] memory w = new uint256[](1);
-        address[3] memory cs = [address(launch), address(drawV2), address(genesis)];
+        address[2] memory cs = [address(launch), address(drawV2)];
         address[2] memory callers = [alice, 0xDA3b641D438362C440Ac5458c57e00a712b66700]; // incl. the coordinator
-        for (uint256 i; i < 3; ++i) {
+        for (uint256 i; i < 2; ++i) {
             for (uint256 k; k < 2; ++k) {
                 vm.prank(callers[k]);
                 vm.expectRevert(
@@ -627,8 +560,8 @@ contract OfficialVRFTest is Fixture {
         // unknown id straight from the wrapper address: ignored
         uint256[] memory w = new uint256[](1);
         vm.prank(address(vrf));
-        genesis.rawFulfillRandomWords(12345, w);
-        assertEq(genesis.assignedCount(), 0);
+        launch.rawFulfillRandomWords(12345, w);
+        assertEq(launch.assignedCount(), 0);
         // empty words from the wrapper: ignored
         vm.prank(address(vrf));
         drawV2.rawFulfillRandomWords(dreq, new uint256[](0));
@@ -641,11 +574,6 @@ contract OfficialVRFTest is Fixture {
     function test_RetryAfterDelay_LateStaleAnswerIgnored_AllConsumers() public {
         // DrawV2
         (uint256 spinId, uint256 d1) = _enter(alice, 1_000e18);
-        // Genesis
-        uint256 tid = nft.registerFor(bob);
-        vm.prank(bob);
-        genesis.mint{value: genesisFee}(tid);
-        (,,,,,, uint256 g1) = genesis.tickets(bob);
         // Launch
         mintN(1);
         uint256 l1 = requestOf(user(0));
@@ -654,29 +582,22 @@ contract OfficialVRFTest is Fixture {
         drawV2.retrySpin{value: drawFee}(spinId);
         vm.warp(block.timestamp + 1 hours);
         uint256 d2 = drawV2.retrySpin{value: drawFee}(spinId);
-        genesis.retryPrize{value: genesisFee}(bob);
-        (,,,,,, uint256 g2) = genesis.tickets(bob);
         launch.retryPrize{value: launchFee}(user(0));
         uint256 l2 = requestOf(user(0));
 
         uint256 paid0 = vrf.totalPaid();
         fulfillTo(address(drawV2), d1, JACKPOT_WORD); // stale
-        fulfillTo(address(genesis), g1, 0); // stale
         fulfillTo(address(launch), l1, 0); // stale
         (, uint8 st,,,,,,) = drawV2.spins(spinId);
         assertEq(st, 1);
-        assertEq(genesis.assignedCount(), 0);
         assertEq(launch.assignedCount(), 0);
         assertEq(vrf.totalPaid(), paid0, "answers cost nothing extra: every request was prepaid");
 
         fulfillTo(address(drawV2), d2, 0);
-        fulfillTo(address(genesis), g2, 299);
         fulfillTo(address(launch), l2, 4_999);
         (, st,,,,,,) = drawV2.spins(spinId);
         assertEq(st, 2);
         assertEq(drawV2.owedTwak(alice), 0, "0x from the live word, not the stale jackpot");
-        (,, uint8 gp,,) = genesis.prizeOf(bob);
-        assertEq(gp, 6);
         (,, uint8 lp,,,) = launch.prizeOf(user(0));
         assertEq(lp, 10);
     }
@@ -712,32 +633,6 @@ contract OfficialVRFTest is Fixture {
         }
         assertEq(d.reservedTwak(), 3 * 10_000e18);
         assertEq(address(evil).balance, 3 * 0.001 ether, "exact price each time");
-    }
-
-    function test_Reentrancy_SyncFulfilAndReenterDuringRequest_Genesis() public {
-        ReentrantWrapper evil = new ReentrantWrapper();
-        TowackGenesis g = new TowackGenesis(
-            address(token), address(nft), ecosystem, address(this), _cfgFor(DRAW_CALLBACK_GAS, address(evil))
-        );
-        vm.startPrank(ecosystem);
-        token.approve(address(g), 8_000_000e18);
-        g.fund(8_000_000e18);
-        vm.stopPrank();
-        g.open();
-        uint256 t2 = nft.registerFor(alice); // alice owns two Agent IDs
-        uint256 t1 = nft.registerFor(alice);
-        evil.arm(address(g), abi.encodeCall(TowackGenesis.mint, (t2)));
-        uint256 gf = g.vrfFeeAt(TEST_GAS_PRICE);
-        vm.prank(alice);
-        g.mint{value: gf}(t1);
-        assertFalse(evil.reenterSucceeded());
-        assertEq(g.mintCount(), 1, "no second mint via re-entry");
-        assertEq(g.assignedCount(), 0, "sync fulfil ignored");
-        evil.arm(address(g), abi.encodeCall(TowackGenesis.claim, ()));
-        vm.warp(block.timestamp + 1 hours);
-        g.retryPrize{value: gf}(alice);
-        assertFalse(evil.reenterSucceeded());
-        assertEq(g.assignedCount(), 0);
     }
 
     function test_Reentrancy_ClaimBnbReceiver_DrawV2AndLaunch() public {
@@ -841,37 +736,6 @@ contract OfficialVRFTest is Fixture {
         vm.prank(alice);
         d.claim();
         assertEq(d.outstandingTwak(), 0);
-    }
-
-    /// Genesis: pending draws stay covered after close (worst-case 5x each, capped by the deck), the owner
-    /// cannot sweep them, and late VRF answers + claims still settle.
-    function test_GenesisPendingDeckAccountingAcrossClose() public {
-        address[3] memory us = [alice, bob, makeAddr("carol")];
-        for (uint256 i; i < 3; ++i) {
-            uint256 tid = nft.registerFor(us[i]);
-            vm.prank(us[i]);
-            genesis.mint{value: genesisFee}(tid);
-        }
-        genesis.close();
-        assertEq(genesis.committed(), 3 * genesis.MAX_EXTRA(), "3 pending x 80k worst case");
-        genesis.sweepSurplus();
-        assertEq(token.balanceOf(address(genesis)), 3 * 80_000e18);
-        vm.expectRevert(TowackGenesis.ZeroAmount.selector);
-        genesis.sweepSurplus();
-
-        vm.warp(block.timestamp + 1 hours);
-        genesis.retryPrize{value: genesisFee}(bob); // retry after close is still allowed
-        for (uint256 i; i < 3; ++i) {
-            (,,,,,, uint256 req) = genesis.tickets(us[i]);
-            fulfillTo(address(genesis), req, 0); // all 5x (5 such slots exist)
-            assertGe(token.balanceOf(address(genesis)), genesis.committed());
-        }
-        assertEq(genesis.assignedCount(), 3);
-        for (uint256 i; i < 3; ++i) {
-            vm.prank(us[i]);
-            genesis.claim();
-        }
-        assertEq(token.balanceOf(address(genesis)), 0);
     }
 
     /// Launch: pending mints block the listing until the wrapper answers (or a retry is answered).

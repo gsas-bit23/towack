@@ -10,7 +10,7 @@ Official X: [@towackxyz](https://x.com/towackxyz).
 
 ## Layout
 - `src/TowackToken.sol`: fixed 1B supply ERC-20, no tax
-- `src/TowackGenesis.sol`: Genesis 300 free mint (300 cap, 20,000 TWAK base, 8M TWAK budget, Agent ID token-id gate, caller pays only the VRF fee)
+- `src/TowackGenesis.sol`: Genesis 300 completely free claim (300 cap, flat 20,000 TWAK sent instantly, 6M TWAK budget, Agent ID token-id gate, non-payable: gas only, no VRF). Live mainnet Genesis: [`0x5B3028454a628F73A5fe9198DE4fddefCC43c73A`](https://bscscan.com/address/0x5B3028454a628F73A5fe9198DE4fddefCC43c73A#code) (Sourcify exact_match + BscScan verified). The older VRF Genesis `0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038` is retired (closed, surplus swept)
 - `src/TowackLaunch.sol`: 0.1 BNB mint, Draw V1 prize wheel (one VRF v2.5 request per mint, fixed 5,000-slot deck, one prize per mint), PancakeSwap listing
 - `src/TowackRouter.sol`: open `buy`/`sell` for any wallet, 1% BNB-leg fee, Leash-style daily limits; rebates accrue only to Agent ID wallets (a non-Agent trade's rebate share goes to the unattributed weekly boost)
 - `src/RebateDistributor.sol`: fee-weighted weekly TWAK + BNB rebates
@@ -20,6 +20,7 @@ Official X: [@towackxyz](https://x.com/towackxyz).
 - `script/DeployFullStackTestnet.s.sol`: BSC testnet full-stack deploy (chainid 97 only, Chainlink VRF v2.5 wrapper)
 - `script/DeployFullStackMainnet.s.sol`: BSC mainnet full-stack deploy. Broadcast 23 Nov 2026, 7:17 PM PKT; record in [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) (see [docs/MAINNET_GO.md](docs/MAINNET_GO.md)).
 - `script/EstimateFullRedeploy.s.sol`: keyless deploy-cost estimate for 97 / 56 (refuses `--broadcast`)
+- `script/RedeployGenesisFlatMainnet.s.sol`: BSC mainnet Genesis migration: close + sweep the old VRF Genesis, deploy the flat gas-only Genesis, fund 6M, open. `dryRun()` is keyless; broadcasting needs the owner's go (see [docs/MAINNET_GO.md](docs/MAINNET_GO.md))
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 

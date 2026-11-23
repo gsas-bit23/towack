@@ -64,7 +64,7 @@ No VRF subscription deposit. Users pay VRF per request (quote + 10% buffer; exce
    Optional timing env: `MINT_START` (unix; default deploy-block timestamp), `MINT_DURATION` (default `604800` = 7 days), `TIMELOCK_DELAY` (default `172800` = 48h, min `86400` = 24h).
 
 5. **Post-deploy (after a successful Mateen broadcast):**
-   - If `ECOSYSTEM_WALLET != MAINNET_DEPLOYER`: from `ECOSYSTEM_WALLET`, `TWAK.approve(genesis, 8000000e18)` then `TowackGenesis.fund(8000000e18)`; from `GENESIS_OWNER`, `TowackGenesis.open()`.
+   - If `ECOSYSTEM_WALLET != MAINNET_DEPLOYER`: from `ECOSYSTEM_WALLET`, `TWAK.approve(genesis, budget)` then `TowackGenesis.fund(budget)`; from `GENESIS_OWNER`, `TowackGenesis.open()`. (Budget was 8,000,000e18 for the original VRF Genesis; the current flat Genesis source uses 6,000,000e18.)
    - Verify all 8 deployed contracts on Sourcify (chain 56) and BscScan.
    - Record the live deploy in `deployments/bsc-mainnet.json`.
    - Copy addresses from `deployments/out/bsc-mainnet.addresses.json` into `web/src/config/addresses.json` (chain `"56"`) and `web/public/skills/towack/SKILL.md`.
@@ -73,4 +73,24 @@ No VRF subscription deposit. Users pay VRF per request (quote + 10% buffer; exce
 
 ## Designed mainnet params
 
-Paid Launch: 0.1 BNB, 80,000 TWAK, cap 5,000, Agent ID required, 5% referrer BNB (0.005) with one referrer per minter and no self-referral. Genesis: 300 free mints, 20,000 TWAK base + TWAK wheel, 8M budget, Agent ID required. DrawV2: open to everyone, 10,000-slot table, 95% expected return, min 100 TWAK, 70M pool. Router: anyone can trade; rebates are Agent ID only.
+Paid Launch: 0.1 BNB, 80,000 TWAK, cap 5,000, Agent ID required, 5% referrer BNB (0.005) with one referrer per minter and no self-referral. Genesis (current source, flat migration pending broadcast): 300 completely free claims, flat 20,000 TWAK each sent instantly, non-payable (gas only, no VRF), 6M budget, Agent ID required. (The original 23 Nov 2026 deploy was 20,000 TWAK base + VRF TWAK wheel, 8M budget.) DrawV2: open to everyone, 10,000-slot table, 95% expected return, min 100 TWAK, 70M pool. Router: anyone can trade; rebates are Agent ID only.
+
+## Genesis 300 flat migration (broadcast 2026-11-23 23:17 PKT)
+
+The Genesis 300 source is a completely free, gas-only, flat 20,000 TWAK claim (non-payable `mint(uint256)` / `mintByHandle()`, no Chainlink VRF, no wheel, no second `claim()`, 6,000,000 TWAK budget).
+
+**Live mainnet Genesis:** [`0x5B3028454a628F73A5fe9198DE4fddefCC43c73A`](https://bscscan.com/address/0x5B3028454a628F73A5fe9198DE4fddefCC43c73A#code) — Sourcify `exact_match` (creation + runtime) and BscScan/Etherscan verified.
+
+**Retired VRF Genesis:** [`0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038`](https://bscscan.com/address/0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038) — closed, 7,938,000 unused TWAK swept to the deployer. Do not send new mints there.
+
+Broadcast from deployer `0x38A0f77Dad60B34cF5cD39305687e354696a6776` after Mateen's go (`t228s1033` / `t229u`), via `script/RedeployGenesisFlatMainnet.s.sol` (close + sweep + deploy + approve + fund 6,000,000 TWAK + open). 6 txs, 1,273,767 gas, 0.0001273767 BNB at 0.1 gwei (legacy):
+
+1. `close()` — [0x35d3f70e600d14309e749dfd8eb6b10886d8c1b2238eb55466d8818b4530ae57](https://bscscan.com/tx/0x35d3f70e600d14309e749dfd8eb6b10886d8c1b2238eb55466d8818b4530ae57)
+2. `sweepSurplus()` — [0x9da53a5f0fcb597ec929436ce4bc1f939df5043c66a4cae876c73bad8a4d2436](https://bscscan.com/tx/0x9da53a5f0fcb597ec929436ce4bc1f939df5043c66a4cae876c73bad8a4d2436)
+3. `CREATE TowackGenesis` — [0x6c4b753814dbb91fbbfdac88b4280dda17875c86cabed78df5105a6eeba83c48](https://bscscan.com/tx/0x6c4b753814dbb91fbbfdac88b4280dda17875c86cabed78df5105a6eeba83c48)
+4. `TWAK.approve` — [0x32e83f5c0a8d8ddb689212869cd65c88268b91ff725882d7873b40db6f12277c](https://bscscan.com/tx/0x32e83f5c0a8d8ddb689212869cd65c88268b91ff725882d7873b40db6f12277c)
+5. `fund(6,000,000e18)` — [0x8ab914875c1b3ebd6c98cf98d7c4bfaba8bf355cf73e741f330bd772c925b0f8](https://bscscan.com/tx/0x8ab914875c1b3ebd6c98cf98d7c4bfaba8bf355cf73e741f330bd772c925b0f8)
+6. `open()` — [0x0a8897ff93e82dcb1c4dc65d446e94bfe591b02ade733cd2f870531d77478411](https://bscscan.com/tx/0x0a8897ff93e82dcb1c4dc65d446e94bfe591b02ade733cd2f870531d77478411)
+
+On-chain checks: old `isOpen()==false`, surplus 0; new `isOpen()==true`, `balanceOf==committed()==6,000,000e18`. Frontend `addresses.json` chain 56 `genesis`, `SKILL.md`, and `deployments/bsc-mainnet.json` point at the new address.
+

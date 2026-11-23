@@ -67,25 +67,13 @@ A standard ERC-20 with burn, no tax, no owner, and no mint after the constructor
 - Views: `prizeOf(minter) → (minted, assigned, prizeId, bnb, bonus, claimed)`, `tickets(minter)`, `remaining(id)`, `remainingCounts()`, `remainingTotal`, `pendingCount()`, `prizeSlots/prizeBnb/prizeBonus(id)`. Referral views: `referrerOf(minter)`, `referralUnclaimed(referrer)` (claimable), `referralEarned(referrer)` (lifetime), `referralCount(referrer)`, `referees(referrer) → address[]`, `referralUnclaimedTotal()`, `referralAccruedTotal()`, `REFERRAL_FEE()`.
 - `libraries/SwapOrNot` (the old single-seed shuffle) is no longer used by TowackLaunch. It is kept only with its own tests.
 
-## TowackGenesis ("Genesis 300", free mint, `src/TowackGenesis.sol`)
-Separate from TowackLaunch: it does not touch the paid 5,000 mints, the paid deck, LP, DrawV2 or the bonus reserve. There is no mint price and no BNB prizes; prizes are TWAK only. `mint`, `mintByHandle` and `retryPrize` **are payable**, but only for the user-paid Chainlink VRF fee (excess refunded in the same tx).
-- **Gate:** `mint(agentTokenId)` requires `IERC721(agentId).ownerOf(agentTokenId) == msg.sender`. Both the token id and the wallet are marked used. A used id moved to a new wallet is still blocked, and a wallet that already minted cannot use a second id.
-- **Numbers:** cap 300; base **20,000 TWAK** sent at mint; one VRF v2.5 request per mint; the callback pops one slot from a fixed 300-slot deck (`word % remainingTotal`, 7 packed counts). The multiplier applies to the 20k base, so extra = (mult − 1) × 20k:
-
-  | id | tier | slots | extra each | extra total |
-  |---|---|---:|---:|---:|
-  | 0 | 5× | 5 | 80,000 | 400,000 |
-  | 1 | 3× | 10 | 40,000 | 400,000 |
-  | 2 | 2× | 20 | 20,000 | 400,000 |
-  | 3 | 1.5× | 40 | 10,000 | 400,000 |
-  | 4 | 1.25× | 50 | 5,000 | 250,000 |
-  | 5 | 1.1× | 75 | 2,000 | 150,000 |
-  | 6 | no bonus | 100 | 0 | 0 |
-
-  At sellout: base 6,000,000 + extra 2,000,000 = **8,000,000 TWAK budget**, which is **16%** of the 50M (5%) ecosystem allocation.
-- **Funding / solvency:** the ecosystem wallet pre-funds the contract with `fund(8M)` (approve + `transferFrom`). `committed()` is everything the contract may still owe. While open, that is unminted base + extra of undrawn slots + assigned-but-unclaimed extra. Once closed, it is unclaimed extra + worst-case extra for pending VRF draws. `open()` and `mint()` require `balance ≥ committed()`. Total assigned can never exceed 8M.
-- **Owner** (Ownable2Step; deployer first, can hand over to the timelock): `open()`, `close()` (the window also auto-closes at 300), and `sweepSurplus()`, which sends only `balance − committed()` to the immutable ecosystem wallet. `renounceOwnership` is disabled.
-- `retryPrize(minter)` (anyone, after 1h) re-requests a stalled draw and invalidates the old request. `claim()` pulls the extra once it is assigned.
+## TowackGenesis ("Genesis 300", free gas-only claim, `src/TowackGenesis.sol`)
+Separate from TowackLaunch: it does not touch the paid 5,000 mints, the paid deck, LP, DrawV2 or the bonus reserve. Completely free: `mint(agentTokenId)` and `mintByHandle()` are **non-payable** (0 BNB attached; the user pays only ordinary network gas). There is **no Chainlink VRF**, no wheel, no bonus tiers and no second `claim()`: each claim transfers a flat **20,000 TWAK** to the caller in the same transaction. The contract never holds or accepts BNB.
+- **Gate:** `mint(agentTokenId)` requires `IERC721(agentId).ownerOf(agentTokenId) == msg.sender`. Both the token id (`tokenIdUsed`) and the wallet (`hasMinted`, `mintIndexOf`) are marked used. A used id moved to a new wallet is still blocked, and a wallet that already claimed cannot use a second id. `mintByHandle()` resolves `handleOf(msg.sender)` on the mainnet SPACE ID HandleRegistry (`tokenId = keccak256(bytes(handle))`) and runs the same checks.
+- **Numbers:** `MAX_MINTS` 300 × `BASE_TOKENS` 20,000 TWAK = `BUDGET` **6,000,000 TWAK**, which is **12%** of the 50M (5%) ecosystem allocation. The window auto-closes at the 300th claim.
+- **Funding / solvency:** the ecosystem wallet pre-funds the contract with `fund(6M)` (approve + `transferFrom`; anyone may fund). `committed()` = `(300 − mintCount) × 20,000` while open and 0 once closed (every claim is paid instantly, nothing is ever owed). `open()` requires `balance ≥ committed()`.
+- **Owner** (Ownable2Step; deployer first, can hand over to the timelock): `open()`, `close()` and `sweepSurplus()`, which sends only `balance − committed()` to the immutable ecosystem wallet (while open: only an overfund; once closed: everything left). `renounceOwnership` is disabled. Events: `GenesisMinted`, `WindowOpened`, `WindowClosed`, `BudgetFunded`, `SurplusSwept`.
+- **Mainnet status:** live Genesis is [`0x5B3028454a628F73A5fe9198DE4fddefCC43c73A`](https://bscscan.com/address/0x5B3028454a628F73A5fe9198DE4fddefCC43c73A#code) (flat 20,000 TWAK, gas only, 6M budget; Sourcify exact_match + BscScan verified). The older VRF Genesis [`0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038`](https://bscscan.com/address/0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038) is retired (closed, surplus swept). See `docs/MAINNET_GO.md`.
 - **Testnet Agent ID:** the existing MockAgentId is balance-only (no token ids), so Genesis on testnet uses a separate ERC-721 `MockAgentIdNFT` `0x70BC…8036` (first deployed by the now-removed `DeployGenesisTestnet.s.sol`; reused by `script/DeployFullStackTestnet.s.sol` as `DEFAULT_AGENT_ID_NFT`).
 
 ## TowackRouter
@@ -132,7 +120,7 @@ Replaced the weekly burn raffle (no rounds, tickets, burns or USD price source a
 - **Superseded testnet pools (history only, no withdraw):** the skeleton DrawV2 `0x5B3028454a628F73A5fe9198DE4fddefCC43c73A` from the first mock-VRF stack still holds that stack's 70M, and the first mock-VRF pool `0x66E8…0191` keeps its 5M stand-in. Neither is used by the frontend's live stack.
 
 ## Randomness: official Chainlink VRF v2.5 direct-funding wrapper (live on testnet; mainnet script uses the same wrapper)
-- **Model:** every randomness request (paid Launch mint, Genesis mint, DrawV2 enter, and the three retries) goes through Chainlink's official **VRFV2PlusWrapper** (direct funding). It is paid in **native BNB, per request, by the user**. There is no subscription, no minimum-balance deposit, no `fundSubscriptionWithNative`, and no `addConsumer`. Official address (docs.chain.link/vrf/v2-5/supported-networks): **`0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94` on both BSC testnet (97) and BSC mainnet (56)**. On 97 its coordinator is `0xDA3b641D438362C440Ac5458c57e00a712b66700` and its key hash is the 50 gwei lane (`0x8596…0e26`). The key hash lives on the wrapper, not in our config.
+- **Model:** every randomness request (paid Launch mint, DrawV2 enter, and their retries; Genesis 300 no longer uses VRF) goes through Chainlink's official **VRFV2PlusWrapper** (direct funding). It is paid in **native BNB, per request, by the user**. There is no subscription, no minimum-balance deposit, no `fundSubscriptionWithNative`, and no `addConsumer`. Official address (docs.chain.link/vrf/v2-5/supported-networks): **`0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94` on both BSC testnet (97) and BSC mainnet (56)**. On 97 its coordinator is `0xDA3b641D438362C440Ac5458c57e00a712b66700` and its key hash is the 50 gwei lane (`0x8596…0e26`). The key hash lives on the wrapper, not in our config.
 - **Live wrapper config** (`getConfig()`, read 2026-11-22, identical on 97 and 56): wrapper gas overhead 13,400; coordinator native overhead 99,500; 435 per word; native premium 60%; flat fee 0; max 10 words. `typeAndVersion` = `VRFV2PlusWrapper 1.0.0`.
 - **Consumer:** `src/VRFConsumerV25.sol` (abstract, ownerless, all config immutable). It follows the same pattern as Chainlink's `VRFV2PlusWrapperConsumerBase.requestRandomnessPayInNative`, re-implemented so that the hook keeps `calldata` words, nothing is owned, and the constructor does not call `wrapper.link()`.
   - `VRFConfig { wrapper, requestConfirmations, callbackGasLimit }`. The constructor requires that the wrapper has code, confirmations are in 3..200, and callback gas is in 50k..2.5M.
@@ -147,13 +135,13 @@ Replaced the weekly burn raffle (no rounds, tickets, burns or USD price source a
     3. Calls `requestRandomWordsInNative{value: price}(limit, 3, 1, ExtraArgsV1{nativePayment: true})`, sending **exactly `price`**. The wrapper keeps any overpayment and never refunds, so the buffer is never sent to it.
     4. Emits `VrfFeePaid(payer, requestId, price)`. The event amount is the exact wrapper price.
     5. Returns `(requestId, price)`. The caller refunds `available − price` last (`RefundFailed` if the caller can't receive; every path is `nonReentrant`).
-  - What `available` is: Launch passes `msg.value − 0.1 BNB` (the mint price stays in Launch). Genesis, DrawV2, and all retries pass `msg.value`. DrawV2's `_availableBnb(msg.value)` excludes the current call's value, so **fees never enter the BNB pot**.
+  - What `available` is: Launch passes `msg.value − 0.1 BNB` (the mint price stays in Launch). DrawV2 and all retries pass `msg.value` (the old VRF Genesis did too). DrawV2's `_availableBnb(msg.value)` excludes the current call's value, so **fees never enter the BNB pot**.
   - No gas-price floor or cap any more. The wrapper prices at request-time gas and its premium and overheads absorb fulfilment variance; the old subscription floor only existed because a sub is billed at fulfilment gas.
   - Gas spikes: a fee quoted at a lower gas price than the tx actually lands at can revert `VrfFeeTooLow` (tested: a 1 gwei quote fails at 5 gwei). The frontend quotes at `gasPrice × 1.25` and sends quote + 10%. With the contract's 10%, that covers a ~1.5× move, and everything unused is refunded in the same tx.
-  - Examples at 1 gwei, exact price / UI quote: Launch 0.000437296 / 0.000481026, Genesis 0.000445296 / 0.000489826, DrawV2 0.000493296 / 0.000542626 BNB. At 0.1 gwei (mainnet-like) the prices are a tenth of that (0.0000437 / 0.0000445 / 0.0000493 BNB).
-- **Callback limits (unchanged):** Launch **165,000**, Genesis **170,000**, DrawV2 **200,000**; `MIN_CALLBACK_GAS` 50k. Re-measured worst cold callbacks through the wrapper mock's exact-gas CALL (the gas the wrapper's CALL consumes, including cold-account access):
+  - Examples at 1 gwei, exact price / UI quote: Launch 0.000437296 / 0.000481026, DrawV2 0.000493296 / 0.000542626 BNB. At 0.1 gwei (mainnet-like) the prices are a tenth of that (0.0000437 / 0.0000493 BNB). (The retired VRF Genesis was 0.000445296 / 0.000489826.)
+- **Callback limits (unchanged):** Launch **165,000**, DrawV2 **200,000** (the retired VRF Genesis used 170,000); `MIN_CALLBACK_GAS` 50k. Re-measured worst cold callbacks through the wrapper mock's exact-gas CALL (the gas the wrapper's CALL consumes, including cold-account access):
   - Launch **94,621**. The worst case is the first 1.1× bonus (id 9); the last no-win slot is 50,466 and the last 25% refund is 93,571.
-  - Genesis **98,449** (last 1.1× slot).
+  - (Retired VRF Genesis: 98,449, last 1.1× slot.)
   - DrawV2 **121,204** (first jackpot plus BNB).
   - Headroom is 43–65%. The older 131,772 / 135,600 / 158,463 figures included the subscription mock's own overhead.
   - The limits were kept rather than tightened. Each 10k of limit costs about 16k × gas price per request. They can be lowered later, but only with a fresh measurement.

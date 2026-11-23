@@ -3,10 +3,11 @@ pragma solidity 0.8.24;
 
 import {Fixture} from "./Fixture.sol";
 import {TowackGenesis} from "../src/TowackGenesis.sol";
-import {VRFConsumerV25} from "../src/VRFConsumerV25.sol";
 import {MockAgentIdNFT} from "../src/mocks/MockAgentIdNFT.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @dev Mirrors the verified BSC mainnet SPACE ID HandleRegistry (0x60B9…022F): soulbound ERC-721 where
 /// `tokenId = uint256(keccak256(bytes(handle)))`, `handleOf(addr)` and `ownerOfHandle(handle)` exist, and
@@ -28,30 +29,62 @@ contract MockHandleRegistry is ERC721 {
     }
 }
 
-/// @dev Exposes the Genesis deck walk without VRF / minting, for the fuzz invariant.
-contract GenesisDeckHarness is TowackGenesis {
-    constructor(address t, address a, address e, VRFConfig memory c) TowackGenesis(t, a, e, msg.sender, c) {}
+/// @dev ERC-20 with a transfer hook: every transfer to `hooked` calls back into it, so a minter contract can
+/// try to re-enter Genesis while its 20k TWAK is being sent.
+contract HookToken is ERC20 {
+    address public hooked;
 
-    function draw(uint256 word) external returns (uint8) {
-        return _drawFromDeck(word);
+    constructor() ERC20("Hook", "HOOK") {
+        _mint(msg.sender, 100_000_000e18);
+    }
+
+    function setHooked(address h) external {
+        hooked = h;
+    }
+
+    function _update(address from, address to, uint256 value) internal override {
+        super._update(from, to, value);
+        if (to == hooked && hooked != address(0)) ReentrantMinter(hooked).onReceive();
+    }
+}
+
+/// @dev Owns two Agent IDs; on receiving TWAK tries to claim again with the second id.
+contract ReentrantMinter {
+    TowackGenesis public g;
+    bytes public reenterCall;
+    bool public reenterSucceeded;
+    bytes public reenterRevertData;
+    uint256 public attempts;
+
+    function setUp(TowackGenesis g_, bytes calldata call_) external {
+        g = g_;
+        reenterCall = call_;
+    }
+
+    function mint(uint256 id) external {
+        g.mint(id);
+    }
+
+    function onReceive() external {
+        if (address(g) == address(0) || reenterCall.length == 0) return;
+        ++attempts;
+        (bool ok, bytes memory data) = address(g).call(reenterCall);
+        reenterSucceeded = ok;
+        reenterRevertData = data;
     }
 }
 
 contract TowackGenesisTest is Fixture {
     TowackGenesis genesis;
     MockAgentIdNFT nft;
-    uint256 genesisFee; // VRF fee per mint / retry (no mint price)
 
     uint256 constant BASE = 20_000e18;
-    uint256 constant BUDGET = 8_000_000e18;
-    uint256[7] FULL = [uint256(5), 10, 20, 40, 50, 75, 100];
-    uint256[7] EXTRA = [uint256(80_000e18), 40_000e18, 20_000e18, 10_000e18, 5_000e18, 2_000e18, 0];
+    uint256 constant BUDGET = 6_000_000e18;
 
     function setUp() public override {
         super.setUp();
         nft = new MockAgentIdNFT();
-        genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS));
-        genesisFee = genesis.vrfFeeAt(TEST_GAS_PRICE);
+        genesis = new TowackGenesis(address(token), address(nft), ecosystem, address(this));
     }
 
     // ---------------------------------------------------------------- helpers
@@ -77,13 +110,8 @@ contract TowackGenesisTest is Fixture {
     }
 
     function _mint(address u, uint256 id) internal {
-        vm.deal(u, genesisFee);
         vm.prank(u);
-        genesis.mint{value: genesisFee}(id);
-    }
-
-    function _req(address u) internal view returns (uint256 id) {
-        (,,,,,, id) = genesis.tickets(u);
+        genesis.mint(id);
     }
 
     function _mintN(uint256 n) internal {
@@ -93,35 +121,74 @@ contract TowackGenesisTest is Fixture {
         }
     }
 
-    function _fulfillN(uint256 n, uint256 salt) internal {
-        for (uint256 i; i < n; ++i) {
-            fulfillTo(address(genesis), _req(gUser(i)), wordFor(salt, i));
-        }
-    }
-
     function _assertSolvent() internal view {
         assertGe(token.balanceOf(address(genesis)), genesis.committed(), "solvent");
-        assertGe(token.balanceOf(address(genesis)), genesis.extraOutstanding(), "outstanding covered");
-        assertLe(genesis.totalAssigned(), BUDGET, "<= 8M");
+        assertLe(genesis.totalClaimed(), BUDGET, "<= 6M");
     }
 
-    // ---------------------------------------------------------------- constants / table
-    function test_DeckTableTotals() public {
-        uint256 slots;
-        uint256 extra;
-        for (uint8 k; k < 7; ++k) {
-            assertEq(genesis.prizeSlots(k), FULL[k]);
-            assertEq(genesis.prizeExtra(k), EXTRA[k]);
-            slots += genesis.prizeSlots(k);
-            extra += genesis.prizeSlots(k) * genesis.prizeExtra(k);
-        }
-        assertEq(slots, 300);
-        assertEq(extra, 2_000_000e18);
-        assertEq(genesis.BASE_TOTAL(), 6_000_000e18);
-        assertEq(genesis.BUDGET(), BUDGET);
-        assertEq(BUDGET * 100 / token.ECOSYSTEM(), 16, "16% of ecosystem");
-        vm.expectRevert(bytes("tier"));
-        genesis.prizeExtra(7);
+    // ---------------------------------------------------------------- constants
+    function test_Constants() public view {
+        assertEq(genesis.MAX_MINTS(), 300);
+        assertEq(genesis.BASE_TOKENS(), 20_000e18);
+        assertEq(genesis.BUDGET(), 6_000_000e18);
+        assertEq(genesis.BUDGET(), genesis.MAX_MINTS() * genesis.BASE_TOKENS());
+        assertEq(BUDGET * 100 / token.ECOSYSTEM(), 12, "12% of ecosystem");
+        assertEq(address(genesis.token()), address(token));
+        assertEq(address(genesis.agentId()), address(nft));
+        assertEq(genesis.ecosystemWallet(), ecosystem);
+        assertEq(genesis.owner(), address(this));
+    }
+
+    function test_ConstructorRejectsZeroAddresses() public {
+        vm.expectRevert(bytes("zero addr"));
+        new TowackGenesis(address(0), address(nft), ecosystem, address(this));
+        vm.expectRevert(bytes("zero addr"));
+        new TowackGenesis(address(token), address(0), ecosystem, address(this));
+        vm.expectRevert(bytes("zero addr"));
+        new TowackGenesis(address(token), address(nft), address(0), address(this));
+    }
+
+    // ---------------------------------------------------------------- happy path
+    function test_MintIsInstantFlat20k_GasOnly() public {
+        _fundAndOpen();
+        (address u, uint256 id) = _newHolder(0);
+        assertEq(u.balance, 0, "minter holds no BNB at all");
+        uint256 g0 = token.balanceOf(address(genesis));
+        vm.expectEmit(true, true, true, true, address(genesis));
+        emit TowackGenesis.GenesisMinted(u, 1, id, BASE);
+        _mint(u, id);
+        assertEq(token.balanceOf(u), BASE, "20k TWAK in the same tx");
+        assertEq(token.balanceOf(address(genesis)), g0 - BASE);
+        assertEq(genesis.mintCount(), 1);
+        assertTrue(genesis.hasMinted(u));
+        assertEq(genesis.mintIndexOf(u), 1);
+        assertTrue(genesis.tokenIdUsed(id));
+        assertEq(genesis.totalClaimed(), BASE);
+        assertEq(genesis.remainingMints(), 299);
+        assertEq(genesis.committed(), 299 * BASE);
+        assertEq(address(genesis).balance, 0, "no BNB");
+        _assertSolvent();
+    }
+
+    /// mint() and mintByHandle() are non-payable; plain BNB is rejected too.
+    function test_NonPayable_RejectsAnyBnb() public {
+        _fundAndOpen();
+        (address u, uint256 id) = _newHolder(0);
+        vm.deal(u, 1 ether);
+        vm.prank(u);
+        (bool ok,) = address(genesis).call{value: 1 wei}(abi.encodeCall(TowackGenesis.mint, (id)));
+        assertFalse(ok, "mint with value reverts");
+        vm.prank(u);
+        (ok,) = address(genesis).call{value: 1 wei}(abi.encodeCall(TowackGenesis.mintByHandle, ()));
+        assertFalse(ok, "mintByHandle with value reverts");
+        vm.prank(u);
+        (ok,) = address(genesis).call{value: 1 ether}("");
+        assertFalse(ok, "plain BNB rejected");
+        assertEq(genesis.mintCount(), 0);
+        // the same call with 0 BNB works
+        _mint(u, id);
+        assertEq(u.balance, 1 ether, "no BNB spent beyond gas (gas price is not charged in tests)");
+        assertEq(address(genesis).balance, 0);
     }
 
     // ---------------------------------------------------------------- window
@@ -137,13 +204,26 @@ contract TowackGenesisTest is Fixture {
         vm.prank(u);
         vm.expectRevert(TowackGenesis.NotOpen.selector);
         genesis.mint(id);
+        vm.expectRevert(TowackGenesis.NotOpen.selector);
+        genesis.close();
 
+        _fund(BUDGET); // the closed-window sweep would have been possible; reopening needs the remaining claims
         genesis.open();
         _mint(u, id);
         assertEq(genesis.mintCount(), 1);
     }
 
-    function test_OnlyOwnerOpensCloses() public {
+    function test_OpenCloseEvents() public {
+        _fund(BUDGET);
+        vm.expectEmit(false, false, false, true, address(genesis));
+        emit TowackGenesis.WindowOpened(BUDGET, BUDGET);
+        genesis.open();
+        vm.expectEmit(false, false, false, true, address(genesis));
+        emit TowackGenesis.WindowClosed(0);
+        genesis.close();
+    }
+
+    function test_OnlyOwnerOpensClosesSweeps() public {
         _fund(BUDGET);
         address rando = makeAddr("rando");
         vm.prank(rando);
@@ -175,10 +255,16 @@ contract TowackGenesisTest is Fixture {
         vm.prank(address(timelock));
         genesis.close();
         assertFalse(genesis.isOpen());
+        vm.prank(address(timelock));
+        genesis.sweepSurplus();
+        assertEq(token.balanceOf(address(genesis)), 0);
     }
 
     function test_RenounceDisabled() public {
         vm.expectRevert(TowackGenesis.RenounceDisabled.selector);
+        genesis.renounceOwnership();
+        vm.prank(makeAddr("rando"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, makeAddr("rando")));
         genesis.renounceOwnership();
     }
 
@@ -195,6 +281,8 @@ contract TowackGenesisTest is Fixture {
         vm.prank(noNft);
         vm.expectRevert(TowackGenesis.NotAgentOwner.selector);
         genesis.mint(id);
+        assertFalse(genesis.tokenIdUsed(id), "failed attempt marks nothing");
+        assertFalse(genesis.hasMinted(noNft));
     }
 
     function test_DoubleClaim_SameWalletSameToken() public {
@@ -204,6 +292,7 @@ contract TowackGenesisTest is Fixture {
         vm.prank(u);
         vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
         genesis.mint(id);
+        assertEq(token.balanceOf(u), BASE, "still exactly one grant");
     }
 
     function test_DoubleClaim_WalletWithSecondToken() public {
@@ -214,6 +303,7 @@ contract TowackGenesisTest is Fixture {
         vm.prank(u);
         vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
         genesis.mint(id2);
+        assertFalse(genesis.tokenIdUsed(id2));
     }
 
     function test_DoubleClaim_TokenTransferredToFreshWallet() public {
@@ -230,13 +320,33 @@ contract TowackGenesisTest is Fixture {
         uint256 own = nft.registerFor(fresh);
         _mint(fresh, own);
         assertEq(genesis.mintCount(), 2);
+        assertEq(token.balanceOf(fresh), BASE);
     }
 
     // ---------------------------------------------------------------- funding / solvency
-    function test_UnderfundedCannotOpenOrMint() public {
+    function test_FundPullsFromCallerAndEmits() public {
+        vm.prank(ecosystem);
+        token.approve(address(genesis), BUDGET);
+        vm.expectEmit(true, false, false, true, address(genesis));
+        emit TowackGenesis.BudgetFunded(ecosystem, BUDGET, BUDGET);
+        vm.prank(ecosystem);
+        genesis.fund(BUDGET);
+        assertEq(genesis.totalFunded(), BUDGET);
+        assertEq(token.balanceOf(address(genesis)), BUDGET);
+
+        vm.expectRevert(TowackGenesis.ZeroAmount.selector);
+        genesis.fund(0);
+        // no approval -> reverts
+        vm.prank(makeAddr("broke"));
+        vm.expectRevert();
+        genesis.fund(1);
+    }
+
+    function test_UnderfundedCannotOpen() public {
         _fund(BUDGET - 1);
         vm.expectRevert(abi.encodeWithSelector(TowackGenesis.Underfunded.selector, BUDGET - 1, BUDGET));
         genesis.open();
+        assertFalse(genesis.isOpen());
         _fund(1);
         genesis.open();
         assertEq(genesis.surplus(), 0);
@@ -249,112 +359,36 @@ contract TowackGenesisTest is Fixture {
         uint256 ecoBal = token.balanceOf(ecosystem);
         _fundAndOpen();
         _mintN(5);
-        _fulfillN(5, 1);
         assertEq(token.balanceOf(address(launch)), launchBal);
         assertEq(token.balanceOf(address(drawV2)), drawBal);
         assertEq(token.balanceOf(token.pair()), pairBal);
         assertEq(token.balanceOf(ecosystem), ecoBal - BUDGET);
     }
 
-    /// No mint price and no BNB kept: plain BNB is rejected; a mint pays only the exact VRF wrapper
-    /// price and any extra msg.value comes straight back.
-    function test_NoBnbKept_OnlyVrfFee() public {
-        vm.deal(address(this), 1 ether);
-        (bool ok,) = address(genesis).call{value: 1 ether}("");
-        assertFalse(ok, "plain BNB rejected");
+    function test_CommittedTracksRemainingClaims() public {
+        assertEq(genesis.committed(), 0, "closed: nothing owed");
         _fundAndOpen();
-        (address u, uint256 id) = _newHolder(0);
-        vm.deal(u, 1 ether);
-        uint256 w0 = address(vrf).balance;
-        uint256 price = wrapperPrice(GENESIS_CALLBACK_GAS);
-        vm.prank(u);
-        (ok,) = address(genesis).call{value: 0.1 ether}(abi.encodeCall(TowackGenesis.mint, (id)));
-        assertTrue(ok, "mint pays only the VRF fee");
-        assertEq(address(genesis).balance, 0, "no BNB kept");
-        assertEq(u.balance, 1 ether - price, "excess over the exact wrapper price refunded");
-        assertEq(address(vrf).balance - w0, price, "wrapper got exactly its price");
-        assertEq(genesisFee, price * 11_000 / 10_000, "quote = wrapper estimate + 10%");
+        assertEq(genesis.committed(), BUDGET);
+        _mintN(7);
+        assertEq(genesis.committed(), (300 - 7) * BASE);
+        assertEq(token.balanceOf(address(genesis)), genesis.committed(), "exactly funded stays exact");
+        genesis.close();
+        assertEq(genesis.committed(), 0, "closed: every claim was already paid");
+        assertEq(genesis.surplus(), (300 - 7) * BASE);
     }
 
-    function test_MintGivesBaseAndRequestsVrf() public {
-        _fundAndOpen();
-        (address u, uint256 id) = _newHolder(0);
-        vm.expectEmit(true, true, true, true, address(genesis));
-        emit TowackGenesis.GenesisMinted(u, 1, id, BASE);
-        vm.recordLogs();
-        _mint(u, id);
-        VrfReq memory r = lastVrfRequest(vm.getRecordedLogs());
-        assertEq(r.callbackGasLimit, GENESIS_CALLBACK_GAS);
-        assertEq(r.paid, wrapperPrice(GENESIS_CALLBACK_GAS));
-        assertEq(r.confirmations, 3);
-        assertEq(r.sender, address(genesis));
-        assertEq(token.balanceOf(u), BASE);
-        uint256 req = _req(u);
-        assertEq(genesis.requestMinter(req), u);
-
-        // claim before assignment
-        vm.prank(u);
-        vm.expectRevert(TowackGenesis.NotAssigned.selector);
-        genesis.claim();
-
-        // word 0 -> pick 0 -> tier 0 (5x)
-        vm.expectEmit(true, true, false, true, address(genesis));
-        emit TowackGenesis.PrizeAssigned(u, 1, 0, 80_000e18);
-        fulfillTo(address(genesis), req, 0);
-        (bool minted, bool assigned, uint8 pid, uint256 extra, bool claimed) = genesis.prizeOf(u);
-        assertTrue(minted && assigned && !claimed);
-        assertEq(pid, 0);
-        assertEq(extra, 80_000e18);
-
-        vm.prank(u);
-        genesis.claim();
-        assertEq(token.balanceOf(u), 100_000e18, "5x = 100k total");
-        vm.prank(u);
-        vm.expectRevert(TowackGenesis.AlreadyClaimed.selector);
-        genesis.claim();
-        _assertSolvent();
-    }
-
-    function test_NoBonusNothingToClaim() public {
-        _fundAndOpen();
-        (address u, uint256 id) = _newHolder(0);
-        _mint(u, id);
-        fulfillTo(address(genesis), _req(u), 299); // last slot -> tier 6
-        (,, uint8 pid,,) = genesis.prizeOf(u);
-        assertEq(pid, 6);
-        vm.prank(u);
-        vm.expectRevert(TowackGenesis.NothingToClaim.selector);
-        genesis.claim();
-    }
-
-    function test_RetryAfterDelay_StaleIgnored() public {
-        _fundAndOpen();
-        (address u, uint256 id) = _newHolder(0);
-        _mint(u, id);
-        uint256 r1 = _req(u);
-        vm.expectRevert(TowackGenesis.TooEarly.selector);
-        genesis.retryPrize{value: genesisFee}(u);
-        vm.warp(block.timestamp + 1 hours);
-        genesis.retryPrize{value: genesisFee}(u);
-        uint256 r2 = _req(u);
-        assertTrue(r2 != r1);
-        fulfillTo(address(genesis), r1, 0); // stale: ignored
-        assertEq(genesis.assignedCount(), 0);
-        fulfillTo(address(genesis), r2, 0);
-        assertEq(genesis.assignedCount(), 1);
-        vm.expectRevert(TowackGenesis.AlreadyAssigned.selector);
-        genesis.retryPrize{value: genesisFee}(u);
-        vm.expectRevert(TowackGenesis.NotMinter.selector);
-        genesis.retryPrize{value: genesisFee}(makeAddr("nobody"));
-    }
-
-    function test_Cap_300Succeed_301stReverts_ContractEmptiesAfterClaims() public {
+    function test_Cap_300Succeed_301stReverts_ContractEmpties() public {
         uint256[11] memory launchDeck = launch.remainingCounts();
         uint256 launchBal = token.balanceOf(address(launch));
         _fundAndOpen();
         _mintN(300);
         assertEq(genesis.mintCount(), 300);
         assertFalse(genesis.isOpen(), "auto-closes at sellout");
+        assertEq(genesis.totalClaimed(), BUDGET, "sellout hands out exactly 6M");
+        assertEq(token.balanceOf(address(genesis)), 0, "contract empty");
+        for (uint256 i; i < 300; i += 37) {
+            assertEq(token.balanceOf(gUser(i)), BASE);
+        }
 
         (address u301, uint256 id301) = _newHolder(300);
         vm.prank(u301);
@@ -362,26 +396,8 @@ contract TowackGenesisTest is Fixture {
         genesis.mint(id301);
         vm.expectRevert(TowackGenesis.SoldOut.selector);
         genesis.open();
-
-        _fulfillN(300, 42);
-        _assertSolvent();
-        assertEq(genesis.remainingTotal(), 0);
-        assertEq(genesis.totalAssigned(), BUDGET, "sellout assigns exactly 8M");
-        assertEq(genesis.extraAssigned(), 2_000_000e18);
-        assertEq(genesis.baseGranted(), 6_000_000e18);
-
-        for (uint256 i; i < 300; ++i) {
-            address u = gUser(i);
-            (,,, uint256 extra,) = genesis.prizeOf(u);
-            if (extra > 0) {
-                vm.prank(u);
-                genesis.claim();
-            }
-            _assertSolventCheap();
-        }
-        assertEq(token.balanceOf(address(genesis)), 0, "contract empty");
-        assertEq(genesis.extraOutstanding(), 0);
-        assertEq(address(genesis).balance, 0, "no BNB");
+        vm.expectRevert(TowackGenesis.ZeroAmount.selector);
+        genesis.sweepSurplus();
 
         // paid deck untouched
         uint256[11] memory after_ = launch.remainingCounts();
@@ -392,47 +408,51 @@ contract TowackGenesisTest is Fixture {
         assertEq(token.balanceOf(address(launch)), launchBal);
     }
 
-    function _assertSolventCheap() internal view {
-        assertGe(token.balanceOf(address(genesis)), genesis.extraOutstanding());
+    function test_SellOutEmitsWindowClosed() public {
+        _fundAndOpen();
+        _mintN(299);
+        (address u, uint256 id) = _newHolder(299);
+        vm.expectEmit(false, false, false, true, address(genesis));
+        emit TowackGenesis.WindowClosed(300);
+        _mint(u, id);
+        assertFalse(genesis.isOpen());
     }
 
-    function test_EarlyClose_SweepOnlyUnassigned() public {
+    /// After sellout the window can never reopen, even with an overfund.
+    function test_CannotReopenAfterSellout() public {
+        _fundAndOpen();
+        _mintN(300);
+        _fund(BASE);
+        vm.expectRevert(TowackGenesis.SoldOut.selector);
+        genesis.open();
+    }
+
+    function test_EarlyClose_SweepReturnsEverythingUnclaimed() public {
         _fundAndOpen();
         _mintN(10);
-        _fulfillN(8, 7); // 2 still pending
         genesis.close();
-
-        uint256 outstanding = genesis.extraOutstanding();
         uint256 bal = token.balanceOf(address(genesis));
-        uint256 pendingWorst = 2 * 80_000e18;
-        assertEq(genesis.committed(), outstanding + pendingWorst);
+        assertEq(bal, BUDGET - 10 * BASE);
         uint256 ecoBefore = token.balanceOf(ecosystem);
+        vm.expectEmit(true, false, false, true, address(genesis));
+        emit TowackGenesis.SurplusSwept(ecosystem, bal);
         uint256 swept = genesis.sweepSurplus();
-        assertEq(swept, bal - outstanding - pendingWorst);
-        assertEq(token.balanceOf(ecosystem), ecoBefore + swept);
+        assertEq(swept, bal);
+        assertEq(genesis.totalSwept(), bal);
+        assertEq(token.balanceOf(ecosystem), ecoBefore + bal);
+        assertEq(token.balanceOf(address(genesis)), 0);
         vm.expectRevert(TowackGenesis.ZeroAmount.selector);
         genesis.sweepSurplus();
 
-        // pending draws and assigned prizes still pay out in full
-        fulfillTo(address(genesis), _req(gUser(8)), wordFor(7, 8));
-        fulfillTo(address(genesis), _req(gUser(9)), wordFor(7, 9));
-        for (uint256 i; i < 10; ++i) {
-            (,,, uint256 extra,) = genesis.prizeOf(gUser(i));
-            if (extra > 0) {
-                vm.prank(gUser(i));
-                genesis.claim();
-            }
-        }
-        assertEq(genesis.extraOutstanding(), 0);
-        // the leftover worst-case reserve is now surplus too
-        if (genesis.surplus() > 0) genesis.sweepSurplus();
-        assertEq(token.balanceOf(address(genesis)), 0);
-        assertEq(token.balanceOf(ecosystem), ecoBefore + bal - genesis.extraAssigned());
-
-        // reopening requires refunding the remaining budget
-        uint256 need = (300 - 10) * BASE + genesis.deckExtraRemaining();
+        // reopening requires refunding the remaining claims
+        uint256 need = (300 - 10) * BASE;
         vm.expectRevert(abi.encodeWithSelector(TowackGenesis.Underfunded.selector, 0, need));
         genesis.open();
+        _fund(need);
+        genesis.open();
+        (address u, uint256 id) = _newHolder(10);
+        _mint(u, id);
+        assertEq(genesis.mintCount(), 11);
     }
 
     function test_SweepWhileOpenOnlyOverfund() public {
@@ -441,99 +461,78 @@ contract TowackGenesisTest is Fixture {
         assertEq(genesis.surplus(), 123e18);
         assertEq(genesis.sweepSurplus(), 123e18);
         assertEq(genesis.surplus(), 0);
+        vm.expectRevert(TowackGenesis.ZeroAmount.selector);
+        genesis.sweepSurplus();
         _mintN(3);
         assertEq(genesis.surplus(), 0);
+        _assertSolvent();
     }
 
-    function test_CallbackGasWellUnderLimit() public {
-        _fundAndOpen();
-        (address u, uint256 id) = _newHolder(0);
-        _mint(u, id);
-        uint256 req = _req(u);
-        uint256[] memory w = new uint256[](1);
-        w[0] = 199; // last 1.1x slot: longest walk that still books extra (3 extra SSTOREs)
-        vm.cool(address(genesis));
-        vm.prank(address(vrf));
-        uint256 g = gasleft();
-        genesis.rawFulfillRandomWords(req, w);
-        uint256 used = g - gasleft();
-        emit log_named_uint("genesis callback gas (cold, worst walk with extra)", used);
-        assertLt(used, 150_000);
-        (,, uint8 pid,,) = genesis.prizeOf(u);
-        assertEq(pid, 5);
+    // ---------------------------------------------------------------- reentrancy
+    function test_Reentrancy_ReenterDuringTokenTransferBlocked() public {
+        HookToken ht = new HookToken();
+        TowackGenesis g = new TowackGenesis(address(ht), address(nft), ecosystem, address(this));
+        ht.approve(address(g), BUDGET);
+        g.fund(BUDGET);
+        g.open();
+
+        ReentrantMinter m = new ReentrantMinter();
+        uint256 t1 = nft.registerFor(address(m));
+        uint256 t2 = nft.registerFor(address(m)); // second Agent ID for the re-entry attempt
+        ht.setHooked(address(m));
+
+        bytes[3] memory calls = [
+            abi.encodeCall(TowackGenesis.mint, (t2)),
+            abi.encodeCall(TowackGenesis.mintByHandle, ()),
+            abi.encodeCall(TowackGenesis.fund, (1))
+        ];
+        for (uint256 i; i < 3; ++i) {
+            uint256 snap = vm.snapshotState();
+            m.setUp(g, calls[i]);
+            m.mint(t1);
+            assertEq(m.attempts(), 1);
+            assertFalse(m.reenterSucceeded(), "re-entry blocked");
+            assertEq(
+                m.reenterRevertData(), abi.encodeWithSelector(ReentrancyGuard.ReentrancyGuardReentrantCall.selector)
+            );
+            assertEq(g.mintCount(), 1, "no second claim via re-entry");
+            assertEq(ht.balanceOf(address(m)), BASE);
+            assertFalse(g.tokenIdUsed(t2));
+            vm.revertToState(snap);
+        }
     }
 
     // ---------------------------------------------------------------- fuzz
-    function testFuzz_DeckInvariants(uint256 k, uint256 salt) public {
-        k = bound(k, 1, 300);
-        GenesisDeckHarness h = new GenesisDeckHarness(address(token), address(nft), ecosystem, vrfCfg(GENESIS_CALLBACK_GAS));
-        uint256[7] memory drawn;
-        uint256 extra;
-        for (uint256 i; i < k; ++i) {
-            uint8 id = h.draw(uint256(keccak256(abi.encode(salt, i))));
-            assertLt(id, 7);
-            drawn[id]++;
-            extra += h.prizeExtra(id);
-        }
-        uint256[7] memory rem = h.remainingCounts();
-        uint256 sum;
-        uint256 extraFromCounts;
-        for (uint256 j; j < 7; ++j) {
-            assertEq(drawn[j] + rem[j], FULL[j], "assigned + remaining == initial");
-            sum += rem[j];
-            extraFromCounts += drawn[j] * EXTRA[j];
-        }
-        assertEq(sum, h.remainingTotal());
-        assertEq(h.remainingTotal() + k, 300);
-        assertEq(extra, extraFromCounts);
-        assertLe(k * BASE + extra, BUDGET);
-        if (k == 300) assertEq(k * BASE + extra, BUDGET);
-    }
-
-    function testFuzz_MintFlowSolvent(uint256 n, uint256 salt) public {
-        n = bound(n, 1, 60);
-        _fundAndOpen();
+    function testFuzz_MintFlowSolvent(uint256 n, uint256 extraFund) public {
+        n = bound(n, 1, 120);
+        extraFund = bound(extraFund, 0, 1_000_000e18);
+        _fund(BUDGET + extraFund);
+        genesis.open();
+        assertEq(genesis.surplus(), extraFund);
         _mintN(n);
         _assertSolvent();
-        _fulfillN(n, salt);
-        _assertSolvent();
-        uint256[7] memory rem = genesis.remainingCounts();
-        uint256 extra;
-        for (uint256 j; j < 7; ++j) {
-            extra += (FULL[j] - rem[j]) * EXTRA[j];
-        }
-        assertEq(genesis.extraAssigned(), extra);
-        assertEq(genesis.totalAssigned(), n * BASE + extra, "base*count + extras == assigned");
+        assertEq(genesis.totalClaimed(), n * BASE);
+        assertEq(token.balanceOf(address(genesis)), BUDGET + extraFund - n * BASE);
         genesis.close();
-        if (genesis.surplus() > 0) genesis.sweepSurplus();
-        _assertSolvent();
-        for (uint256 i; i < n; ++i) {
-            (,,, uint256 e,) = genesis.prizeOf(gUser(i));
-            if (e > 0) {
-                vm.prank(gUser(i));
-                genesis.claim();
-            }
-        }
-        assertEq(token.balanceOf(address(genesis)), 0, "empty after claims + sweep");
+        uint256 ecoBefore = token.balanceOf(ecosystem);
+        genesis.sweepSurplus();
+        assertEq(token.balanceOf(address(genesis)), 0, "empty after close + sweep");
+        assertEq(token.balanceOf(ecosystem) - ecoBefore, BUDGET + extraFund - n * BASE);
     }
 
     // ---------------------------------------------------------------- mainnet HandleRegistry compatibility
     function test_MintByHandle_HandleRegistryCompatibleAndBlocksDoubleMint() public {
         MockHandleRegistry reg = new MockHandleRegistry();
-        TowackGenesis g = new TowackGenesis(address(token), address(reg), ecosystem, address(this), vrfCfg(GENESIS_CALLBACK_GAS));
+        TowackGenesis g = new TowackGenesis(address(token), address(reg), ecosystem, address(this));
         vm.startPrank(ecosystem);
         token.approve(address(g), BUDGET);
         g.fund(BUDGET);
         vm.stopPrank();
         g.open();
-        uint256 fee = g.vrfFeeAt(TEST_GAS_PRICE);
 
         address alice = makeAddr("aliceHandle");
         address bob = makeAddr("bobHandle");
         address noHandle = makeAddr("noHandle");
-        vm.deal(alice, 1 ether);
-        vm.deal(bob, 1 ether);
-        vm.deal(noHandle, 1 ether);
 
         reg.adminRegister("aliceagent", alice);
         reg.adminRegister("bobagent", bob);
@@ -543,11 +542,11 @@ contract TowackGenesisTest is Fixture {
         // No handle reverts NotAgentOwner
         vm.prank(noHandle);
         vm.expectRevert(TowackGenesis.NotAgentOwner.selector);
-        g.mintByHandle{value: fee}();
+        g.mintByHandle();
 
         // Alice uses mintByHandle() -> derives keccak256("aliceagent"), marks tokenIdUsed & wallet used
         vm.prank(alice);
-        g.mintByHandle{value: fee}();
+        g.mintByHandle();
         assertEq(g.mintCount(), 1);
         assertTrue(g.tokenIdUsed(aliceTid));
         assertEq(token.balanceOf(alice), BASE);
@@ -555,24 +554,27 @@ contract TowackGenesisTest is Fixture {
         // Alice cannot double-mint via mint(tokenId) or mintByHandle()
         vm.prank(alice);
         vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
-        g.mint{value: fee}(aliceTid);
+        g.mint(aliceTid);
+        vm.prank(alice);
+        vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
+        g.mintByHandle();
 
         // Bob uses mint(tokenId) directly -> works and blocks mintByHandle()
         vm.prank(bob);
-        g.mint{value: fee}(bobTid);
+        g.mint(bobTid);
         assertEq(g.mintCount(), 2);
         assertTrue(g.tokenIdUsed(bobTid));
+        assertEq(token.balanceOf(bob), BASE);
         vm.prank(bob);
         vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
-        g.mintByHandle{value: fee}();
+        g.mintByHandle();
     }
 
     function test_MintByHandle_RevertsOnMockWithoutHandleOf() public {
         _fundAndOpen();
         (address u,) = _newHolder(0);
-        vm.deal(u, 1 ether);
         vm.prank(u);
         vm.expectRevert(TowackGenesis.NotAgentOwner.selector);
-        genesis.mintByHandle{value: genesisFee}();
+        genesis.mintByHandle();
     }
 }

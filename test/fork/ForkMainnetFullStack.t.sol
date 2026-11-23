@@ -114,11 +114,9 @@ contract ForkMainnetFullStackTest is Test {
             new TowackRouter(address(token), PANCAKE_ROUTER, AGENT_ID, address(rebates), address(drawV2), dev);
         rebates.bind(address(token), address(router));
         rebates.setRouterAdmin(address(timelock));
-        TowackGenesis genesis = new TowackGenesis(
-            address(token), AGENT_ID, ecosystem, address(this), VRFConsumerV25.VRFConfig(VRF_WRAPPER, 3, 170_000)
-        );
-        token.approve(address(genesis), 8_000_000e18);
-        genesis.fund(8_000_000e18);
+        TowackGenesis genesis = new TowackGenesis(address(token), AGENT_ID, ecosystem, address(this));
+        token.approve(address(genesis), 6_000_000e18);
+        genesis.fund(6_000_000e18);
         genesis.open();
 
         // 1. Referred paid mint (holder 2 referred by holder 1) + non-agent rejection
@@ -166,23 +164,22 @@ contract ForkMainnetFullStackTest is Test {
         launch.claim();
         assertEq(REAL_HOLDER_2.balance - r2b, 0.02375 ether, "0.02375 BNB refund claimed");
 
-        // 2. Genesis 300: holder 1 uses mintByHandle(), holder 2 uses mint(uint256(keccak256(h2)))
-        uint256 genFee = genesis.vrfFeeAt(0.1 gwei);
+        // 2. Genesis 300 (free, gas-only, flat 20k, no VRF): holder 1 uses mintByHandle(), holder 2 uses
+        //    mint(uint256(keccak256(h2))) against the REAL mainnet HandleRegistry; 0 BNB attached.
+        uint256 h1Bnb = REAL_HOLDER_1.balance;
+        uint256 h2Bnb = REAL_HOLDER_2.balance;
         vm.prank(REAL_HOLDER_1);
-        genesis.mintByHandle{value: genFee}();
+        genesis.mintByHandle();
         vm.prank(REAL_HOLDER_2);
-        genesis.mint{value: genFee}(uint256(keccak256(bytes(h2))));
+        genesis.mint(uint256(keccak256(bytes(h2))));
         assertEq(genesis.mintCount(), 2);
-        (,,,,,, uint256 gReq1) = genesis.tickets(REAL_HOLDER_1);
-        (,,,,,, uint256 gReq2) = genesis.tickets(REAL_HOLDER_2);
-        _fulfillViaRealWrapper(gReq1, 199); // worst-case cold walk + extra (1.1x, +2k TWAK)
-        _fulfillViaRealWrapper(gReq2, 0); // 5x (+80k TWAK)
+        assertEq(REAL_HOLDER_1.balance, h1Bnb, "no BNB attached");
+        assertEq(REAL_HOLDER_2.balance, h2Bnb, "no BNB attached");
+        assertEq(token.balanceOf(REAL_HOLDER_1), 88_000e18 + 20_000e18, "instant flat 20k");
+        assertEq(token.balanceOf(REAL_HOLDER_2), 80_000e18 + 20_000e18, "instant flat 20k");
         vm.prank(REAL_HOLDER_1);
-        genesis.claim();
-        vm.prank(REAL_HOLDER_2);
-        genesis.claim();
-        assertEq(token.balanceOf(REAL_HOLDER_1), 88_000e18 + 22_000e18);
-        assertEq(token.balanceOf(REAL_HOLDER_2), 80_000e18 + 100_000e18);
+        vm.expectRevert(TowackGenesis.AlreadyMinted.selector);
+        genesis.mintByHandle();
 
         // 3. Close mint + finalize listing on REAL mainnet PancakeSwap v2
         vm.warp(block.timestamp + 7 days);

@@ -5,7 +5,7 @@ import { useGasPrice, useReadContract } from "wagmi";
 import { fmt18 } from "@/lib/format";
 import type { AppChainId } from "@/config/chains";
 
-/** `vrfFeeAt(uint256 gasPrice)`: identical on TowackLaunch, TowackGenesis and DrawV2 (VRFConsumerV25). */
+/** `vrfFeeAt(uint256 gasPrice)`: identical on TowackLaunch and DrawV2 (VRFConsumerV25). Genesis 300 has no VRF (free, gas-only claim). */
 const vrfFeeAbi = [
   {
     type: "function",
@@ -17,7 +17,7 @@ const vrfFeeAbi = [
 ] as const;
 
 /**
- * Chainlink VRF fee the user pays on every randomness request (mint / Genesis mint / pool entry / retry).
+ * Chainlink VRF fee the user pays on every randomness request (paid mint / pool entry / retry).
  * Paid in BNB per request to the official Chainlink VRF v2.5 direct-funding WRAPPER (no subscription).
  * Quoted on-chain with OUR contract's `vrfFeeAt(gasPrice)` = the wrapper's `estimateRequestPriceNative` at that gas
  * price + 10% (never `vrfFee()` / the wrapper's `calculateRequestPriceNative`: both use tx.gasprice, which is often

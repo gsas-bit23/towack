@@ -56,9 +56,8 @@ contract DeployFullStackTestnet is Script {
     address constant DEFAULT_AGENT_ID_NFT = 0x70BC7133E62427DAE709299454ed8c9015898036;
 
     uint32 constant LAUNCH_CALLBACK_GAS = 165_000;
-    uint32 constant GENESIS_CALLBACK_GAS = 170_000;
     uint32 constant DRAW_CALLBACK_GAS = 200_000;
-    uint256 constant GENESIS_BUDGET = 8_000_000e18;
+    uint256 constant GENESIS_BUDGET = 6_000_000e18;
     /// ~16.0M gas at 1 gwei = 0.016 tBNB, plus a small margin. No VRF deposit (the wrapper is paid per request).
     uint256 constant GAS_RESERVE = 0.02 ether;
 
@@ -168,9 +167,7 @@ contract DeployFullStackTestnet is Script {
         o.router = address(new TowackRouter(o.token, PANCAKE_ROUTER, o.agentId, o.rebates, o.drawV2, DEPLOYER));
         RebateDistributor(payable(o.rebates)).bind(o.token, o.router);
 
-        o.genesis = address(
-            new TowackGenesis(o.token, o.agentIdNft, DEPLOYER, DEPLOYER, _cfg(wrapper, GENESIS_CALLBACK_GAS))
-        );
+        o.genesis = address(new TowackGenesis(o.token, o.agentIdNft, DEPLOYER, DEPLOYER));
         TowackToken(o.token).approve(o.genesis, GENESIS_BUDGET);
         TowackGenesis(o.genesis).fund(GENESIS_BUDGET);
         TowackGenesis(o.genesis).open();
@@ -196,9 +193,7 @@ contract DeployFullStackTestnet is Script {
         if (o.instantClose) console2.log("REHEARSAL stack: separate from addresses.json; do NOT write it there");
         console2.log("deployer tBNB left (wei)", DEPLOYER.balance);
         console2.log("Launch callback", VRFConsumerV25(o.launch).vrfCallbackGasLimit());
-        console2.log("Genesis callback", VRFConsumerV25(o.genesis).vrfCallbackGasLimit());
         console2.log("DrawV2 callback", VRFConsumerV25(o.drawV2).vrfCallbackGasLimit());
-        console2.log("Genesis fee @ 1 gwei (wei)", VRFConsumerV25(o.genesis).vrfFeeAt(1 gwei));
         console2.log("DrawV2 fee @ 1 gwei (wei)", VRFConsumerV25(o.drawV2).vrfFeeAt(1 gwei));
         console2.log("Launch fee @ 1 gwei (wei)", VRFConsumerV25(o.launch).vrfFeeAt(1 gwei));
         console2.log(

@@ -27,7 +27,7 @@ import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interface
 ///     --legacy --with-gas-price <live wei> --gas-estimate-multiplier 100
 ///
 /// Txs (same order as DeployFullStackTestnet): Timelock, DrawV2 (70M via TokenBound), Launch, RebateDistributor,
-/// TeamVesting, Token (+pair), 3x bindToken, Router, rebates.bind, Genesis, approve + fund(8M) + open.
+/// TeamVesting, Token (+pair), 3x bindToken, Router, rebates.bind, Genesis (no VRF), approve + fund(6M) + open.
 /// No subscription and NO VRF deposit: the wrapper is paid per request by users. No paid mint (a user cost).
 /// The script measures the gas of each step in-simulation and prints the deploy cost at the run's gas price,
 /// 0.05, 0.1, 1 and 3 gwei. forge's own "Estimated total gas" summary is the authoritative number.
@@ -40,9 +40,8 @@ contract EstimateFullRedeploy is Script {
 
     // per-contract callback gas limits (see docs/ARCHITECTURE.md, Randomness)
     uint32 constant LAUNCH_CALLBACK_GAS = 165_000;
-    uint32 constant GENESIS_CALLBACK_GAS = 170_000;
     uint32 constant DRAW_CALLBACK_GAS = 200_000;
-    uint256 constant GENESIS_BUDGET = 8_000_000e18;
+    uint256 constant GENESIS_BUDGET = 6_000_000e18;
 
     struct Net {
         address wrapper;
@@ -132,9 +131,7 @@ contract EstimateFullRedeploy is Script {
         o.router = address(new TowackRouter(o.token, n.pancakeRouter, n.agentId, o.rebates, o.drawV2, DEPLOYER));
         RebateDistributor(payable(o.rebates)).bind(o.token, o.router);
 
-        o.genesis = address(
-            new TowackGenesis(o.token, n.agentIdNft, DEPLOYER, DEPLOYER, _cfg(n, GENESIS_CALLBACK_GAS))
-        );
+        o.genesis = address(new TowackGenesis(o.token, n.agentIdNft, DEPLOYER, DEPLOYER));
         TowackToken(o.token).approve(o.genesis, GENESIS_BUDGET);
         TowackGenesis(o.genesis).fund(GENESIS_BUDGET);
         TowackGenesis(o.genesis).open();
@@ -155,7 +152,6 @@ contract EstimateFullRedeploy is Script {
 
         // ---- per-request user fees with these limits (the frontend calls vrfFeeAt(gasPrice) the same way)
         _fees("Launch", VRFConsumerV25(o.launch), gp);
-        _fees("Genesis", VRFConsumerV25(o.genesis), gp);
         _fees("DrawV2", VRFConsumerV25(o.drawV2), gp);
         console2.log("DrawV2 availableTwak", DrawV2(payable(o.drawV2)).availableTwak());
         console2.log("Genesis committed", TowackGenesis(o.genesis).committed());

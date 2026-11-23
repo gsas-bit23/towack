@@ -92,7 +92,7 @@ export function WheelStage({
 }
 
 /**
- * Wheel mode state machine shared by the paid and Genesis stages:
+ * Wheel mode state machine for the paid (Draw V1) stage:
  *  waiting  -> anticipation spin until the prize shows up
  *  assigned -> ease out and stop exactly on prizeId (or snap there if the visitor arrives later)
  * Confetti fires on a live landing unless the prize is `noWinId`.

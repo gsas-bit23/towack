@@ -1,6 +1,6 @@
 ---
 name: towack
-description: Mint Towack (TWAK) slots (optionally with a referrer), claim Genesis 300, enter the Draw V2 pool wheel, claim prizes and referral BNB, buy/sell TWAK through the Towack router, swap or bridge tokens via PancakeSwap, Uniswap, and Relay, and (Agent ID holders) place or cancel Aster perpetual orders from the Towack /perps page (BAW signs only a trade-only Aster API-wallet approval) on BNB Smart Chain mainnet using the official Binance Agentic Wallet (BAW) external-sign flow. Use when a user asks to mint, refer, spin, enter, claim, buy, sell, swap, bridge, or trade perps on Towack with their Binance Agentic Wallet.
+description: Mint Towack (TWAK) slots (optionally with a referrer), claim the free Genesis 300 (flat 20,000 TWAK, gas only), enter the Draw V2 pool wheel, claim prizes and referral BNB, buy/sell TWAK through the Towack router, swap or bridge tokens via PancakeSwap, Uniswap, and Relay, and (Agent ID holders) place or cancel Aster perpetual orders from the Towack /perps page (BAW signs only a trade-only Aster API-wallet approval) on BNB Smart Chain mainnet using the official Binance Agentic Wallet (BAW) external-sign flow. Use when a user asks to mint, refer, spin, enter, claim, buy, sell, swap, bridge, or trade perps on Towack with their Binance Agentic Wallet.
 ---
 
 # Towack with Binance Agentic Wallet
@@ -18,7 +18,7 @@ Requires Binance's official skill: https://github.com/binance/binance-skills-hub
   2. Show the user the parsed tx, the risks and `authorityChanges`. Wait for an explicit "yes".
   3. Only then `baw contract-call execute --requestId <requestId> --json`. Never execute without a fresh preview and the user's "yes"; a two-step flow (approve, then sell/enter) needs a preview + "yes" for **each** step.
 - `--value` is raw wei (integer). Never pass a gas price.
-- **VRF fee.** Every randomness request is paid by the user in native BNB to the Chainlink VRF v2.5 direct-funding wrapper. Quote it with `vrfFeeAt(uint256 gasPrice)` (selector `0xa3eaf9d8`) via an `eth_call` at `gasPrice = max(liveGasPrice * 3, 0.25 gwei)` (`0.25 gwei` = `250000000` wei), on the contract you are about to call. BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the Towack contract in the same tx.
+- **VRF fee.** Every randomness request (paid mint, Draw V2 entry, retries; Genesis 300 has none) is paid by the user in native BNB to the Chainlink VRF v2.5 direct-funding wrapper. Quote it with `vrfFeeAt(uint256 gasPrice)` (selector `0xa3eaf9d8`) via an `eth_call` at `gasPrice = max(liveGasPrice * 3, 0.25 gwei)` (`0.25 gwei` = `250000000` wei), on the contract you are about to call. BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the Towack contract in the same tx.
 - Exact TWAK approvals only, never unlimited (never `type(uint256).max`).
 
 ## Addresses (chain 56)
@@ -28,7 +28,7 @@ Mainnet contracts are live on BNB Smart Chain (chain 56), deployed 23 Nov 2026, 
 | Contract | Address |
 |---|---|
 | TowackLaunch | `0xc102c1d5F308722d24850bb5ebF7214831D63E51` |
-| TowackGenesis | `0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038` |
+| TowackGenesis | `0x5B3028454a628F73A5fe9198DE4fddefCC43c73A` |
 | DrawV2 | `0xdf4499f5690474F502a774eCF6B93E73f57944C8` |
 | TWAK token | `0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494` |
 | TowackRouter | `0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775` |
@@ -60,11 +60,11 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 2. `TowackLaunch.claimReferral()`: `--inputData 0xe02f1ebd`, `--value 0`. Pull-based, any phase, no deadline (never swept). Reverts `NothingToClaimReferral()` if zero.
 
 ### Genesis 300 (Agent ID required)
-This mint is free: 0 BNB goes to Towack. The `--value` you attach is only a Chainlink VRF randomness buffer (quoted at `max(liveGasPrice * 3, 0.25 gwei)` so BAW's higher broadcast gas does not underpay). Most of it (every unused wei) is refunded automatically in the same transaction; the minter still pays ordinary network gas.
-1. `fee = TowackGenesis.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))`.
-2. Easiest on mainnet (`HandleRegistry`): `TowackGenesis.mintByHandle()` payable (selector `0x748049f4`): `--inputData 0x748049f4`, `--value = fee` (no mint price; resolves `handleOf(msg.sender)` on-chain).
-   Or `TowackGenesis.mint(uint256 agentTokenId)` payable (selector `0xa0712d68`): where `agentTokenId = uint256(keccak256(bytes(handle)))`, `--value = fee`. One per Agent ID and per wallet.
-3. Later: `TowackGenesis.claim()` (`--inputData 0x4e71d92d`, `--value 0`).
+Completely free: the claim is **non-payable**, so always `--value 0` (attaching any BNB reverts). The user pays only ordinary network gas (~$0.002). Each claim sends a flat **20,000 TWAK** to the caller in the same transaction: no wheel, no Chainlink VRF, no fee quote, no second `claim()` step. 300 claims in total (6,000,000 TWAK budget); one per Agent ID and per wallet.
+1. Easiest on mainnet (`HandleRegistry`): `TowackGenesis.mintByHandle()` (selector `0x748049f4`): `--inputData 0x748049f4`, `--value 0` (resolves `handleOf(msg.sender)` on-chain).
+   Or `TowackGenesis.mint(uint256 agentTokenId)` (selector `0xa0712d68`): where `agentTokenId = uint256(keccak256(bytes(handle)))`, `--value 0`.
+2. Nothing else to do: the 20,000 TWAK is already in the wallet once the tx confirms. Optional check: `hasMinted(address)` via `eth_call`.
+If the preview reverts (`NotOpen`, `SoldOut`, `AlreadyMinted`, `TokenIdUsed`, `NotAgentOwner`), stop and tell the user. Do not attach BNB. The retired VRF Genesis `0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038` is closed and must not be used.
 
 ### Draw V2 pool wheel (anyone, no Agent ID)
 1. `TWAK.approve(DrawV2, amount)` (selector `0x095ea7b3`): `--to TWAK`, `--value 0`, exact `amount` (18 decimals).
@@ -126,7 +126,7 @@ When not bridging, BAW's native routing can also be used directly:
 `baw market-order quote --fromTokenQty <qty> --fromToken <in> --toToken <out> --binanceChainId 56 --slippage <slip> --json` -> preview -> explicit yes -> `baw market-order swap` -> poll order status.
 
 ### Retries
-If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch / Genesis) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))` again. Same preview / confirm / execute rules.
+If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))` again. Same preview / confirm / execute rules.
 
 ## Aster perps (`/perps`; agent path for Agent ID holders)
 

@@ -42,32 +42,37 @@
     "token": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
     "pair": "0x8F64C0fef2f5Ff365C9a1E3D3c925a07078733Cc",
     "router": "0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775",
-    "genesis": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+    "genesis": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
     "wbnb": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
     "pancakeRouter": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
-    "pancakeFactory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+    "pancakeFactory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+    "genesisV1": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038"
   },
   "allocationsTwak": {
     "launch": "650000000",
     "drawV2": "70000000",
     "rebateDistributor": "100000000",
     "teamVesting": "50000000",
-    "genesis": "8000000",
-    "deployerRemainder": "122000000",
+    "genesis": "6000000",
+    "deployerRemainder": "123938000",
     "totalSupply": "1000000000",
-    "note": "Deployer remainder is seasons + ecosystem leftover + POL buffer, because those wallets were set to the deployer EOA."
+    "note": "After the 2026-11-23 23:17 PKT Genesis flat migration: old VRF Genesis was closed and 7,938,000 unused TWAK swept to the deployer; the new flat Genesis was funded with 6,000,000 TWAK. Deployer remainder is seasons + ecosystem leftover + POL buffer + the 1,938,000 TWAK not moved into the new 6M budget.",
+    "genesisV1SweptTwak": "7938000"
   },
   "statusChecks": {
     "allBytecodeNonEmpty": true,
     "tokenName": "Towack",
     "tokenSymbol": "TWAK",
     "genesisIsOpen": true,
-    "genesisFundedTwak": "8000000",
+    "genesisFundedTwak": "6000000",
     "genesisMaxMints": 300,
     "genesisOwner": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
     "launchMaxMints": 5000,
     "launchMintStart": 1795443464,
-    "launchMintEnd": 1796048264
+    "launchMintEnd": 1796048264,
+    "genesisAddress": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
+    "genesisV1Address": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+    "genesisV1IsOpen": false
   },
   "notes": [
     "Broadcast 2026-11-23 19:17 PKT from deployer 0x38A0\u20266776 after Mateen's explicit go (t201s895).",
@@ -76,7 +81,8 @@
     "Genesis was funded with 8M TWAK and opened in the same script (isOpen=true).",
     "Paid Launch window is 7 days from deploy: 2026-11-23 19:17:44 PKT to 2026-11-30 19:17:44 PKT.",
     "Source verification on Sourcify / BscScan is a follow-up; production Vercel promote still needs Mateen's sign-off.",
-    "Do not commit .env, private keys, or Foundry cache/broadcast (gitignored)."
+    "Do not commit .env, private keys, or Foundry cache/broadcast (gitignored).",
+    "Genesis flat migration broadcast 2026-11-23 23:17 PKT after Mateen's go (t228s1033 / t229u): old VRF Genesis 0xD093\u20268038 closed and 7,938,000 TWAK swept; new flat TowackGenesis 0x5B3028454a628F73A5fe9198DE4fddefCC43c73A deployed, funded with 6,000,000 TWAK and opened. 6 txs, 1,273,767 gas, 0.0001273767 BNB at 0.1 gwei (legacy). Sourcify exact_match (creation + runtime) and BscScan/Etherscan verified."
   ],
   "transactions": [
     {
@@ -238,6 +244,66 @@
       "blockNumber": 135285749,
       "status": "0x1",
       "gasUsed": 60494
+    },
+    {
+      "hash": "0x35d3f70e600d14309e749dfd8eb6b10886d8c1b2238eb55466d8818b4530ae57",
+      "url": "https://bscscan.com/tx/0x35d3f70e600d14309e749dfd8eb6b10886d8c1b2238eb55466d8818b4530ae57",
+      "name": "TowackGenesisV1.close",
+      "contractAddress": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+      "txType": "CALL",
+      "blockNumber": 135317455,
+      "status": "0x1",
+      "gasUsed": 27056
+    },
+    {
+      "hash": "0x9da53a5f0fcb597ec929436ce4bc1f939df5043c66a4cae876c73bad8a4d2436",
+      "url": "https://bscscan.com/tx/0x9da53a5f0fcb597ec929436ce4bc1f939df5043c66a4cae876c73bad8a4d2436",
+      "name": "TowackGenesisV1.sweepSurplus",
+      "contractAddress": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+      "txType": "CALL",
+      "blockNumber": 135317460,
+      "status": "0x1",
+      "gasUsed": 75132
+    },
+    {
+      "hash": "0x6c4b753814dbb91fbbfdac88b4280dda17875c86cabed78df5105a6eeba83c48",
+      "url": "https://bscscan.com/tx/0x6c4b753814dbb91fbbfdac88b4280dda17875c86cabed78df5105a6eeba83c48",
+      "name": "TowackGenesis.create",
+      "contractAddress": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
+      "txType": "CREATE",
+      "blockNumber": 135317462,
+      "status": "0x1",
+      "gasUsed": 985591
+    },
+    {
+      "hash": "0x32e83f5c0a8d8ddb689212869cd65c88268b91ff725882d7873b40db6f12277c",
+      "url": "https://bscscan.com/tx/0x32e83f5c0a8d8ddb689212869cd65c88268b91ff725882d7873b40db6f12277c",
+      "name": "TWAK.approve",
+      "contractAddress": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+      "txType": "CALL",
+      "blockNumber": 135317465,
+      "status": "0x1",
+      "gasUsed": 46017
+    },
+    {
+      "hash": "0x8ab914875c1b3ebd6c98cf98d7c4bfaba8bf355cf73e741f330bd772c925b0f8",
+      "url": "https://bscscan.com/tx/0x8ab914875c1b3ebd6c98cf98d7c4bfaba8bf355cf73e741f330bd772c925b0f8",
+      "name": "TowackGenesis.fund",
+      "contractAddress": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
+      "txType": "CALL",
+      "blockNumber": 135317471,
+      "status": "0x1",
+      "gasUsed": 84518
+    },
+    {
+      "hash": "0x0a8897ff93e82dcb1c4dc65d446e94bfe591b02ade733cd2f870531d77478411",
+      "url": "https://bscscan.com/tx/0x0a8897ff93e82dcb1c4dc65d446e94bfe591b02ade733cd2f870531d77478411",
+      "name": "TowackGenesis.open",
+      "contractAddress": "0x5B3028454a628F73A5fe9198DE4fddefCC43c73A",
+      "txType": "CALL",
+      "blockNumber": 135317476,
+      "status": "0x1",
+      "gasUsed": 55453
     }
   ]
 }

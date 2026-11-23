@@ -1,195 +1,22 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState } from "react";
 import { keccak256, toBytes } from "viem";
 import { useReadContract, useWriteContract } from "wagmi";
 import { towackGenesisAbi } from "@/abi";
 import { useTowack } from "@/lib/chain";
-import { agentNftAbi, useGenesisDemo, useGenesisState, useMyGenesis } from "@/lib/genesis";
-import { GENESIS_BASE, GENESIS_NO_BONUS_ID, GENESIS_PRIZES, GENESIS_SLICES, genesisPrizeById, genesisShareText } from "@/lib/genesisPrizes";
-import { fmtDuration } from "@/lib/format";
+import { agentNftAbi, useGenesisState, useMyGenesis } from "@/lib/genesis";
+import { GENESIS_BASE, GENESIS_BUDGET, GENESIS_COST_TEXT, genesisShareText } from "@/lib/genesisPrizes";
 import { useTx } from "@/lib/tx";
-import { useNow } from "@/lib/useNow";
-import { useVrfFee } from "@/lib/vrfFee";
 import { AnimatedNumber, Confetti, ProgressFill, SuccessCheck } from "./motion";
-import { ShareButton, useWheelMachine, type WheelStatus } from "./PrizeBooth";
-import { SpinWheel } from "./SpinWheel";
+import { ShareButton } from "./PrizeBooth";
 import { ConnectPill } from "./ConnectPill";
 import { AgentPathToggle } from "./AgentPath";
-import { TxNotice, VrfSource } from "./status";
+import { TxNotice } from "./status";
 import { Button, Check, Kicker, Panel, Pill } from "./ui";
 
-const WHEEL_SIZE = 380;
 const BASE_TEXT = `${GENESIS_BASE.toLocaleString("en-US")} TWAK`;
-
-/** Genesis-only wheel + result card (7 TWAK tiers, no BNB slices). */
-function GenesisWheelStage({
-  status,
-  prizeId,
-  salt = 0,
-  fresh = false,
-  demo = false,
-  waitingNote,
-  actions,
-  idleNote,
-}: {
-  status: WheelStatus;
-  prizeId?: number;
-  salt?: number;
-  fresh?: boolean;
-  demo?: boolean;
-  waitingNote?: ReactNode;
-  actions?: ReactNode;
-  idleNote?: ReactNode;
-}) {
-  const { mode, landed, burst, onLanded } = useWheelMachine(status, fresh, prizeId, GENESIS_NO_BONUS_ID);
-  const prize = genesisPrizeById(prizeId);
-  const showResult = landed && prize !== undefined && status === "assigned";
-
-  return (
-    <div className="relative">
-      {demo ? (
-        <div className="mb-4 flex justify-center">
-          <Pill tone="gold" className="border border-line text-[13px]">
-            DEMO SPIN · not a real mint or prize
-          </Pill>
-        </div>
-      ) : null}
-      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-2xl" aria-hidden="true">
-        <Confetti fire={burst} big={Boolean(prize?.jackpot)} />
-      </div>
-      <SpinWheel mode={mode} prizeId={prizeId} salt={salt} onLanded={onLanded} size={WHEEL_SIZE} prizes={GENESIS_PRIZES} slices={GENESIS_SLICES} />
-
-      <div className="mt-6 min-h-[110px]" aria-live="polite">
-        {status === "waiting" || (status === "assigned" && !landed) ? (
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 text-[18px] font-semibold sm:text-[20px]">
-              <span className="blink h-2 w-2 rounded-full bg-gold" aria-hidden="true" />
-              {status === "waiting" ? "Spinning… waiting for VRF" : "Here it comes…"}
-            </div>
-            {waitingNote ? <div className="mt-2 text-[14px] text-sub">{waitingNote}</div> : null}
-          </div>
-        ) : showResult ? (
-          <motion.div
-            initial={{ y: 12, opacity: 0.6 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 26 }}
-            className={`rounded-2xl border px-5 py-5 text-center ${prize.kind === "none" ? "border-line bg-card-2" : prize.jackpot ? "gold-hairline border-gold/40 bg-gold/[.06]" : "border-line-2 bg-card-2"}`}
-          >
-            {prize.kind !== "none" && !demo ? <SuccessCheck className="mx-auto mb-2 h-9 w-9" /> : null}
-            <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{demo ? "Demo landed on" : prize.kind === "none" ? "The wheel says" : "You pulled"}</div>
-            <div className={`mt-1 text-[26px] font-semibold leading-tight tracking-tight sm:text-[28px] ${prize.jackpot ? "text-gold" : ""}`}>{prize.label}</div>
-            <div className="mt-1 text-[18px] font-semibold">{prize.total.toLocaleString("en-US")} TWAK total</div>
-            <div className="mt-1 text-sm font-medium text-muted">
-              {prize.kind === "none" ? `No bonus slot. Your ${BASE_TEXT} base is already in your wallet.` : `${BASE_TEXT} base (already sent) + ${prize.extra.toLocaleString("en-US")} TWAK to claim`}
-            </div>
-            {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
-          </motion.div>
-        ) : (
-          <div className="text-center font-medium text-sub">{idleNote}</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const DEMO_PRIZES = [1, 3, GENESIS_NO_BONUS_ID, 0, 4];
-
-function GenesisDemoWheel() {
-  const [round, setRound] = useState(1);
-  const [status, setStatus] = useState<WheelStatus>("waiting");
-  useEffect(() => {
-    const t = setTimeout(() => setStatus("assigned"), 2800);
-    return () => clearTimeout(t);
-  }, [round]);
-  return (
-    <GenesisWheelStage
-      key={round}
-      status={status}
-      prizeId={DEMO_PRIZES[(round - 1) % DEMO_PRIZES.length]}
-      salt={round}
-      fresh
-      demo
-      waitingNote="Demo only — no transaction, no VRF."
-      actions={
-        <Button
-          tone="line"
-          size="sm"
-          className="min-h-11"
-          onClick={() => {
-            setStatus("waiting");
-            setRound((r) => r + 1);
-          }}
-        >
-          Spin the demo again
-        </Button>
-      }
-    />
-  );
-}
-
-/** Live wheel for the connected wallet's Genesis ticket. */
-function MyGenesisWheel({ fresh, retryDelay }: { fresh: boolean; retryDelay: number }) {
-  const { chainId, addresses, account } = useTowack();
-  const { prize, mintIndex, requestedAt } = useMyGenesis();
-  const { writeContractAsync } = useWriteContract();
-  const tx = useTx();
-  const now = useNow(5_000);
-  const genesis = addresses.genesis;
-  const status: WheelStatus = !prize?.minted ? "none" : prize.assigned ? "assigned" : "waiting";
-  const canRetry = status === "waiting" && now > 0 && requestedAt !== undefined && requestedAt > 0 && now >= requestedAt + retryDelay;
-  const hasExtra = Boolean(prize && prize.extra > 0n);
-  const vrf = useVrfFee(genesis, chainId); // a retry is a new VRF request: the caller pays its fee
-
-  const claim = () =>
-    genesis && tx.run("Claim Genesis bonus", () => writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "claim", chainId }));
-  const retry = () =>
-    genesis &&
-    account &&
-    vrf.value !== undefined &&
-    tx.run("Retry VRF", () =>
-      writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "retryPrize", args: [account], value: vrf.value, chainId }),
-    );
-
-  return (
-    <div>
-      <GenesisWheelStage
-        status={status}
-        prizeId={prize?.assigned ? prize.prizeId : undefined}
-        salt={mintIndex ?? 0}
-        fresh={fresh}
-        waitingNote={
-          <>
-            {mintIndex ? <Pill tone="neutral">GENESIS #{mintIndex}</Pill> : null} {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago.` : ""}
-            {canRetry ? (
-              <div className="mt-3 flex justify-center">
-                <Button tone="line" size="sm" className="min-h-11" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
-                  {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
-                </Button>
-              </div>
-            ) : null}
-          </>
-        }
-        actions={
-          prize && status === "assigned" ? (
-            <>
-              {hasExtra && !prize.claimed ? (
-                <Button tone="gold" size="sm" className="min-h-11" disabled={tx.busy} onClick={claim}>
-                  {tx.busy ? "Check your wallet…" : "Claim bonus TWAK"}
-                </Button>
-              ) : null}
-              {hasExtra && prize.claimed ? <Pill tone="gold" className="border border-line px-4 py-2 text-sm">CLAIMED ✓</Pill> : null}
-              <ShareButton prizeId={prize.prizeId} text={genesisShareText(prize.prizeId)} />
-            </>
-          ) : undefined
-        }
-      />
-      <TxNotice state={tx.state} onClose={tx.reset} />
-      {status === "assigned" && hasExtra && !prize?.claimed ? <AgentPathToggle flow="genesisClaim" className="mt-4" /> : null}
-    </div>
-  );
-}
 
 /** Parse numeric token id, 0x hex id, or SPACE ID handle (e.g. "alice" / "alice.ai" -> keccak256(bytes("alice"))). */
 function parseTokenOrHandle(raw: string): { id?: bigint; handle?: string } {
@@ -202,11 +29,37 @@ function parseTokenOrHandle(raw: string): { id?: bigint; handle?: string } {
   return {};
 }
 
-/** Mint CTA: finds (or takes) the Agent ID handle / token id, checks it, and calls mint(tokenId). */
+/** Claimed state: 20,000 TWAK already in the wallet (sent in the mint tx itself). */
+function GenesisClaimed({ mintIndex, burst }: { mintIndex?: number; burst: number }) {
+  return (
+    <div className="relative">
+      <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-2xl" aria-hidden="true">
+        <Confetti fire={burst} />
+      </div>
+      <motion.div
+        initial={{ y: 12, opacity: 0.6 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}
+        className="gold-hairline rounded-2xl border border-gold/40 bg-gold/[.06] px-5 py-6 text-center"
+        aria-live="polite"
+      >
+        <SuccessCheck className="mx-auto mb-2 h-9 w-9" />
+        <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Genesis claimed{mintIndex ? ` · #${mintIndex}` : ""}</div>
+        <div className="mt-1 text-[28px] font-semibold leading-tight tracking-tight text-gold">{BASE_TEXT}</div>
+        <div className="mt-1 text-sm font-medium text-muted">Already in your wallet. Nothing else to claim.</div>
+        <div className="mt-4 flex justify-center">
+          <ShareButton prizeId={0} path="/mint" text={genesisShareText(mintIndex)} />
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/** Mint CTA: finds (or takes) the Agent ID handle / token id, checks it, and calls mint(tokenId) with 0 BNB. */
 function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   const { chainId, addresses, account } = useTowack();
   const { genesis, isOpen, mintCount, cap, registry } = useGenesisState();
-  const { prize } = useMyGenesis();
+  const { minted } = useMyGenesis();
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
   const [typed, setTyped] = useState("");
@@ -264,19 +117,14 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   });
 
   const owns = tokenId === undefined ? undefined : ownerErr ? false : owner === undefined ? undefined : owner.toLowerCase() === account?.toLowerCase();
-  const minted = prize?.minted;
   const soldOut = mintCount !== undefined ? mintCount >= cap : undefined;
-  // No mint price. The only BNB sent is the Chainlink VRF fee for the spin (excess refunded in the same tx).
-  const vrf = useVrfFee(genesis, chainId);
-  const canMint = Boolean(
-    genesis && account && tokenId !== undefined && owns && used === false && minted === false && isOpen && !soldOut && vrf.value !== undefined,
-  );
+  const canMint = Boolean(genesis && account && tokenId !== undefined && owns && used === false && minted === false && isOpen && !soldOut);
 
   async function mint() {
-    if (!genesis || !canMint || tokenId === undefined || vrf.value === undefined) return;
-    const value = vrf.value;
-    const ok = await tx.run("Genesis mint", () =>
-      writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "mint", args: [tokenId], value, chainId }),
+    if (!genesis || !canMint || tokenId === undefined) return;
+    // Non-payable: no `value` (0 BNB). The wallet only pays ordinary network gas.
+    const ok = await tx.run("Genesis claim", () =>
+      writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "mint", args: [tokenId], chainId }),
     );
     if (ok) onMinted();
   }
@@ -322,16 +170,14 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
                 : "Checking owner…"}
         </Check>
         <Check ok={used === undefined ? undefined : !used}>{used ? "That Agent ID already claimed Genesis" : "Agent ID not used yet"}</Check>
-        <Check ok={minted === undefined ? undefined : !minted}>{minted ? "This wallet already claimed — see your spin" : "Wallet not used yet"}</Check>
+        <Check ok={minted === undefined ? undefined : !minted}>{minted ? "This wallet already claimed its 20,000 TWAK" : "Wallet not used yet"}</Check>
         <Check ok={isOpen === undefined ? undefined : isOpen && !soldOut}>{soldOut ? "All 300 claimed" : isOpen ? "Genesis window open" : "Genesis window closed"}</Check>
       </ul>
       <Button tone="gold" size="lg" className="mt-5 w-full min-h-14" disabled={!canMint || tx.busy} onClick={mint}>
-        {tx.busy ? "Check your wallet…" : minted ? "Already claimed" : "Claim free + spin"}
+        {tx.busy ? "Check your wallet…" : minted ? "Already claimed" : `Claim ${BASE_TEXT} free`}
       </Button>
       <p className="mt-2 text-center text-sm font-medium text-muted">
-        {vrf.supported === false
-          ? "Free: you only pay gas. Your wallet asks you to confirm."
-          : `The mint is free: 0 BNB goes to Towack. Your wallet attaches about ${vrf.label} BNB as a Chainlink VRF randomness buffer; most of it (every unused wei) is refunded in the same transaction. You still pay gas.`}
+        {GENESIS_COST_TEXT}. 0 BNB is attached; you only confirm the network gas in your wallet.
       </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       {!minted ? <AgentPathToggle flow="genesis" className="mt-4" /> : null}
@@ -339,49 +185,31 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   );
 }
 
-/** The 7 Genesis tiers: multiplier, total TWAK and slots out of 300 (live remaining once deployed). */
-function GenesisLegend({ remaining }: { remaining?: number[] }) {
+/** Right-hand summary: what a claim gives, before the wallet has claimed. */
+function GenesisOffer() {
   return (
-    <>
-    <div className="mt-5 text-[12px] font-semibold uppercase tracking-[.15em] text-muted">Total TWAK per slot · slots of 300</div>
-    <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 [&>*]:min-w-0" aria-label="Genesis wheel: total TWAK per slot and odds">
-      {GENESIS_PRIZES.map((p) => (
-        <li key={p.id} className="flex items-center gap-2 rounded-2xl border border-line bg-card px-2.5 py-2">
-          <span
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line font-display text-[11px] font-semibold"
-            style={{ background: p.fill, color: p.ink }}
-          >
-            {p.kind === "none" ? "1×" : p.wheel}
-          </span>
-          <span className="min-w-0 leading-tight">
-            <span className="block whitespace-nowrap font-mono text-[14px] font-medium">{(p.total / 1000).toLocaleString("en-US")}K</span>
-            <span className="block whitespace-nowrap text-[12px] font-semibold text-muted">
-              {remaining ? `${remaining[p.id]} left` : `${p.slots} / 300`}
-            </span>
-          </span>
-        </li>
-      ))}
-    </ul>
-    </>
+    <div className="rounded-2xl border border-line-2 bg-card-2 px-5 py-6 text-center">
+      <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Every Genesis claim</div>
+      <div className="mt-1 font-display text-[44px] font-semibold leading-none text-gold sm:text-[52px]">{BASE_TEXT}</div>
+      <div className="mt-2 text-sm font-medium text-sub">Sent to your wallet in the same transaction</div>
+      <ul className="mx-auto mt-5 max-w-sm space-y-2.5 text-left">
+        <Check ok>0 BNB attached: no mint price, no fee, no deposit</Check>
+        <Check ok>Only ordinary network gas (~$0.002)</Check>
+        <Check ok>One transaction: no spin, no waiting, no second claim</Check>
+        <Check ok>One claim per Agent ID and per wallet</Check>
+      </ul>
+    </div>
   );
 }
 
-/** Genesis 300 banner on /mint: counter, copy, claim, and the Genesis-only wheel. */
+/** Genesis 300 banner on /mint: counter, copy, claim CTA and claimed state. */
 export function GenesisCard() {
   const { account } = useTowack();
-  const { genesis, mintCount, cap, retryDelay, remaining } = useGenesisState();
-  const { prize } = useMyGenesis();
-  const demo = useGenesisDemo();
-  const [fresh, setFresh] = useState(false);
+  const { genesis, mintCount, cap, refetch } = useGenesisState();
+  const my = useMyGenesis();
+  const [burst, setBurst] = useState(0);
   const pct = mintCount !== undefined ? Math.min(100, (Number(mintCount) / Number(cap)) * 100) : 0;
-
-  const wheel = demo.active ? (
-    <GenesisDemoWheel />
-  ) : genesis && account && prize?.minted ? (
-    <MyGenesisWheel fresh={fresh} retryDelay={retryDelay} />
-  ) : (
-    <GenesisWheelStage status="none" idleNote="Claim to spin. Each Genesis mint pops one slot from a fixed 300-slot TWAK-only deck." />
-  );
+  const claimed = Boolean(genesis && account && my.minted);
 
   return (
     <section id="genesis" className="scroll-mt-24">
@@ -391,13 +219,12 @@ export function GenesisCard() {
           <div className="lg:col-start-1">
             <div className="flex flex-wrap items-center gap-2">
               <Kicker>Genesis 300 · free</Kicker>
-              <Pill tone="neutral" className="border border-line">TWAK ONLY</Pill>
-              <VrfSource consumer={genesis} />
+              <Pill tone="neutral" className="border border-line">GAS ONLY</Pill>
             </div>
-            <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">300 free spins for Agent ID holders</h2>
+            <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">300 free 20,000 TWAK claims for Agent ID holders</h2>
             <p className="mt-3 font-medium text-sub">
-              One free mint per Agent ID and per wallet: <b className="text-fg">{BASE_TEXT}</b> on the spot plus one spin of a TWAK-only wheel (up to 5×,
-              i.e. 100,000 TWAK). The mint itself is free: 0 BNB goes to Towack. The tiny BNB your wallet attaches is only a Chainlink VRF randomness buffer, and most of it (every unused wei) is refunded automatically in the same transaction. Funded from the 5% ecosystem allocation (8M TWAK budget) and separate from the paid 5,000.
+              <b className="text-fg">{GENESIS_COST_TEXT}.</b> One claim per Agent ID and per wallet: you attach 0 BNB, pay only ordinary network gas, and{" "}
+              <b className="text-fg">{BASE_TEXT}</b> lands in your wallet in the same transaction. Funded from the 5% ecosystem allocation ({GENESIS_BUDGET} budget) and separate from the paid 5,000.
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-3">
@@ -417,26 +244,25 @@ export function GenesisCard() {
             >
               <ProgressFill pct={pct} className="rounded-full bg-gold" />
             </div>
-            <GenesisLegend remaining={remaining} />
           </div>
 
-          {/* wheel: right column on desktop, between copy and CTA on phones */}
-          <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1" data-genesis-wheel>
-            {wheel}
-            {demo.allowed && !demo.active ? (
-              <p className="mt-1 text-center text-xs font-medium text-muted">
-                Preview only:{" "}
-                <a className="inline-flex min-h-10 items-center px-1 underline" href="?demo=genesis#genesis">
-                  play a Genesis demo spin
-                </a>
-              </p>
-            ) : null}
+          {/* offer / claimed state: right column on desktop */}
+          <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1" data-genesis-offer>
+            {claimed ? <GenesisClaimed mintIndex={my.mintIndex} burst={burst} /> : <GenesisOffer />}
           </div>
 
           {/* CTA */}
           <div className="lg:col-start-1">
             {genesis ? (
-              <GenesisClaim onMinted={() => setFresh(true)} />
+              claimed ? null : (
+                <GenesisClaim
+                  onMinted={() => {
+                    setBurst((b) => b + 1);
+                    my.refetch();
+                    void refetch();
+                  }}
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-dashed border-line bg-card px-4 py-5 text-center">
                 <div className="font-display text-[20px] font-semibold">Genesis 300 unavailable</div>

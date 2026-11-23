@@ -43,8 +43,9 @@ import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interface
 /// Optional env (all entry points): MINT_START (unix, default now), MINT_DURATION (default 7 days),
 /// TIMELOCK_DELAY (default 48h, min 24h), GENESIS_OWNER (default deployer; Ownable2Step), SEASONS_WALLET,
 /// ECOSYSTEM_WALLET, POL_BUFFER_WALLET, TEAM_BENEFICIARY, DEV_WALLET, TIMELOCK_PROPOSER (default: deployer).
-/// Genesis is funded (8M) and opened in-script only when ECOSYSTEM_WALLET == deployer; otherwise the ecosystem
-/// wallet must later `approve(genesis, 8M)`, call `genesis.fund(8M)`, and the Genesis owner calls `open()`.
+/// Genesis (free, gas-only, flat 20k TWAK, no VRF) is funded (6M) and opened in-script only when
+/// ECOSYSTEM_WALLET == deployer; otherwise the ecosystem wallet must later `approve(genesis, 6M)`, call
+/// `genesis.fund(6M)`, and the Genesis owner calls `open()`.
 ///
 /// Ownership after deploy (no EOA-only irreversible traps):
 ///  - TimelockController(delay, proposers/executors = [TIMELOCK_PROPOSER], admin = none / self-administered).
@@ -68,10 +69,9 @@ contract DeployFullStackMainnet is Script {
 
     // ---------------------------------------------------------------- params (same as testnet)
     uint32 public constant LAUNCH_CALLBACK_GAS = 165_000;
-    uint32 public constant GENESIS_CALLBACK_GAS = 170_000;
     uint32 public constant DRAW_CALLBACK_GAS = 200_000;
     uint16 public constant REQUEST_CONFIRMATIONS = 3;
-    uint256 public constant GENESIS_BUDGET = 8_000_000e18;
+    uint256 public constant GENESIS_BUDGET = 6_000_000e18;
     uint256 public constant MIN_TIMELOCK_DELAY = 24 hours;
     /// ~15.5M deploy gas: ~0.00155 BNB at 0.1 gwei. Lowered to 0.002 BNB per Mateen (deployer funded 0.0026348 BNB).
     uint256 public constant GAS_RESERVE = 0.002 ether;
@@ -273,9 +273,7 @@ contract DeployFullStackMainnet is Script {
         RebateDistributor(payable(o.rebates)).bind(o.token, o.router);
         RebateDistributor(payable(o.rebates)).setRouterAdmin(o.timelock);
 
-        o.genesis = address(
-            new TowackGenesis(o.token, AGENT_ID, c.ecosystem, c.genesisOwner, _vrf(GENESIS_CALLBACK_GAS))
-        );
+        o.genesis = address(new TowackGenesis(o.token, AGENT_ID, c.ecosystem, c.genesisOwner));
         if (c.ecosystem == c.deployer) {
             TowackToken(o.token).approve(o.genesis, GENESIS_BUDGET);
             TowackGenesis(o.genesis).fund(GENESIS_BUDGET);
@@ -302,7 +300,6 @@ contract DeployFullStackMainnet is Script {
         require(l.MINT_PRICE() == 0.1 ether && l.REFERRAL_FEE() == 0.005 ether, "mint/referral params");
         require(l.prizeBnb(0) + l.REFERRAL_FEE() <= l.MINT_PRICE(), "referral solvency");
         require(VRFConsumerV25(o.launch).vrfCallbackGasLimit() == LAUNCH_CALLBACK_GAS, "launch cb gas");
-        require(VRFConsumerV25(o.genesis).vrfCallbackGasLimit() == GENESIS_CALLBACK_GAS, "genesis cb gas");
         require(VRFConsumerV25(o.drawV2).vrfCallbackGasLimit() == DRAW_CALLBACK_GAS, "draw cb gas");
         require(address(VRFConsumerV25(o.launch).vrfWrapper()) == VRF_WRAPPER, "wrapper");
         require(DrawV2(payable(o.drawV2)).owner() == o.timelock, "drawV2 owner");
@@ -312,6 +309,7 @@ contract DeployFullStackMainnet is Script {
         require(address(ro.agentId()) == AGENT_ID && ro.wbnb() == WBNB && ro.lotteryTreasury() == o.drawV2, "router");
         TowackGenesis g = TowackGenesis(o.genesis);
         require(address(g.agentId()) == AGENT_ID && g.owner() == c.genesisOwner, "genesis");
+        require(g.BUDGET() == GENESIS_BUDGET && g.ecosystemWallet() == c.ecosystem, "genesis budget/wallet");
         if (o.genesisOpened) require(t.balanceOf(o.genesis) == GENESIS_BUDGET && g.isOpen(), "genesis funded+open");
         TimelockController tl = TimelockController(payable(o.timelock));
         require(tl.getMinDelay() == c.tlDelay, "timelock delay");
@@ -345,7 +343,6 @@ contract DeployFullStackMainnet is Script {
             );
         }
         console2.log("Launch VRF fee @ 0.1 gwei (wei)", VRFConsumerV25(o.launch).vrfFeeAt(0.1 gwei));
-        console2.log("Genesis VRF fee @ 0.1 gwei (wei)", VRFConsumerV25(o.genesis).vrfFeeAt(0.1 gwei));
         console2.log("DrawV2 VRF fee @ 0.1 gwei (wei)", VRFConsumerV25(o.drawV2).vrfFeeAt(0.1 gwei));
     }
 
