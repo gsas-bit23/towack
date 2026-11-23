@@ -31,6 +31,7 @@ import {
   type Token,
 } from "@/lib/quotes";
 import { useTx } from "@/lib/tx";
+import { useLocale } from "@/lib/i18n";
 import { PREVIEW_USER, PROVIDER_KEYS_SET, useDebounced, useRoutes } from "./useRoutes";
 
 const selectClass =
@@ -79,6 +80,7 @@ export function SwapDesk() {
 
 function SwapCard() {
   const { chainId, addresses, account } = useTowack();
+  const { t, rich } = useLocale();
   const twak = addresses.token ? makeToken(chainId, addresses.token, "TWAK", "Towack") : undefined;
   const originTokens = [...ORIGIN_TOKENS[chainId], ...(twak ? [twak] : [])];
   const destChains = [{ id: 56, name: CHAIN_NAMES[56] }, ...RELAY_DESTINATIONS.map((c) => ({ id: c.id, name: c.name }))];
@@ -182,7 +184,7 @@ function SwapCard() {
     const plan = executionPlan(q, { recipient: account, nowSec: Date.now() / 1000, deadlineSec, allowance });
     if (plan.approval) {
       const ap = plan.approval;
-      const ok = await tx.run(`Approve exactly ${fmtAmt(ap.amount, q.tokenIn.decimals)} ${q.tokenIn.symbol}`, () =>
+      const ok = await tx.run(t("swap.txApprove", { amt: fmtAmt(ap.amount, q.tokenIn.decimals), sym: q.tokenIn.symbol }), () =>
         writeContractAsync({ address: ap.token, abi: erc20Abi, functionName: "approve", args: [ap.spender, ap.amount], chainId }),
       );
       if (!ok) return;
@@ -190,9 +192,9 @@ function SwapCard() {
     // AMM calldata is rebuilt after an approval so the deadline is fresh.
     const txs = plan.approval && q.amm ? executionPlan(q, { recipient: account, nowSec: Date.now() / 1000, deadlineSec, allowance: q.approval?.amount }).txs : plan.txs;
     for (let i = 0; i < txs.length; i++) {
-      const t = txs[i];
-      const label = `${q.crossChain ? "Bridge" : "Swap"} via ${q.label}${txs.length > 1 ? ` (${i + 1}/${txs.length})` : ""}`;
-      const ok = await tx.run(label, () => sendTransactionAsync({ to: t.to, data: t.data, value: t.value, chainId }));
+      const step = txs[i];
+      const label = `${t("swap.via", { action: q.crossChain ? t("swap.Bridge") : t("swap.Swap"), label: q.label })}${txs.length > 1 ? ` (${i + 1}/${txs.length})` : ""}`;
+      const ok = await tx.run(label, () => sendTransactionAsync({ to: step.to, data: step.data, value: step.value, chainId }));
       if (!ok) return;
     }
     if (q.provider === "relay" && q.relayRequestId) setRelayReq({ id: q.relayRequestId, dest: CHAIN_NAMES[q.tokenOut.chainId] ?? "destination" });
@@ -231,15 +233,15 @@ function SwapCard() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[21px] font-semibold tracking-tight">Swap &amp; bridge</h2>
+        <h2 className="text-[21px] font-semibold tracking-tight">{t("swap.cardTitle")}</h2>
         <ChainNote />
       </div>
 
       <div className="mt-6 space-y-5">
-        <Field label="You pay" hint={account ? `Balance: ${fmtAmt(balance, tokenIn.decimals)} ${tokenIn.symbol}` : undefined}>
+        <Field label={t("swap.youPay")} hint={account ? t("swap.balance", { n: fmtAmt(balance, tokenIn.decimals), sym: tokenIn.symbol }) : undefined}>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">
             <select
-              aria-label="Token you pay"
+              aria-label={t("swap.tokenPay")}
               className={`${selectClass} col-span-2 sm:col-span-1`}
               style={CHEVRON}
               value={tokenIn.address}
@@ -264,7 +266,7 @@ function SwapCard() {
                 setAmount(e.target.value.replace(/[^0-9.]/g, ""));
                 setPick(null);
               }}
-              aria-label={`Amount in ${tokenIn.symbol}`}
+              aria-label={t("swap.amountIn", { sym: tokenIn.symbol })}
             />
             <Button
               tone="line"
@@ -272,15 +274,15 @@ function SwapCard() {
               disabled={!balance}
               onClick={() => balance && setAmount(formatUnits(isNative(tokenIn) ? (balance > GAS_RESERVE ? balance - GAS_RESERVE : 0n) : balance, tokenIn.decimals))}
             >
-              Max
+              {t("common.max")}
             </Button>
           </div>
         </Field>
 
-        <Field label="You get">
+        <Field label={t("swap.youGet")}>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <select
-              aria-label="Destination chain"
+              aria-label={t("swap.destChain")}
               className={selectClass}
               style={CHEVRON}
               value={destChainId}
@@ -292,12 +294,12 @@ function SwapCard() {
             >
               {destChains.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.id === chainId ? `${c.name} (same chain)` : `${c.name} · via Relay`}
+                  {c.id === chainId ? t("swap.sameChain", { name: c.name }) : t("swap.viaRelay", { name: c.name })}
                 </option>
               ))}
             </select>
             <select
-              aria-label="Token you get"
+              aria-label={t("swap.tokenGet")}
               className={selectClass}
               style={CHEVRON}
               value={tokenOut.address}
@@ -316,31 +318,31 @@ function SwapCard() {
         </Field>
 
         {crossChain ? (
-          <Field label="Recipient on destination (optional)" hint={`Defaults to your connected wallet. Must be an address you control on ${CHAIN_NAMES[destChainId]}.`}>
+          <Field label={t("swap.recipient")} hint={t("swap.recipientHint", { chain: CHAIN_NAMES[destChainId] ?? "" })}>
             <input
               className={`${inputClass} font-mono !text-[15px]`}
-              placeholder={account ?? "0x… (your wallet)"}
+              placeholder={account ?? t("swap.recipientPh")}
               value={recipientInput}
               onChange={(e) => setRecipientInput(e.target.value.trim())}
-              aria-label="Recipient address"
+              aria-label={t("swap.recipientAria")}
               aria-invalid={recipientBad}
             />
           </Field>
         ) : null}
-        {recipientBad ? <p className="font-medium text-down">That is not a valid EVM address.</p> : null}
+        {recipientBad ? <p className="font-medium text-down">{t("swap.badAddr")}</p> : null}
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Slippage %" hint="Default 0.5%.">
-            <input className={inputClass} inputMode="decimal" value={slippage} onChange={(e) => setSlippage(e.target.value.replace(/[^0-9.]/g, ""))} aria-label="Slippage percent" />
+          <Field label={t("trade.slippage")} hint={t("swap.slipHint")}>
+            <input className={inputClass} inputMode="decimal" value={slippage} onChange={(e) => setSlippage(e.target.value.replace(/[^0-9.]/g, ""))} aria-label={t("swap.slipAria")} />
           </Field>
-          <Field label="Deadline (min)" hint="1–60. PancakeSwap / Uniswap.">
-            <input className={inputClass} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} aria-label="Deadline minutes" />
+          <Field label={t("trade.deadline")} hint={t("swap.deadlineHint")}>
+            <input className={inputClass} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} aria-label={t("swap.deadlineAria")} />
           </Field>
         </div>
-        {slipBps === undefined ? <p className="font-medium text-down">Slippage must be between 0.05% and 50%.</p> : null}
-        {slipLevel === "high" ? <p className="font-medium text-down">High slippage: you may get a much worse price, and bots can take the difference.</p> : null}
-        {slipLevel === "extreme" ? <p className="font-medium text-down">Slippage above 15% is blocked here. Lower it to continue.</p> : null}
-        {deadlineSec === undefined ? <p className="font-medium text-down">Deadline must be 1–60 minutes.</p> : null}
+        {slipBps === undefined ? <p className="font-medium text-down">{t("swap.slipRange")}</p> : null}
+        {slipLevel === "high" ? <p className="font-medium text-down">{t("swap.slipHigh")}</p> : null}
+        {slipLevel === "extreme" ? <p className="font-medium text-down">{t("swap.slipExtreme")}</p> : null}
+        {deadlineSec === undefined ? <p className="font-medium text-down">{t("swap.deadlineRange")}</p> : null}
       </div>
 
       <RouteList
@@ -356,42 +358,51 @@ function SwapCard() {
 
       {twakPair ? (
         <p className="mt-5 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
-          Trading TWAK ⇄ BNB? The <Link className="underline" href="/trade">Towack desk</Link> routes through TowackRouter, where Agent ID wallets earn rebates.
-          Routes on this page go straight to PancakeSwap / Uniswap / Relay and earn no Towack rebate.
+          {rich("swap.twakPair", {
+            a: (c) => (
+              <Link className="underline" href="/trade">
+                {c}
+              </Link>
+            ),
+          })}
         </p>
       ) : null}
 
       <div className="mt-6">
-        <NeedsWallet why="Connect any wallet to swap or bridge. You sign every step in your own wallet.">
+        <NeedsWallet why={t("swap.connectWhy")}>
           {hasAgent ? (
             <p className="mb-4 text-sm font-medium text-sub">
-              <Pill tone="neutral">AGENT ID ✓</Pill>{" "}
-              <span className="ml-1">Use the AI-agent box below to run this route from your Binance Agentic Wallet. Third-party routes earn no Towack rebate.</span>
+              <Pill tone="neutral">{t("trade.agentPill")}</Pill> <span className="ml-1">{t("swap.agentNote")}</span>
             </p>
           ) : null}
           <>
-            {insufficient ? <p className="mb-3 font-medium text-down">Not enough {tokenIn.symbol} in this wallet.</p> : null}
-            {lowGasHeadroom ? <p className="mb-3 font-medium text-down">This leaves almost no {tokenIn.symbol} for gas. Try a slightly smaller amount.</p> : null}
+            {insufficient ? <p className="mb-3 font-medium text-down">{t("swap.notEnough", { sym: tokenIn.symbol })}</p> : null}
+            {lowGasHeadroom ? <p className="mb-3 font-medium text-down">{t("swap.lowGas", { sym: tokenIn.symbol })}</p> : null}
             {selected && selected.provider === "relay" && selected.priceImpactPct !== undefined && selected.priceImpactPct < -3 ? (
-              <p className="mb-3 font-medium text-down">Relay reports a {Math.abs(selected.priceImpactPct).toFixed(2)}% total impact on this route. Check it is worth it.</p>
+              <p className="mb-3 font-medium text-down">{t("swap.relayImpact", { p: Math.abs(selected.priceImpactPct).toFixed(2) })}</p>
             ) : null}
             {selected && selected.vsBestBps < -100 ? (
-              <p className="mb-3 font-medium text-down">This route pays {(Math.abs(selected.vsBestBps) / 100).toFixed(2)}% less than the best one.</p>
+              <p className="mb-3 font-medium text-down">{t("swap.vsBest", { p: (Math.abs(selected.vsBestBps) / 100).toFixed(2) })}</p>
             ) : null}
-            {selected && !builtForMe && account ? <p className="mb-3 font-medium text-sub">Refreshing the quote for your wallet…</p> : null}
+            {selected && !builtForMe && account ? <p className="mb-3 font-medium text-sub">{t("swap.refreshing")}</p> : null}
             <Button tone={crossChain ? "gold" : "soft"} size="lg" className="w-full" disabled={!ready} onClick={execute}>
               {tx.busy
-                ? "Check your wallet…"
+                ? t("wallet.checkWallet")
                 : !selected
-                  ? "Pick an amount for a quote"
+                  ? t("swap.pickAmount")
                   : needsApproval
-                    ? `Approve exact ${tokenIn.symbol}, then ${crossChain ? "bridge" : "swap"}`
-                    : `${crossChain ? "Bridge" : "Swap"} via ${selected.label}`}
+                    ? t("swap.approveThen", { sym: tokenIn.symbol, action: crossChain ? t("swap.actBridge") : t("swap.actSwap") })
+                    : t("swap.via", { action: crossChain ? t("swap.Bridge") : t("swap.Swap"), label: selected.label })}
             </Button>
             <p className="mt-3 text-center text-sm font-medium text-muted">
               {needsApproval
-                ? `Two wallet confirmations: an approval for exactly ${amountIn ? fmtAmt(amountIn, tokenIn.decimals) : "the"} ${tokenIn.symbol} to the ${selected?.label} contract, then the ${crossChain ? "bridge" : "swap"}. Never unlimited.`
-                : "You confirm every step in your own wallet. Towack never signs, holds or relays your funds."}
+                ? t("swap.twoConfirm", {
+                    amt: amountIn ? fmtAmt(amountIn, tokenIn.decimals) : t("trade.the"),
+                    sym: tokenIn.symbol,
+                    label: selected?.label ?? "",
+                    action: crossChain ? t("swap.actBridge") : t("swap.actSwap"),
+                  })
+                : t("swap.confirmAll")}
             </p>
           </>
           <TxNotice state={tx.state} onClose={tx.reset} />
@@ -400,7 +411,7 @@ function SwapCard() {
         <AgentPathToggle key={`${crossChain}-${selected?.provider ?? "none"}`} flow={crossChain ? "bridge" : "swap"} swap={agentCtx} className="mt-4" />
       </div>
       <p className="mt-6 text-sm font-semibold text-muted">
-        Quotes are estimates and refresh every 20 seconds. Prices move; bridges take time.
+        {t("swap.estimates")}
       </p>
     </Panel>
   );
@@ -425,29 +436,30 @@ function RouteList({
   queryError?: string;
   previewOnly: boolean;
 }) {
+  const { t } = useLocale();
   if (!amountIn) {
-    return <p className="mt-6 rounded-2xl border border-dashed border-line bg-card-2 px-5 py-4 font-medium text-sub">Enter an amount to compare routes.</p>;
+    return <p className="mt-6 rounded-2xl border border-dashed border-line bg-card-2 px-5 py-4 font-medium text-sub">{t("swap.enterAmount")}</p>;
   }
   if (loading) {
     return (
       <p className="mt-6 rounded-2xl border border-line bg-card-2 px-5 py-4 font-medium" role="status">
-        Asking PancakeSwap, Uniswap and Relay…
+        {t("swap.asking")}
       </p>
     );
   }
-  if (queryError) return <p className="mt-6 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">Quote failed: {queryError}</p>;
+  if (queryError) return <p className="mt-6 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">{t("swap.quoteFailed", { e: queryError })}</p>;
   if (!result) return null;
   const { quotes, errors } = result;
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted">Routes ({quotes.length})</h3>
-        <span className="text-xs font-medium text-muted">{refreshing ? "Refreshing…" : previewOnly ? "Preview quotes · connect to execute" : "Live quotes"}</span>
+        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted">{t("swap.routes", { n: quotes.length })}</h3>
+        <span className="text-xs font-medium text-muted">{refreshing ? t("swap.refreshingShort") : previewOnly ? t("swap.previewQuotes") : t("swap.liveQuotes")}</span>
       </div>
       {quotes.length === 0 ? (
-        <p className="mt-2 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">No route found for this pair and amount. Try a different amount or token.</p>
+        <p className="mt-2 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">{t("swap.noRoute")}</p>
       ) : (
-        <ul className="mt-2 space-y-3" role="radiogroup" aria-label="Routes">
+        <ul className="mt-2 space-y-3" role="radiogroup" aria-label={t("swap.routesAria")}>
           {quotes.map((q) => {
             const on = selected?.provider === q.provider;
             return (
@@ -464,8 +476,8 @@ function RouteList({
                       {on ? <span className="h-2 w-2 rounded-full bg-card" /> : null}
                     </span>
                     <span className="font-display text-[18px] font-semibold">{q.label}</span>
-                    {q.best ? <Pill tone="gold">BEST</Pill> : null}
-                    {q.crossChain ? <Pill tone="gold">CROSS-CHAIN</Pill> : null}
+                    {q.best ? <Pill tone="gold">{t("swap.best")}</Pill> : null}
+                    {q.crossChain ? <Pill tone="gold">{t("swap.crossChain")}</Pill> : null}
                     <span className="ml-auto font-mono text-[18px] font-medium tabular-nums">
                       {fmtAmt(q.amountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
                     </span>
@@ -473,14 +485,14 @@ function RouteList({
                   <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm font-medium text-sub sm:grid-cols-2">
                     <span className="break-words">{q.route}</span>
                     <span className="sm:text-right">
-                      Min {fmtAmt(q.minAmountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
+                      {t("swap.min", { n: fmtAmt(q.minAmountOut, q.tokenOut.decimals), sym: q.tokenOut.symbol })}
                     </span>
                     <span>
-                      Gas ≈ {fmtAmt(q.gasCostWei, 18, 3)} {q.tokenIn.chainId === 97 ? "tBNB" : "BNB"}
+                      {t("swap.gas", { n: fmtAmt(q.gasCostWei, 18, 3), unit: q.tokenIn.chainId === 97 ? "tBNB" : "BNB" })}
                       {q.gasScored && q.gasInOut > 0n ? ` (${fmtAmt(q.gasInOut, q.tokenOut.decimals, 3)} ${q.tokenOut.symbol})` : ""}
                     </span>
                     <span className="sm:text-right">
-                      {q.best ? "Best net output" : `${(q.vsBestBps / 100).toFixed(2)}% vs best`}
+                      {q.best ? t("swap.bestNet") : t("swap.vsBestShort", { p: (q.vsBestBps / 100).toFixed(2) })}
                       {q.etaSeconds !== undefined ? ` · ~${q.etaSeconds < 60 ? `${Math.max(1, q.etaSeconds)}s` : `${Math.round(q.etaSeconds / 60)}m`}` : ""}
                     </span>
                     {q.feeNote ? <span className="sm:col-span-2">{q.feeNote}</span> : null}
@@ -494,7 +506,7 @@ function RouteList({
       {errors.length > 0 ? (
         <details className="mt-3 text-sm font-medium text-muted">
           <summary className="cursor-pointer">
-            {errors.length} provider{errors.length > 1 ? "s" : ""} had no quote
+            {t("swap.noQuoteCount", { n: errors.length })}
           </summary>
           <ul className="mt-2 space-y-1">
             {errors.map((e) => (
@@ -507,7 +519,7 @@ function RouteList({
       ) : null}
       {selected ? (
         <p className="mt-3 text-xs font-medium text-muted">
-          Selected: {selected.label} ·{" "}
+          {t("swap.selected", { label: selected.label })}{" "}
           <a className="underline" href={PROVIDER_SITE[selected.provider]} target="_blank" rel="noreferrer">
             {PROVIDER_SITE[selected.provider].replace("https://", "")}
           </a>
@@ -520,35 +532,34 @@ function RouteList({
 function RelayTracker({ status, error, dest, id }: { status?: string; error?: string; dest: string; id: string }) {
   const done = status === "success";
   const bad = status === "failure" || status === "refund" || status === "refunded";
+  const { t } = useLocale();
   return (
     <div role="status" aria-live="polite" className={`mt-4 rounded-2xl border border-line px-4 py-3 font-medium ${done ? "bg-card" : bad ? "bg-down/10" : "bg-card-2"}`}>
-      <span className="font-semibold">Relay: </span>
+      <span className="font-semibold">{t("swap.relay")}</span>
       {error
-        ? `Could not read the status (${error}). Your funds are not lost; check relay.link.`
+        ? t("swap.relayErr", { e: error })
         : done
-          ? `Filled on ${dest}.`
+          ? t("swap.relayDone", { dest })
           : bad
-            ? `Status "${status}". If refunded, the funds go back to your wallet on BNB Chain.`
-            : `Waiting for the fill on ${dest} (${status ?? "checking"})…`}
+            ? t("swap.relayBad", { s: status ?? "" })
+            : t("swap.relayWait", { dest, s: status ?? t("swap.checking") })}
       <a className="ml-2 underline" href={`https://relay.link/transaction/${id}`} target="_blank" rel="noreferrer">
-        Track on relay.link ↗
+        {t("swap.track")}
       </a>
     </div>
   );
 }
 
 function HowRouting() {
+  const { t, rich } = useLocale();
   return (
     <Panel tone="raised" shadow={false}>
-      <h2 className="text-[20px] font-semibold tracking-tight">How the best route is picked</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">{t("swap.howTitle")}</h2>
       <ol className="mt-3 list-decimal space-y-2 pl-5 font-medium text-sub">
-        <li>Every provider is asked in parallel for the same amount and slippage.</li>
-        <li>
-          <b>Net output = what you receive − estimated gas.</b> Received amounts already include each provider&apos;s fees (pool fee, Relay fee). Gas is priced in
-          the output token.
-        </li>
-        <li>Highest net output wins; ties go to the cheaper-gas route. You can pick any route yourself.</li>
-        <li>Quotes refresh every 20 s and are re-checked by the contracts: if the price moves past your slippage, the transaction reverts and only gas is spent.</li>
+        <li>{t("swap.how1")}</li>
+        <li>{rich("swap.how2", { b: (c) => <b>{c}</b> })}</li>
+        <li>{t("swap.how3")}</li>
+        <li>{t("swap.how4")}</li>
       </ol>
     </Panel>
   );
@@ -556,17 +567,18 @@ function HowRouting() {
 
 function ProvidersPanel() {
   // Providers that are switched off are simply not listed.
+  const { t } = useLocale();
   const rows: { id: ProviderId; what: string; on: boolean }[] = [
-    { id: "pancakeV3", what: "Swap · v3 pools", on: true },
-    { id: "pancakeV2", what: "Swap · v2 pools", on: true },
-    { id: "uniswapV3", what: "Swap · v3 pools", on: true },
-    { id: "relay", what: "Cross-chain bridge + swap", on: true },
-    { id: "zeroex", what: "Aggregator", on: PROVIDER_KEYS_SET.zeroex },
-    { id: "oneinch", what: "Aggregator", on: PROVIDER_KEYS_SET.oneinch },
+    { id: "pancakeV3", what: t("swap.pv.v3"), on: true },
+    { id: "pancakeV2", what: t("swap.pv.v2"), on: true },
+    { id: "uniswapV3", what: t("swap.pv.v3"), on: true },
+    { id: "relay", what: t("swap.pv.relay"), on: true },
+    { id: "zeroex", what: t("swap.pv.agg"), on: PROVIDER_KEYS_SET.zeroex },
+    { id: "oneinch", what: t("swap.pv.agg"), on: PROVIDER_KEYS_SET.oneinch },
   ];
   return (
     <Panel>
-      <h2 className="text-[20px] font-semibold tracking-tight">Providers</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">{t("swap.providers")}</h2>
       <ul className="mt-4 space-y-3">
         {rows.filter((r) => r.on).map((r) => (
           <li key={r.id} className="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-3 sm:gap-y-1.5">
@@ -576,7 +588,7 @@ function ProvidersPanel() {
               </a>
               <div className="text-sm font-medium text-muted">{r.what}</div>
             </div>
-            <span className="max-w-full rounded-2xl bg-card-2 px-3 py-1 text-left text-xs font-semibold text-fg sm:text-right">Live</span>
+            <span className="max-w-full rounded-2xl bg-card-2 px-3 py-1 text-left text-xs font-semibold text-fg sm:text-right">{t("swap.pv.live")}</span>
           </li>
         ))}
       </ul>
@@ -585,16 +597,14 @@ function ProvidersPanel() {
 }
 
 function TwakDeskCard() {
+  const { t } = useLocale();
   return (
     <Panel tone="gold" shadow={false}>
-      <h2 className="text-[20px] font-semibold tracking-tight">Trading TWAK?</h2>
-      <p className="mt-2 font-medium text-sub">
-        TWAK ⇄ BNB lives on the Towack desk: it goes through TowackRouter, so Agent ID wallets earn weekly rebates. Swaps on this page go straight to
-        third-party contracts and earn no Towack rebate.
-      </p>
+      <h2 className="text-[20px] font-semibold tracking-tight">{t("swap.twakTitle")}</h2>
+      <p className="mt-2 font-medium text-sub">{t("swap.twakBody")}</p>
       <div className="mt-4">
         <Link href="/trade" className="font-display text-[17px] font-semibold underline decoration-[3px] underline-offset-4 hover:text-gold">
-          Open the TWAK desk →
+          {t("swap.twakLink")}
         </Link>
       </div>
     </Panel>

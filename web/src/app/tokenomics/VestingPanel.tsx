@@ -8,12 +8,14 @@ import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDate } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
+import { useLocale } from "@/lib/i18n";
 
 const DAY = 86400;
 const CLIFF_DAYS = 365;
 const VEST_DAYS = 1460;
 
 function Schedule() {
+  const { t } = useLocale();
   return (
     <div className="mt-5">
       <div className="flex h-10 overflow-hidden rounded-2xl border border-line" aria-hidden="true">
@@ -21,10 +23,10 @@ function Schedule() {
         <div className="bg-gradient-to-r from-card-2 to-card" style={{ width: "80%" }} />
       </div>
       <div className="mt-2 flex justify-between text-[13px] font-semibold text-muted">
-        <span>Deploy</span>
-        <span>Cliff (1 year) — nothing unlocks</span>
-        <span>then daily for 4 years →</span>
-        <span>~5 years: 100%</span>
+        <span>{t("vest.deploy")}</span>
+        <span>{t("vest.cliff")}</span>
+        <span>{t("vest.daily")}</span>
+        <span>{t("vest.full")}</span>
       </div>
     </div>
   );
@@ -36,6 +38,7 @@ export function VestingPanel() {
   const now = useNow(60_000);
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
+  const { t } = useLocale();
 
   const c = { address: vest, abi: teamVestingAbi, chainId } as const;
   const { data } = useReadContracts({
@@ -67,12 +70,11 @@ export function VestingPanel() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-semibold">Team vesting · 50M TWAK (5%)</h2>
-        {isBeneficiary ? <Pill tone="gold">YOU ARE THE BENEFICIARY</Pill> : null}
+        <h2 className="font-display text-[28px] font-semibold">{t("vest.title")}</h2>
+        {isBeneficiary ? <Pill tone="gold">{t("vest.youBen")}</Pill> : null}
       </div>
       <p className="mt-1 font-semibold text-sub">
-        Start = contract deploy. {CLIFF_DAYS}-day cliff with nothing unlocked, then linear daily over {VEST_DAYS} days. No listing unlock, no owner, no
-        revocation. The beneficiary is fixed.
+        {t("vest.body", { cliff: CLIFF_DAYS, days: VEST_DAYS })}
       </p>
       <Schedule />
       {!has("teamVesting") ? (
@@ -82,17 +84,18 @@ export function VestingPanel() {
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Started" value={start ? fmtDate(start).split(",").slice(0, 2).join(",") : "—"} />
-            <Stat label="Cliff ends" value={cliffEnd ? fmtDate(cliffEnd).split(",").slice(0, 2).join(",") : "—"} sub={inCliff ? "in cliff" : undefined} />
-            <Stat label="Vested" value={`${fmt18(vested, 0)}`} sub={`${pct.toFixed(2)}% of 50M`} />
-            <Stat label="Claimable now" value={fmt18(releasable, 0)} sub={`released ${fmt18(released, 0)}`} />
+            <Stat label={t("vest.started")} value={start ? fmtDate(start).split(",").slice(0, 2).join(",") : "—"} />
+            <Stat label={t("vest.cliffEnds")} value={cliffEnd ? fmtDate(cliffEnd).split(",").slice(0, 2).join(",") : "—"} sub={inCliff ? t("vest.inCliff") : undefined} />
+            <Stat label={t("vest.vested")} value={`${fmt18(vested, 0)}`} sub={t("vest.ofTotal", { p: pct.toFixed(2) })} />
+            <Stat label={t("vest.claimable")} value={fmt18(releasable, 0)} sub={t("vest.released", { n: fmt18(released, 0) })} />
           </div>
-          <div className="mt-4 h-6 overflow-hidden rounded-full border border-line bg-card-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Vested">
+          <div className="mt-4 h-6 overflow-hidden rounded-full border border-line bg-card-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={t("vest.vested")}>
             <div className="h-full w-full origin-left bg-gold" style={{ transform: `scaleX(${pct / 100})` }} />
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
             <div className="font-medium text-sub">
-              Beneficiary: <AddressLink address={beneficiary} /> · Fully vested {fullAt ? fmtDate(fullAt).split(",").slice(0, 2).join(",") : "—"}
+              {t("vest.beneficiary")} <AddressLink address={beneficiary} /> ·{" "}
+              {t("vest.fully", { date: fullAt ? fmtDate(fullAt).split(",").slice(0, 2).join(",") : "—" })}
             </div>
             {account ? (
               <Button
@@ -100,15 +103,15 @@ export function VestingPanel() {
                 size="sm"
                 disabled={!releasable || releasable === 0n || bound === false || tx.busy}
                 onClick={() =>
-                  tx.run("Release vested TWAK", () => writeContractAsync({ address: vest!, abi: teamVestingAbi, functionName: "release", chainId }))
+                  tx.run(t("vest.txRelease"), () => writeContractAsync({ address: vest!, abi: teamVestingAbi, functionName: "release", chainId }))
                 }
               >
-                Release to beneficiary
+                {t("vest.release")}
               </Button>
             ) : null}
           </div>
           {account && !isBeneficiary ? (
-            <p className="mt-2 text-sm font-semibold text-muted">You&apos;re not the beneficiary. Anyone may trigger a release, but tokens only ever go to the beneficiary.</p>
+            <p className="mt-2 text-sm font-semibold text-muted">{t("vest.notBen")}</p>
           ) : null}
           <TxNotice state={tx.state} onClose={tx.reset} />
         </>

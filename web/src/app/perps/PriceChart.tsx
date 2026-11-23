@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "@/lib/i18n";
 import type { CandlestickData, HistogramData, IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
 import type { AsterNet } from "@/lib/aster/markets";
 import { CHART_INTERVALS, fetchKlines, type Candle, type ChartInterval } from "@/lib/aster/marketData";
@@ -44,6 +45,7 @@ export function PriceChart({
   const box = useRef<HTMLDivElement>(null);
   const chartRef = useRef<{ chart: IChartApi; lib: Lib }>(undefined);
   const series = useRef<{ candles: ISeriesApi<"Candlestick">; volume: ISeriesApi<"Histogram">; last: number }>(undefined);
+  const { t } = useLocale();
   const [ready, setReady] = useState(0);
   const [legend, setLegend] = useState<Candle>();
 
@@ -151,7 +153,7 @@ export function PriceChart({
   return (
     <div className="flex h-full min-w-0 flex-col">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-3 py-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Chart interval">
+        <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label={t("perps.c.intervalAria")}>
           {CHART_INTERVALS.map((i) => (
             <button
               key={i}
@@ -165,7 +167,7 @@ export function PriceChart({
             </button>
           ))}
         </div>
-        <FeedBadge status={status} note={status === "poll" ? `live via poll · ${pollMs(interval) / 1000}s` : undefined} />
+        <FeedBadge status={status} note={status === "poll" ? t("perps.feed.pollEvery", { s: pollMs(interval) / 1000 }) : undefined} />
       </div>
       <div className="flex min-h-[18px] flex-wrap gap-x-3 px-3 pt-1.5 font-mono text-[11px] tabular-nums text-muted">
         {show ? (
@@ -187,15 +189,15 @@ export function PriceChart({
         ) : null}
       </div>
       <div className="relative min-h-0 flex-1">
-        <div ref={box} className="absolute inset-0 font-mono" aria-label={`${symbol} ${interval} candlestick chart`} role="img" />
+        <div ref={box} className="absolute inset-0 font-mono" aria-label={t("perps.c.aria", { symbol, interval })} role="img" />
         {klines.isPending ? (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center text-[13px] text-muted">Loading {symbol} candles from Aster…</div>
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-[13px] text-muted">{t("perps.c.loading", { symbol })}</div>
         ) : klines.error ? (
           <div role="alert" className="absolute inset-x-3 top-3 rounded-lg border border-down/30 bg-down/10 px-3 py-2 text-[13px]">
-            Couldn&apos;t load candles from Aster: {(klines.error as Error).message}. Retrying…
+            {t("perps.c.err", { e: (klines.error as Error).message })}
           </div>
         ) : data && data.length === 0 ? (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center text-[13px] text-muted">No candles for {symbol} yet.</div>
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-[13px] text-muted">{t("perps.c.none", { symbol })}</div>
         ) : null}
       </div>
     </div>
@@ -203,7 +205,8 @@ export function PriceChart({
 }
 
 export function FeedBadge({ status, note }: { status: FeedStatus; note?: string }) {
-  const label = status === "live" ? "Live · websocket" : status === "poll" ? (note ?? "live via poll") : "Connecting…";
+  const { t } = useLocale();
+  const label = status === "live" ? t("perps.feed.live") : status === "poll" ? (note ?? t("perps.feed.poll")) : t("perps.feed.connecting");
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-muted">
       <span className={`h-1.5 w-1.5 rounded-full ${status === "live" ? "bg-up" : status === "poll" ? "bg-gold" : "bg-dim"}`} aria-hidden="true" />

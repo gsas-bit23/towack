@@ -8,13 +8,14 @@ import { explainAsterError, signedRequest, type StoredAgent } from "@/lib/aster/
 import { trimDecimal } from "@/lib/aster/markets";
 import { cancelParams, parseOpenOrders, parseOrderHistory, parseUserTrades } from "@/lib/aster/orders";
 import { usePositionRisk } from "./useAsterAccount";
+import { useLocale, type MessageKey } from "@/lib/i18n";
 
 type Tab = "positions" | "open" | "history" | "trades";
-const TABS: [Tab, string][] = [
-  ["positions", "Positions"],
-  ["open", "Open orders"],
-  ["history", "Order history"],
-  ["trades", "Trade history"],
+const TABS: [Tab, MessageKey][] = [
+  ["positions", "perps.bl.positions"],
+  ["open", "perps.bl.open"],
+  ["history", "perps.bl.history"],
+  ["trades", "perps.bl.trades"],
 ];
 
 const fmtTime = (ms: number | undefined) => (ms ? new Date(ms).toLocaleString("en-GB", { hour12: false, month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—");
@@ -28,10 +29,11 @@ const pnlCls = (v: string) => (Number(v) > 0 ? "text-up" : Number(v) < 0 ? "text
 export function Blotter({ agent, symbol, onNeedAgent }: { agent: StoredAgent | undefined; symbol: string; onNeedAgent: () => void }) {
   const [tab, setTab] = useState<Tab>("positions");
   const [allSymbols, setAllSymbols] = useState(false);
+  const { t } = useLocale();
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3">
-        <div className="-mb-px flex min-w-0 flex-wrap" role="tablist" aria-label="Account">
+        <div className="-mb-px flex min-w-0 flex-wrap" role="tablist" aria-label={t("perps.accountAria")}>
           {TABS.map(([k, label]) => (
             <button
               key={k}
@@ -41,25 +43,25 @@ export function Blotter({ agent, symbol, onNeedAgent }: { agent: StoredAgent | u
               onClick={() => setTab(k)}
               className={`border-b-2 px-2.5 py-2.5 text-[13px] font-semibold sm:px-3 ${tab === k ? "border-gold text-fg" : "border-transparent text-muted hover:text-fg"}`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
         {agent && (tab === "open" || tab === "positions") ? (
           <label className="flex items-center gap-2 py-2 text-[12px] text-muted">
             <input type="checkbox" className="h-3.5 w-3.5 accent-gold" checked={allSymbols} onChange={(e) => setAllSymbols(e.target.checked)} />
-            All markets
+            {t("perps.bl.all")}
           </label>
         ) : agent ? (
-          <span className="py-2 text-[12px] text-dim">{symbol} · last 7 days</span>
+          <span className="py-2 text-[12px] text-dim">{t("perps.bl.last7", { symbol })}</span>
         ) : null}
       </div>
       <div className="min-h-[140px]">
         {!agent ? (
           <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
-            <p className="max-w-[420px] text-[13.5px] text-sub">Set up an Aster API wallet to see your positions, open orders, order history and fills. Nothing is shown until Aster returns your real account.</p>
+            <p className="max-w-[420px] text-[13.5px] text-sub">{t("perps.bl.setupBody")}</p>
             <Button tone="soft" size="sm" onClick={onNeedAgent}>
-              Set up API wallet
+              {t("perps.bl.setup")}
             </Button>
           </div>
         ) : tab === "positions" ? (
@@ -77,10 +79,11 @@ export function Blotter({ agent, symbol, onNeedAgent }: { agent: StoredAgent | u
 }
 
 function State({ pending, error, children }: { pending: boolean; error: unknown; children: ReactNode }) {
+  const { t } = useLocale();
   if (pending)
     return (
       <div className="space-y-2 p-3">
-        <Skeleton className="h-7 w-full" label="Loading from Aster" />
+        <Skeleton className="h-7 w-full" label={t("perps.bl.loading")} />
         <Skeleton className="h-7 w-full" />
       </div>
     );
@@ -112,17 +115,18 @@ const Empty = ({ children }: { children: ReactNode }) => <p className="px-4 py-8
 function Positions({ agent, symbol }: { agent: StoredAgent; symbol?: string }) {
   const q = usePositionRisk(agent);
   const rows = (q.data ?? []).filter((p) => Number(p.positionAmt) !== 0 && (!symbol || p.symbol === symbol));
+  const { t } = useLocale();
   return (
     <>
       <State pending={q.isPending} error={q.error}>
         {rows.length === 0 ? (
-          <Empty>No open positions{symbol ? ` on ${symbol}` : ""}. You&apos;re flat.</Empty>
+          <Empty>{symbol ? t("perps.bl.noPosOn", { symbol }) : t("perps.bl.noPos")}</Empty>
         ) : (
-          <Table head={["Market", "Size", "Entry", "Mark", "Liq. price", "Margin", "uPnL", "Lev / mode"]}>
+          <Table head={[t("perps.bl.market"), t("perps.bl.size"), t("perps.bl.entry"), t("perps.bl.mark"), t("perps.bl.liq"), t("perps.bl.margin"), t("perps.bl.upnl"), t("perps.bl.levMode")]}>
             {rows.map((p) => (
               <tr key={`${p.symbol}${p.positionSide}`} className="border-t border-line-2">
                 <td className="px-3 py-2 font-sans font-semibold">
-                  {p.symbol} <span className={p.side === "LONG" ? "text-up" : "text-down"}>{p.side === "LONG" ? "Long" : "Short"}</span>
+                  {p.symbol} <span className={p.side === "LONG" ? "text-up" : "text-down"}>{p.side === "LONG" ? t("perps.bl.long") : t("perps.bl.short")}</span>
                 </td>
                 <td className="px-3 py-2 text-right">{trimDecimal(p.positionAmt.replace("-", ""))}</td>
                 <td className="px-3 py-2 text-right">{trimDecimal(p.entryPrice)}</td>
@@ -131,14 +135,14 @@ function Positions({ agent, symbol }: { agent: StoredAgent; symbol?: string }) {
                 <td className="px-3 py-2 text-right">{num(p.margin)} USDT</td>
                 <td className={`px-3 py-2 text-right ${pnlCls(p.unRealizedProfit)}`}>{num(p.unRealizedProfit)}</td>
                 <td className="px-3 py-2 text-right">
-                  {p.leverage}x · {p.marginType === "ISOLATED" ? "Isolated" : "Cross"}
+                  {p.leverage}x · {p.marginType === "ISOLATED" ? t("perps.t.isolated") : t("perps.t.cross")}
                 </td>
               </tr>
             ))}
           </Table>
         )}
       </State>
-      <p className="px-3 pb-2 text-[11px] text-dim">Refreshed every 10s. Close a position with a reduce-only order in the ticket.</p>
+      <p className="px-3 pb-2 text-[11px] text-dim">{t("perps.bl.refresh")}</p>
     </>
   );
 }
@@ -147,6 +151,7 @@ function OpenOrders({ agent, symbol }: { agent: StoredAgent; symbol?: string }) 
   const qc = useQueryClient();
   const [confirm, setConfirm] = useState<number>();
   const [msg, setMsg] = useState<string>();
+  const { t } = useLocale();
   const orders = useQuery({
     queryKey: ["aster-open-orders", agent.net, agent.signer],
     queryFn: async () => parseOpenOrders(await signedRequest(agent, "GET", "/fapi/v3/openOrders")),
@@ -159,7 +164,7 @@ function OpenOrders({ agent, symbol }: { agent: StoredAgent; symbol?: string }) 
     setMsg(undefined);
     try {
       await signedRequest(agent, "DELETE", "/fapi/v3/order", cancelParams(sym, orderId));
-      setMsg(`Cancelled order ${orderId}.`);
+      setMsg(t("perps.bl.cancelled", { id: orderId }));
     } catch (e) {
       setMsg(explainAsterError(e));
     } finally {
@@ -173,35 +178,35 @@ function OpenOrders({ agent, symbol }: { agent: StoredAgent; symbol?: string }) 
     <>
       <State pending={orders.isPending} error={orders.error}>
         {rows.length === 0 ? (
-          <Empty>No open orders{symbol ? ` on ${symbol}` : ""}.</Empty>
+          <Empty>{symbol ? t("perps.bl.noOpenOn", { symbol }) : t("perps.bl.noOpen")}</Empty>
         ) : (
-          <Table head={["Market", "Type", "Price", "Trigger", "Filled / size", "Flags", "Time", ""]}>
+          <Table head={[t("perps.bl.market"), t("perps.bl.type"), t("perps.bl.price"), t("perps.bl.trigger"), t("perps.bl.filled"), t("perps.bl.flags"), t("perps.bl.time"), ""]}>
             {rows.map((o) => (
               <tr key={o.orderId} className="border-t border-line-2">
                 <td className="px-3 py-2 font-sans font-semibold">
-                  {o.symbol} <span className={o.side === "BUY" ? "text-up" : "text-down"}>{o.side === "BUY" ? "Buy" : "Sell"}</span>
+                  {o.symbol} <span className={o.side === "BUY" ? "text-up" : "text-down"}>{o.side === "BUY" ? t("perps.bl.buy") : t("perps.bl.sell")}</span>
                 </td>
                 <td className="px-3 py-2 text-right font-sans">{o.type}</td>
-                <td className="px-3 py-2 text-right">{Number(o.price) > 0 ? trimDecimal(o.price) : "Market"}</td>
+                <td className="px-3 py-2 text-right">{Number(o.price) > 0 ? trimDecimal(o.price) : t("perps.bl.marketPx")}</td>
                 <td className="px-3 py-2 text-right">{o.stopPrice && Number(o.stopPrice) > 0 ? trimDecimal(o.stopPrice) : "—"}</td>
                 <td className="px-3 py-2 text-right">
                   {trimDecimal(o.executedQty)} / {trimDecimal(o.origQty)}
                 </td>
-                <td className="px-3 py-2 text-right font-sans text-muted">{o.reduceOnly ? "Reduce-only" : "—"}</td>
+                <td className="px-3 py-2 text-right font-sans text-muted">{o.reduceOnly ? t("perps.t.reduceOnly") : "—"}</td>
                 <td className="px-3 py-2 text-right text-muted">{fmtTime(o.time)}</td>
                 <td className="px-3 py-1.5 text-right font-sans">
                   {confirm === o.orderId ? (
                     <span className="inline-flex gap-1.5">
                       <Button tone="danger" size="sm" onClick={() => cancel(o.symbol, o.orderId)}>
-                        Confirm
+                        {t("perps.bl.confirm")}
                       </Button>
                       <Button tone="line" size="sm" onClick={() => setConfirm(undefined)}>
-                        Keep
+                        {t("perps.bl.keep")}
                       </Button>
                     </span>
                   ) : (
                     <Button tone="line" size="sm" onClick={() => setConfirm(o.orderId)}>
-                      Cancel
+                      {t("perps.bl.cancel")}
                     </Button>
                   )}
                 </td>
@@ -226,22 +231,23 @@ function OrderHistory({ agent, symbol }: { agent: StoredAgent; symbol: string })
     refetchInterval: 30_000,
     retry: false,
   });
+  const { t } = useLocale();
   return (
     <State pending={q.isPending} error={q.error}>
       {!q.data?.length ? (
-        <Empty>No orders on {symbol} in the last 7 days.</Empty>
+        <Empty>{t("perps.bl.noHist", { symbol })}</Empty>
       ) : (
-        <Table head={["Market", "Type", "Price", "Avg fill", "Filled / size", "Status", "Updated"]}>
+        <Table head={[t("perps.bl.market"), t("perps.bl.type"), t("perps.bl.price"), t("perps.bl.avgFill"), t("perps.bl.filled"), t("perps.bl.status"), t("perps.bl.updated")]}>
           {q.data.map((o) => (
             <tr key={o.orderId} className="border-t border-line-2">
               <td className="px-3 py-2 font-sans font-semibold">
-                {o.symbol} <span className={o.side === "BUY" ? "text-up" : "text-down"}>{o.side === "BUY" ? "Buy" : "Sell"}</span>
+                {o.symbol} <span className={o.side === "BUY" ? "text-up" : "text-down"}>{o.side === "BUY" ? t("perps.bl.buy") : t("perps.bl.sell")}</span>
               </td>
               <td className="px-3 py-2 text-right font-sans">
                 {o.type}
                 {o.reduceOnly ? " · RO" : ""}
               </td>
-              <td className="px-3 py-2 text-right">{Number(o.price) > 0 ? trimDecimal(o.price) : o.stopPrice && Number(o.stopPrice) > 0 ? `@${trimDecimal(o.stopPrice)}` : "Market"}</td>
+              <td className="px-3 py-2 text-right">{Number(o.price) > 0 ? trimDecimal(o.price) : o.stopPrice && Number(o.stopPrice) > 0 ? `@${trimDecimal(o.stopPrice)}` : t("perps.bl.marketPx")}</td>
               <td className="px-3 py-2 text-right">{Number(o.avgPrice) > 0 ? trimDecimal(o.avgPrice) : "—"}</td>
               <td className="px-3 py-2 text-right">
                 {trimDecimal(o.executedQty)} / {trimDecimal(o.origQty)}
@@ -263,16 +269,17 @@ function TradeHistory({ agent, symbol }: { agent: StoredAgent; symbol: string })
     refetchInterval: 30_000,
     retry: false,
   });
+  const { t: tr } = useLocale();
   return (
     <State pending={q.isPending} error={q.error}>
       {!q.data?.length ? (
-        <Empty>No fills on {symbol} in the last 7 days.</Empty>
+        <Empty>{tr("perps.bl.noFills", { symbol })}</Empty>
       ) : (
-        <Table head={["Market", "Price", "Size", "Value", "Fee", "Realized PnL", "Role", "Time"]}>
+        <Table head={[tr("perps.bl.market"), tr("perps.bl.price"), tr("perps.bl.size"), tr("perps.bl.value"), tr("perps.bl.fee"), tr("perps.bl.pnl"), tr("perps.bl.role"), tr("perps.bl.time")]}>
           {q.data.map((t) => (
             <tr key={t.id} className="border-t border-line-2">
               <td className="px-3 py-2 font-sans font-semibold">
-                {t.symbol} <span className={t.side === "BUY" ? "text-up" : "text-down"}>{t.side === "BUY" ? "Buy" : "Sell"}</span>
+                {t.symbol} <span className={t.side === "BUY" ? "text-up" : "text-down"}>{t.side === "BUY" ? tr("perps.bl.buy") : tr("perps.bl.sell")}</span>
               </td>
               <td className="px-3 py-2 text-right">{trimDecimal(t.price)}</td>
               <td className="px-3 py-2 text-right">{trimDecimal(t.qty)}</td>
@@ -281,7 +288,7 @@ function TradeHistory({ agent, symbol }: { agent: StoredAgent; symbol: string })
                 {num(t.commission, 4)} {t.commissionAsset}
               </td>
               <td className={`px-3 py-2 text-right ${pnlCls(t.realizedPnl)}`}>{num(t.realizedPnl)}</td>
-              <td className="px-3 py-2 text-right font-sans text-muted">{t.maker ? "Maker" : "Taker"}</td>
+              <td className="px-3 py-2 text-right font-sans text-muted">{t.maker ? tr("perps.bl.maker") : tr("perps.bl.taker")}</td>
               <td className="px-3 py-2 text-right text-muted">{fmtTime(t.time)}</td>
             </tr>
           ))}

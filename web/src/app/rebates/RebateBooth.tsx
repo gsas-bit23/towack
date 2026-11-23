@@ -9,10 +9,12 @@ import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
+import { useLocale, type MessageKey } from "@/lib/i18n";
 
 const MAX_EPOCHS_SHOWN = 120;
 
 export function RebateBooth() {
+  const { t } = useLocale();
   return (
     <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
       <div className="col-span-12 lg:col-span-8">
@@ -22,19 +24,16 @@ export function RebateBooth() {
       </div>
       <div className="col-span-12 lg:col-span-4">
         <Panel tone="raised" shadow={false}>
-          <h2 className="text-[20px] font-semibold tracking-tight">How rebates work</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight">{t("reb.how")}</h2>
           <ul className="mt-3 space-y-2 font-medium text-sub">
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Every swap through the Towack router pays 1% on the BNB leg.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Half of that fee goes into this week&apos;s BNB rebate pot.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />The week&apos;s TWAK budget (~961,538 TWAK) is added on top.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />At the end of the week, your share = your fees ÷ all fees.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Weeks with no trades roll their budget into the next week.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Claim any finished week, any time, on-chain.</li>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <li key={n} className="flex gap-2.5">
+                <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />
+                <span>{t(`reb.how${n}` as MessageKey)}</span>
+              </li>
+            ))}
           </ul>
-          <p className="mt-4 text-sm font-semibold text-sub">
-            Holding TWAK earns nothing here. Rebates return only part of the fees you paid plus a share of a fixed budget, and other traders dilute it.
-            Not a yield product.
-          </p>
+          <p className="mt-4 text-sm font-semibold text-sub">{t("reb.note")}</p>
         </Panel>
       </div>
     </div>
@@ -47,6 +46,7 @@ function EpochTable() {
   const now = useNow();
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
+  const { t } = useLocale();
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const c = { address: dist, abi: rebateDistributorAbi, chainId } as const;
@@ -118,7 +118,7 @@ function EpochTable() {
   async function claim() {
     const list = sel.map((r) => BigInt(r.e));
     if (!list.length) return;
-    const ok = await tx.run("Claim rebates", () =>
+    const ok = await tx.run(t("reb.txClaim"), () =>
       writeContractAsync({ address: dist, abi: rebateDistributorAbi, functionName: "claim", args: [list], chainId }),
     );
     if (ok) setSelected(new Set());
@@ -127,46 +127,46 @@ function EpochTable() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[21px] font-semibold tracking-tight">Epochs</h2>
+        <h2 className="text-[21px] font-semibold tracking-tight">{t("reb.epochs")}</h2>
         <ChainNote />
       </div>
-      {metaErr ? <RpcErrorNotice onRetry={() => void refetchMeta()} label="Could not load rebate epochs." /> : null}
+      {metaErr ? <RpcErrorNotice onRetry={() => void refetchMeta()} label={t("reb.loadErr")} /> : null}
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        <Stat label="Current epoch" value={curN !== undefined ? `#${curN}` : "—"} sub={nextEnd && now ? `ends in ${fmtDuration(nextEnd - now)}` : undefined} />
-        <Stat label="Finalized up to" value={finalized !== undefined ? (finN > 0 ? `#${finN - 1}` : "none yet") : "—"} />
-        <Stat label="Started" value={start ? fmtDate(start).split(",")[0] : "—"} sub="epoch 0" />
+        <Stat label={t("reb.current")} value={curN !== undefined ? `#${curN}` : "—"} sub={nextEnd && now ? t("reb.endsIn", { d: fmtDuration(nextEnd - now) }) : undefined} />
+        <Stat label={t("reb.finalized")} value={finalized !== undefined ? (finN > 0 ? `#${finN - 1}` : t("reb.noneYet")) : "—"} />
+        <Stat label={t("reb.started")} value={start ? fmtDate(start).split(",")[0] : "—"} sub={t("reb.epoch0")} />
       </div>
       {pendingCheckpoint ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
-          <span>Some finished weeks haven&apos;t been tallied yet. Anyone can run the checkpoint (gas only); claiming also runs it.</span>
+          <span>{t("reb.pending")}</span>
           {account ? (
             <Button
               tone="line"
               size="sm"
               disabled={tx.busy}
-              onClick={() => tx.run("Checkpoint", () => writeContractAsync({ address: dist, abi: rebateDistributorAbi, functionName: "checkpoint", chainId }))}
+              onClick={() => tx.run(t("reb.txCheckpoint"), () => writeContractAsync({ address: dist, abi: rebateDistributorAbi, functionName: "checkpoint", chainId }))}
             >
-              Run checkpoint
+              {t("reb.runCheckpoint")}
             </Button>
           ) : null}
         </div>
       ) : null}
 
       <div className="mt-6">
-        <NeedsWallet why="Connect to see the fees you paid and the rebates you can claim.">
+        <NeedsWallet why={t("reb.connectWhy")}>
           {visible.length === 0 ? (
-            <p className="rounded-2xl bg-card-2 px-4 py-6 text-center font-medium">No trading activity found for this wallet yet.</p>
+            <p className="rounded-2xl bg-card-2 px-4 py-6 text-center font-medium">{t("reb.noActivity")}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-left font-medium">
                 <thead className="text-[12px] uppercase tracking-widest text-muted">
                   <tr>
-                    <th className="px-3">Pick</th>
-                    <th className="px-3">Epoch</th>
-                    <th className="px-3">Your fees</th>
-                    <th className="px-3">Share</th>
-                    <th className="px-3">Claimable</th>
-                    <th className="px-3">Status</th>
+                    <th className="px-3">{t("reb.pick")}</th>
+                    <th className="px-3">{t("reb.epoch")}</th>
+                    <th className="px-3">{t("reb.yourFees")}</th>
+                    <th className="px-3">{t("reb.share")}</th>
+                    <th className="px-3">{t("reb.claimable")}</th>
+                    <th className="px-3">{t("reb.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -182,7 +182,7 @@ function EpochTable() {
                             disabled={!can}
                             checked={selected.has(r.e)}
                             onChange={() => toggle(r.e)}
-                            aria-label={`Select epoch ${r.e}`}
+                            aria-label={t("reb.selectEpoch", { n: r.e })}
                           />
                         </td>
                         <td className="px-3 py-3 font-display font-semibold">#{r.e}</td>
@@ -196,11 +196,11 @@ function EpochTable() {
                               <span className="text-sm text-muted">+ {fmt18(r.bnb, 6)} BNB</span>
                             </>
                           ) : (
-                            <span className="text-muted">after week ends</span>
+                            <span className="text-muted">{t("reb.afterWeek")}</span>
                           )}
                         </td>
                         <td className="rounded-r-2xl px-3 py-3">
-                          {r.live ? <Pill tone="neutral">LIVE</Pill> : r.claimed ? <Pill tone="line">CLAIMED</Pill> : r.finalized ? can ? <Pill tone="gold">READY</Pill> : <Pill tone="line">—</Pill> : <Pill tone="line">TALLYING</Pill>}
+                          {r.live ? <Pill tone="neutral">{t("reb.live")}</Pill> : r.claimed ? <Pill tone="line">{t("reb.claimed")}</Pill> : r.finalized ? can ? <Pill tone="gold">{t("reb.ready")}</Pill> : <Pill tone="line">—</Pill> : <Pill tone="line">{t("reb.tallying")}</Pill>}
                         </td>
                       </tr>
                     );
@@ -211,14 +211,14 @@ function EpochTable() {
           )}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-card p-4">
             <div className="font-medium">
-              Selected: <span className="font-display font-semibold">{fmt18(sumT, 2)} TWAK</span> + <span className="font-display font-semibold">{fmt18(sumB, 6)} BNB</span>
+              {t("reb.selected")} <span className="font-display font-semibold">{fmt18(sumT, 2)} TWAK</span> + <span className="font-display font-semibold">{fmt18(sumB, 6)} BNB</span>
             </div>
             <div className="flex gap-3">
               <Button tone="line" size="sm" disabled={!claimableRows.length} onClick={() => setSelected(new Set(claimableRows.map((r) => r.e)))}>
-                Select all
+                {t("reb.selectAll")}
               </Button>
               <Button tone="gold" size="sm" disabled={!sel.length || tx.busy} onClick={claim}>
-                {tx.busy ? "Check your wallet…" : `Claim ${sel.length || ""} epoch${sel.length === 1 ? "" : "s"}`}
+                {tx.busy ? t("wallet.checkWallet") : sel.length ? t("reb.claimN", { n: sel.length }) : t("reb.claimNone")}
               </Button>
             </div>
           </div>

@@ -46,26 +46,34 @@ const FRIENDLY: Record<string, string> = {
   PairLocked: "Trading opens after the listing is finalized.",
 };
 
-export function explainError(err: unknown): string {
+/** `code` is a stable id the UI translates (tx.err.<code>); `message` is the English fallback. */
+export function explainErrorCode(err: unknown): { code?: string; message: string } {
+  if (err instanceof RevertedOnChain) return { code: "reverted", message: err.message };
   if (err instanceof BaseError) {
-    if (err.walk((e) => e instanceof UserRejectedRequestError)) return "You cancelled in your wallet. Nothing was sent.";
+    if (err.walk((e) => e instanceof UserRejectedRequestError)) return { code: "rejected", message: "You cancelled in your wallet. Nothing was sent." };
     const revert = err.walk((e) => e instanceof ContractFunctionRevertedError);
     if (revert instanceof ContractFunctionRevertedError) {
       const name = revert.data?.errorName;
-      if (name && FRIENDLY[name]) return FRIENDLY[name];
-      if (revert.reason) return revert.reason;
+      if (name && FRIENDLY[name]) return { code: name, message: FRIENDLY[name] };
+      if (revert.reason) return { message: revert.reason };
     }
-    return err.shortMessage || err.message;
+    return { message: err.shortMessage || err.message };
   }
-  return err instanceof Error ? err.message : "Something went wrong.";
+  return err instanceof Error ? { message: err.message } : { code: "generic", message: "Something went wrong." };
 }
+
+export function explainError(err: unknown): string {
+  return explainErrorCode(err).message;
+}
+
+class RevertedOnChain extends Error {}
 
 export type TxState =
   | { status: "idle" }
   | { status: "wallet"; label: string }
   | { status: "pending"; label: string; hash: Hash }
   | { status: "success"; label: string; hash: Hash }
-  | { status: "error"; label: string; message: string; hash?: Hash };
+  | { status: "error"; label: string; message: string; code?: string; hash?: Hash };
 
 /**
  * Runs one user-signed transaction: `send` must call a wagmi write (which opens the user's wallet
@@ -84,12 +92,12 @@ export function useTx() {
         hash = await send();
         setState({ status: "pending", label, hash });
         const receipt = await waitForTransactionReceipt(config, { hash });
-        if (receipt.status !== "success") throw new Error("Transaction reverted on-chain.");
+        if (receipt.status !== "success") throw new RevertedOnChain("Transaction reverted on-chain.");
         setState({ status: "success", label, hash });
         await queryClient.invalidateQueries();
         return true;
       } catch (e) {
-        setState({ status: "error", label, message: explainError(e), hash });
+        setState({ status: "error", label, ...explainErrorCode(e), hash });
         return false;
       }
     },

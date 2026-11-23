@@ -5,6 +5,8 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { DECK_SIZE, PRIZES } from "@/lib/prizes";
+import { useLocale } from "@/lib/i18n";
+import { prizeAmount, prizeLabel } from "@/lib/prizeText";
 
 const BNB = PRIZES.filter((p) => p.kind === "bnb");
 const BONUS = PRIZES.filter((p) => p.kind === "bonus");
@@ -13,6 +15,7 @@ const BONUS_H = [40, 50, 60, 70, 80, 88];
 const BONUS_COLOR = ["bg-[#3A414B]", "bg-[#3A414B]", "bg-[#4A3C10]", "bg-[#4A3C10]", "bg-gold/80", "bg-gold"];
 
 export function BnbTierStubs() {
+  const { t: tr } = useLocale();
   return (
     <>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
@@ -21,8 +24,8 @@ export function BnbTierStubs() {
             <div className={`font-mono text-[28px] font-medium leading-none tracking-tight lg:text-[32px] ${i === 0 ? "text-gold" : ""}`}>
               {t.slots.toLocaleString("en-US")}
             </div>
-            <div className="mt-3 text-[14px] font-semibold">{t.label}</div>
-            <div className="mt-0.5 font-mono text-[12.5px] text-muted">{t.amount}</div>
+            <div className="mt-3 text-[14px] font-semibold">{prizeLabel(tr, t)}</div>
+            <div className="mt-0.5 font-mono text-[12.5px] text-muted">{prizeAmount(tr, t)}</div>
             <div className="mt-3 border-t border-line pt-2.5 font-mono text-[12px] text-dim">
               {t.slots} / {DECK_SIZE.toLocaleString("en-US")}
             </div>
@@ -30,9 +33,9 @@ export function BnbTierStubs() {
         ))}
         <div className="lift min-w-0 rounded-xl border border-dashed border-line-2 p-4">
           <div className="font-mono text-[28px] font-medium leading-none tracking-tight text-muted lg:text-[32px]">{NONE.slots}</div>
-          <div className="mt-3 text-[14px] font-semibold">Better luck next time</div>
-          <div className="mt-0.5 font-mono text-[12.5px] text-muted">keep your 80k TWAK</div>
-          <div className="mt-3 border-t border-line pt-2.5 font-mono text-[12px] text-dim">NO PRIZE</div>
+          <div className="mt-3 text-[14px] font-semibold">{prizeLabel(tr, NONE)}</div>
+          <div className="mt-0.5 font-mono text-[12.5px] text-muted">{tr("deck.keep80k")}</div>
+          <div className="mt-3 border-t border-line pt-2.5 font-mono text-[12px] text-dim">{tr("deck.noPrize")}</div>
         </div>
       </div>
       <DeckBar />
@@ -43,6 +46,7 @@ export function BnbTierStubs() {
 /** Whole deck as one bar: every slot is exactly one outcome. */
 export function DeckBar() {
   const reduce = useReducedMotion();
+  const { t } = useLocale();
   const segs = [
     { w: 500, c: "bg-gold" },
     { w: 600, c: "bg-[#B08A10]" },
@@ -68,9 +72,9 @@ export function DeckBar() {
         ))}
       </div>
       <div className="mt-2 flex flex-wrap justify-between gap-2 text-[12.5px] text-muted">
-        <span>3,500 BNB refunds (gold)</span>
-        <span>1,020 TWAK bonuses (green)</span>
-        <span>480 no prize</span>
+        <span>{t("deck.bnbRefunds")}</span>
+        <span>{t("deck.twakBonuses")}</span>
+        <span>{t("deck.none")}</span>
       </div>
     </>
   );
@@ -78,6 +82,7 @@ export function DeckBar() {
 
 export function BonusBars() {
   const reduce = useReducedMotion();
+  const { t } = useLocale();
   return (
     <>
       <div className="mt-6 grid min-w-0 grid-cols-3 items-start gap-x-3 gap-y-5 sm:grid-cols-6">
@@ -102,7 +107,7 @@ export function BonusBars() {
         ))}
       </div>
       <div className="mt-3 text-center text-[12.5px] text-muted">
-        slots per multiplier · extra TWAK on top of the 80,000 from the mint
+        {t("deck.bonusCaption")}
       </div>
     </>
   );

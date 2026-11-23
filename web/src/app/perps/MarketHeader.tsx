@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fmtCompactUsd, fmtFunding, fmtPrice, trimDecimal, type MarketRow } from "@/lib/aster/markets";
 import { useNow } from "@/lib/useNow";
+import { useLocale } from "@/lib/i18n";
 
 function countdown(next: number | undefined, nowSec: number): string {
   if (!next || !nowSec) return "—";
@@ -28,17 +29,18 @@ export function MarketHeader({
   onSelect: (symbol: string) => void;
 }) {
   const now = useNow(1_000);
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const up = (row?.changePct ?? 0) >= 0;
   const d = row?.priceDecimals ?? 8;
   const stats: [string, string, string?][] = [
-    ["24h change", row?.changePct === undefined ? "—" : `${up ? "+" : ""}${row.changePct.toFixed(2)}%`, row?.changePct === undefined ? "" : up ? "text-up" : "text-down"],
-    ["24h volume", fmtCompactUsd(row?.quoteVolume)],
-    ["Mark", fmtPrice(row?.markPrice, d)],
-    ["Index", fmtPrice(row?.indexPrice, d)],
-    ["Funding", fmtFunding(row?.fundingRate), (row?.fundingRate ?? 0) < 0 ? "text-down" : "text-up"],
-    ["Next funding", countdown(row?.nextFundingTime, now)],
+    [t("perps.h.change"), row?.changePct === undefined ? "—" : `${up ? "+" : ""}${row.changePct.toFixed(2)}%`, row?.changePct === undefined ? "" : up ? "text-up" : "text-down"],
+    [t("perps.h.volume"), fmtCompactUsd(row?.quoteVolume)],
+    [t("perps.h.mark"), fmtPrice(row?.markPrice, d)],
+    [t("perps.h.index"), fmtPrice(row?.indexPrice, d)],
+    [t("perps.h.funding"), fmtFunding(row?.fundingRate), (row?.fundingRate ?? 0) < 0 ? "text-down" : "text-up"],
+    [t("perps.h.nextFunding"), countdown(row?.nextFundingTime, now)],
   ];
 
   return (
@@ -53,16 +55,16 @@ export function MarketHeader({
         >
           <span>
             <span className="block text-[22px] font-semibold leading-tight tracking-tight sm:text-[24px]">{symbol}</span>
-            <span className="block text-[11px] font-medium uppercase tracking-[.1em] text-muted">Aster · perpetual</span>
+            <span className="block text-[11px] font-medium uppercase tracking-[.1em] text-muted">{t("perps.h.perpetual")}</span>
           </span>
           <span className="text-muted" aria-hidden="true">
             ▾
           </span>
-          <span className="sr-only">Change market</span>
+          <span className="sr-only">{t("perps.h.changeMarket")}</span>
         </button>
         <div className="min-w-0">
           <div className={`font-mono text-[22px] font-medium leading-tight tabular-nums tracking-tight ${row?.changePct === undefined ? "" : up ? "text-up" : "text-down"}`}>{trimDecimal(row?.lastPrice)}</div>
-          <div className="text-[11px] font-medium text-muted">last price</div>
+          <div className="text-[11px] font-medium text-muted">{t("perps.h.last")}</div>
         </div>
       </div>
       <dl className="grid min-w-0 basis-full grid-cols-3 gap-x-4 gap-y-2 md:basis-0 md:flex-1 xl:flex xl:flex-wrap xl:gap-x-7">
@@ -75,7 +77,7 @@ export function MarketHeader({
       </dl>
       {error ? (
         <p role="alert" className="w-full rounded-lg border border-down/30 bg-down/10 px-3 py-2 text-[13px]">
-          Couldn&apos;t reach Aster&apos;s public API: {error}. Retrying…
+          {t("perps.h.apiErr", { e: error })}
         </p>
       ) : null}
       {open ? <MarketPicker rows={rows} loading={loading} selected={symbol} onClose={close}
@@ -101,6 +103,7 @@ function MarketPicker({
   onClose: () => void;
 }) {
   const [q, setQ] = useState("");
+  const { t } = useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const list = useMemo(() => {
     const t = q.trim().toUpperCase();
@@ -125,27 +128,27 @@ function MarketPicker({
     <div
       ref={ref}
       role="dialog"
-      aria-label="Choose a market"
+      aria-label={t("perps.pick.aria")}
       className="absolute left-2 right-2 top-[calc(100%+6px)] z-40 rounded-xl border border-line-2 bg-card-2 p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,.8)] sm:right-auto sm:w-[440px]"
     >
       <input
         autoFocus
         className="w-full rounded-lg border border-line-2 bg-card px-3 py-2 text-[15px] text-fg placeholder:text-dim focus:border-gold focus:outline-none"
-        placeholder="Search BTC, ETH…"
+        placeholder={t("perps.pick.search")}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        aria-label="Search markets"
+        aria-label={t("perps.pick.searchAria")}
       />
       <div className="mt-2 grid grid-cols-[1fr_auto_auto] gap-x-3 px-2 text-[11px] font-medium text-dim">
-        <span>Market</span>
-        <span className="text-right">Last</span>
+        <span>{t("perps.pick.market")}</span>
+        <span className="text-right">{t("perps.pick.last")}</span>
         <span className="w-[64px] text-right">24h</span>
       </div>
       <ul className="mt-1 max-h-[340px] overflow-y-auto">
         {loading && !rows ? (
-          <li className="px-2 py-3 text-[13px] text-muted">Loading Aster markets…</li>
+          <li className="px-2 py-3 text-[13px] text-muted">{t("perps.pick.loading")}</li>
         ) : list.length === 0 ? (
-          <li className="px-2 py-3 text-[13px] text-muted">No market matches “{q}”.</li>
+          <li className="px-2 py-3 text-[13px] text-muted">{t("perps.pick.none", { q })}</li>
         ) : (
           list.map((r) => {
             const up = (r.changePct ?? 0) >= 0;
@@ -171,7 +174,7 @@ function MarketPicker({
           })
         )}
       </ul>
-      <p className="px-2 pt-2 text-[11px] text-dim">Sorted by 24h volume. Public Aster data, no key.</p>
+      <p className="px-2 pt-2 text-[11px] text-dim">{t("perps.pick.note")}</p>
     </div>
   );
 }

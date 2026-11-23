@@ -21,6 +21,7 @@ import {
 import { ASTER_API_WALLET_URL, trimDecimal, type AsterNet } from "@/lib/aster/markets";
 import { useAsterBalance } from "./useAsterAccount";
 import { useNow } from "@/lib/useNow";
+import { useLocale } from "@/lib/i18n";
 import { AGENT_TTL_DAYS, ASTER_EVM_SIGNATURE_CHAIN_ID, approvalMessage, asterTypedData, defaultAgentName, nextNonce } from "@/lib/aster/sign";
 
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -32,15 +33,15 @@ export function useAsterAgent(net: AsterNet): StoredAgent | undefined {
 }
 
 export function AsterAccountCard({ net, agent }: { net: AsterNet; agent: StoredAgent | undefined }) {
+  const { t, rich } = useLocale();
   return (
     <Panel tone="card" shadow={false} className="!p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[16px] font-semibold tracking-tight">Your Aster API wallet</h2>
-        <Pill tone="neutral">Stays in this browser</Pill>
+        <h2 className="text-[16px] font-semibold tracking-tight">{t("perps.a.title")}</h2>
+        <Pill tone="neutral">{t("perps.a.stays")}</Pill>
       </div>
       <p className="mt-2 text-[12.5px] leading-relaxed text-sub">
-        Aster trades are signed by an <b>API wallet</b>: a key that can place and cancel perp orders for your account but can never withdraw. It lives
-        only in this browser&apos;s storage. Towack has no server that sees it; only signatures go, straight to Aster.
+        {rich("perps.a.body", { b: (c) => <b>{c}</b> })}
       </p>
       <div className="mt-4 text-[13px]">{agent ? <AgentStatus agent={agent} /> : <AgentSetup net={net} />}</div>
     </Panel>
@@ -53,54 +54,55 @@ function AgentStatus({ agent }: { agent: StoredAgent }) {
   const now = useNow(60_000);
   const expired = exp && now ? exp.getTime() < now * 1000 : false;
   const balance = useAsterBalance(agent);
+  const { t } = useLocale();
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Stat label="Account" value={<span className="font-mono text-[18px]">{short(agent.user)}</span>} sub="main wallet" />
+        <Stat label={t("perps.a.account")} value={<span className="font-mono text-[18px]">{short(agent.user)}</span>} sub={t("perps.a.mainWallet")} />
         <Stat
-          label="API wallet"
+          label={t("perps.a.apiWallet")}
           value={<span className="font-mono text-[18px]">{short(agent.signer)}</span>}
-          sub={`${agent.source === "generated" ? "made here, approved by your wallet" : "pasted from Aster"} · ${agent.remember ? "remembered on this device" : "this tab only"}`}
+          sub={`${agent.source === "generated" ? t("perps.a.madeHere") : t("perps.a.pasted")} · ${agent.remember ? t("perps.a.remembered") : t("perps.a.tabOnly")}`}
         />
       </div>
       {exp ? (
         <p className={`text-sm font-medium ${expired ? "text-down" : "text-sub"}`}>
-          {expired ? "Expired" : "Expires"} {exp.toLocaleString()}. Perps only, no spot, no withdrawals.
+          {t(expired ? "perps.a.expiredAt" : "perps.a.expiresAt", { date: exp.toLocaleString() })}
         </p>
       ) : null}
       <div className="rounded-2xl border border-line bg-card px-4 py-3 font-medium">
         {balance.isPending ? (
-          "Checking your Aster USDT margin…"
+          t("perps.a.checkingMargin")
         ) : balance.error ? (
           <span className="text-down">{explainAsterError(balance.error)}</span>
         ) : balance.data ? (
           <>
-            USDT margin: {trimDecimal(balance.data.balance)} · available {trimDecimal(balance.data.available)}
+            {t("perps.a.margin", { bal: trimDecimal(balance.data.balance), avail: trimDecimal(balance.data.available) })}
           </>
         ) : (
-          "No USDT margin on Aster yet. Deposit on asterdex.com first."
+          t("perps.a.noMargin")
         )}
       </div>
       <div className="flex flex-wrap gap-3">
         {sure ? (
           <>
             <Button tone="gold" size="sm" onClick={() => forgetAgent(agent.net)}>
-              Yes, forget this key
+              {t("perps.a.forgetYes")}
             </Button>
             <Button tone="line" size="sm" onClick={() => setSure(false)}>
-              Keep it
+              {t("perps.a.keep")}
             </Button>
           </>
         ) : (
           <Button tone="line" size="sm" onClick={() => setSure(true)}>
-            Forget key on this browser
+            {t("perps.a.forget")}
           </Button>
         )}
         <a className="inline-flex min-h-10 items-center text-sm font-semibold underline" href={ASTER_API_WALLET_URL[agent.net]} target="_blank" rel="noreferrer">
-          Manage / revoke on Aster ↗
+          {t("perps.a.manage")}
         </a>
       </div>
-      <p className="text-xs font-medium text-muted">Forgetting only deletes it here. Revoke it on Aster to switch it off everywhere.</p>
+      <p className="text-xs font-medium text-muted">{t("perps.a.forgetNote")}</p>
     </div>
   );
 }
@@ -108,13 +110,14 @@ function AgentStatus({ agent }: { agent: StoredAgent }) {
 function AgentSetup({ net }: { net: AsterNet }) {
   const [mode, setMode] = useState<"wallet" | "paste">("wallet");
   const [remember, setRemember] = useState(false);
+  const { t } = useLocale();
   return (
     <div>
-      <div className="inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label="How to set up the API wallet">
+      <div className="inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label={t("perps.a.setupAria")}>
         {(
           [
-            ["wallet", "Approve with my wallet"],
-            ["paste", "Paste an Aster key"],
+            ["wallet", t("perps.a.approve")],
+            ["paste", t("perps.a.paste")],
           ] as const
         ).map(([m, label]) => (
           <button
@@ -133,7 +136,7 @@ function AgentSetup({ net }: { net: AsterNet }) {
       <label className="mt-5 flex items-start gap-3 font-medium">
         <input type="checkbox" className="mt-1 h-5 w-5 accent-gold" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
         <span>
-          Remember on this device. Off: kept for this tab only and gone when you close it. Don&apos;t tick this on a shared computer.
+          {t("perps.a.remember")}
         </span>
       </label>
     </div>
@@ -146,6 +149,7 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
   const { signTypedDataAsync } = useSignTypedData();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>();
+  const { t, rich } = useLocale();
   const onBsc = chainId === ASTER_EVM_SIGNATURE_CHAIN_ID;
 
   async function approve() {
@@ -162,7 +166,7 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
       saveAgent({ v: 1, net, user: address, signer, key, expired: approval.expired, source: "generated", remember });
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
-      setErr(/reject|denied/i.test(m) ? "You declined the signature. Nothing was approved." : /nonce/i.test(m) ? `${m}. Aster needs the signature within ~10 seconds; try again.` : explainAsterError(e));
+      setErr(/reject|denied/i.test(m) ? t("perps.a.declined") : /nonce/i.test(m) ? t("perps.a.nonce", { m }) : explainAsterError(e));
     } finally {
       setBusy(false);
     }
@@ -171,7 +175,7 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
   if (!isConnected) {
     return (
       <div className="rounded-2xl border border-line bg-card p-5 text-center">
-        <p className="font-medium text-sub">Connect the wallet you use on Aster (the one that holds your margin).</p>
+        <p className="font-medium text-sub">{t("perps.a.connect")}</p>
         <div className="mt-4 flex justify-center">
           <ConnectPill />
         </div>
@@ -182,20 +186,17 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
   return (
     <div className="space-y-4">
       <ol className="list-decimal space-y-1 pl-5 font-medium text-sub">
-        <li>This page makes a fresh API wallet key in your browser.</li>
-        <li>
-          Your wallet signs one message approving it on Aster: perps <b>yes</b>, spot <b>no</b>, withdrawals <b>no</b>, expires in{" "}
-          {AGENT_TTL_DAYS} days. It is a signature, not a transaction: no gas, nothing broadcast.
-        </li>
-        <li>The approval goes straight to Aster. The key stays here.</li>
+        <li>{t("perps.a.step1")}</li>
+        <li>{rich("perps.a.step2", { b: (c) => <b>{c}</b> }, { days: AGENT_TTL_DAYS })}</li>
+        <li>{t("perps.a.step3")}</li>
       </ol>
       {!onBsc ? (
         <Button tone="soft" size="md" disabled={switching} onClick={() => switchChainAsync({ chainId: ASTER_EVM_SIGNATURE_CHAIN_ID }).catch(() => undefined)}>
-          {switching ? "Check your wallet…" : "Switch wallet to BNB Smart Chain to sign"}
+          {switching ? t("wallet.checkWallet") : t("perps.a.switchBsc")}
         </Button>
       ) : (
         <Button tone="soft" size="md" disabled={busy} onClick={approve}>
-          {busy ? "Sign in your wallet…" : "Approve a trade-only API wallet"}
+          {busy ? t("perps.a.signing") : t("perps.a.approveBtn")}
         </Button>
       )}
       {err ? (
@@ -214,25 +215,28 @@ function PasteKey({ net, remember }: { net: AsterNet; remember: boolean }) {
   const userValue = user || address || "";
   const signer = agentAddressFromKey(key);
   const userOk = isAddress(userValue.trim());
+  const { t, rich } = useLocale();
   return (
     <div className="space-y-4">
       <p className="font-medium text-sub">
-        Already made an API wallet on{" "}
-        <a className="underline" href={ASTER_API_WALLET_URL[net]} target="_blank" rel="noreferrer">
-          Aster&apos;s API wallet page
-        </a>{" "}
-        (Pro API)? Paste its private key. Give it perps permission only, never withdrawals.
+        {rich("perps.a.pasteIntro", {
+          a: (c) => (
+            <a className="underline" href={ASTER_API_WALLET_URL[net]} target="_blank" rel="noreferrer">
+              {c}
+            </a>
+          ),
+        })}
       </p>
-      <Field label="Aster account (main wallet address)">
+      <Field label={t("perps.a.accountField")}>
         <input className={`${inputClass} font-mono !text-[15px]`} placeholder="0x…" value={userValue} onChange={(e) => setUser(e.target.value.trim())} spellCheck={false} />
       </Field>
-      <Field label="API wallet private key" hint={key && !signer ? "That doesn't look like a 32-byte hex private key." : signer ? `API wallet address: ${signer}` : "Stays in this browser. Never your main wallet's key."}>
+      <Field label={t("perps.a.keyField")} hint={key && !signer ? t("perps.a.keyBad") : signer ? t("perps.a.keyAddr", { a: signer }) : t("perps.a.keyHint")}>
         <input
           className={`${inputClass} font-mono !text-[15px]`}
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder="0x… (64 hex characters)"
+          placeholder={t("perps.a.keyPh")}
           value={key}
           onChange={(e) => setKey(e.target.value)}
         />
@@ -247,7 +251,7 @@ function PasteKey({ net, remember }: { net: AsterNet; remember: boolean }) {
           setKey("");
         }}
       >
-        Use this API wallet
+        {t("perps.a.use")}
       </Button>
     </div>
   );

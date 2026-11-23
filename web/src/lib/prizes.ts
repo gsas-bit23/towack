@@ -100,8 +100,4 @@ export function landingAngle(prizeId: number, salt: number): number {
   return landingAngleIn(SLICES, prizeId, salt);
 }
 
-export function shareText(prizeId: number): string {
-  const p = PRIZES[prizeId];
-  const pulled = p.kind === "none" ? "pulled “Better luck next time”" : `pulled ${p.label} (${p.amount})`;
-  return `I spun the Towack prize wheel on BNB Chain and ${pulled} 🎡 Agent ID holders only. Game of chance, no promised returns.`;
-}
+// Localized labels / share text: lib/prizeText.ts.

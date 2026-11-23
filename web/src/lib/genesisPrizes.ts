@@ -7,8 +7,4 @@ export const GENESIS_CAP = 300;
 export const GENESIS_BUDGET = "6M TWAK";
 /** User-facing cost line (BSC gas for one claim at ~0.05–0.1 gwei is a fraction of a cent). */
 export const GENESIS_COST_TEXT = "Completely free — only network gas (~$0.002), instant 20,000 TWAK";
-
-export function genesisShareText(mintIndex?: number): string {
-  const n = mintIndex ? ` #${mintIndex}` : "";
-  return `I claimed Towack Genesis 300${n} on BNB Chain: 20,000 TWAK, completely free (just gas). Agent ID holders only. No promised returns.`;
-}
+// Localized copy for this (and the share text) lives in lib/i18n (genesis.cost / genesis.share) and lib/prizeText.ts.

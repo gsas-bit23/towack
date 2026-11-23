@@ -4,7 +4,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { Spin } from "@/lib/draw";
 import { shortAddr } from "@/lib/format";
-import { DECK_SIZE, NO_WIN_ID, PRIZES, prizeById, shareText } from "@/lib/prizes";
+import { DECK_SIZE, NO_WIN_ID, PRIZES, prizeById } from "@/lib/prizes";
+import { useLocale, type TFn } from "@/lib/i18n";
+import { prizeAmount, prizeLabel, prizeShareText, prizeWheel } from "@/lib/prizeText";
 import { useNow } from "@/lib/useNow";
 import { Confetti, SuccessCheck } from "./motion";
 import { SpinWheel, type WheelMode } from "./SpinWheel";
@@ -39,6 +41,7 @@ export function WheelStage({
   size?: number;
 }) {
   const { mode, landed, burst, onLanded } = useWheelMachine(status, fresh, prizeId, NO_WIN_ID);
+  const { t } = useLocale();
 
   const prize = prizeById(prizeId);
   const showResult = landed && prize !== undefined && status === "assigned";
@@ -48,7 +51,7 @@ export function WheelStage({
       {demo ? (
         <div className="mb-4 flex justify-center">
           <Pill tone="gold">
-            DEMO SPIN · not a real mint or prize
+            {t("wheel.demoPill")}
           </Pill>
         </div>
       ) : null}
@@ -63,7 +66,7 @@ export function WheelStage({
           <div className="text-center">
             <div className="inline-flex items-center gap-2 text-[18px] font-semibold sm:text-[20px]">
               <span className="blink h-2 w-2 rounded-full bg-gold" aria-hidden="true" />
-              {status === "waiting" ? "Spinning… waiting for Chainlink VRF" : "Here it comes…"}
+              {status === "waiting" ? t("wheel.waitingVrf") : t("wheel.hereItComes")}
             </div>
             {waitingNote ? <div className="mt-2 text-[14px] text-sub">{waitingNote}</div> : null}
           </div>
@@ -75,12 +78,12 @@ export function WheelStage({
             className={`rounded-2xl border px-6 py-5 text-center ${prize.kind === "none" ? "border-line bg-card-2" : prize.jackpot ? "gold-hairline border-gold/40 bg-gold/[.06]" : "border-line-2 bg-card-2"}`}
           >
             {prize.kind !== "none" && !demo ? <SuccessCheck className="mx-auto mb-2 h-9 w-9" /> : null}
-            <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{demo ? "Demo landed on" : prize.kind === "none" ? "The wheel says" : "You won"}</div>
-            <div className={`mt-1 text-[28px] font-semibold leading-tight tracking-tight ${prize.jackpot ? "text-gold" : ""}`}>{prize.label}</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{demo ? t("wheel.demoLanded") : prize.kind === "none" ? t("wheel.says") : t("wheel.youWon")}</div>
+            <div className={`mt-1 text-[28px] font-semibold leading-tight tracking-tight ${prize.jackpot ? "text-gold" : ""}`}>{prizeLabel(t, prize)}</div>
             <div className="mt-1 font-mono text-[16px] text-sub">
-              {prize.kind === "none" ? "No prize this time. Your 80,000 TWAK from the mint is already yours." : prize.amount}
+              {prize.kind === "none" ? t("wheel.noPrize") : prizeAmount(t, prize)}
             </div>
-            {prize.kind === "bonus" ? <div className="mt-1 text-[13px] text-muted">on top of the 80,000 TWAK from your mint</div> : null}
+            {prize.kind === "bonus" ? <div className="mt-1 text-[13px] text-muted">{t("wheel.onTop")}</div> : null}
             {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
           </motion.div>
         ) : (
@@ -133,39 +136,41 @@ export function useWheelMachine(status: WheelStatus, fresh: boolean, prizeId: nu
 }
 
 export function ShareButton({ prizeId, text, path = "/draw" }: { prizeId: number; text?: string; path?: string }) {
+  const { t } = useLocale();
   return (
     <Button
       tone="line"
       size="sm"
       onClick={() => {
         const url = `${window.location.origin}${path}`;
-        const href = `https://x.com/intent/tweet?text=${encodeURIComponent(text ?? shareText(prizeId))}&url=${encodeURIComponent(url)}`;
+        const href = `https://x.com/intent/tweet?text=${encodeURIComponent(text ?? prizeShareText(t, PRIZES[prizeId] ?? PRIZES[NO_WIN_ID]))}&url=${encodeURIComponent(url)}`;
         window.open(href, "_blank", "noopener,noreferrer");
       }}
     >
-      Share on X
+      {t("common.shareX")}
     </Button>
   );
 }
 
 /** All 11 tiers with true odds, and live remaining counts when the contract provides them. */
 export function PrizeLegend({ remaining }: { remaining?: number[] }) {
+  const { t } = useLocale();
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {PRIZES.map((p) => (
         <div key={p.id} className="lift flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] font-mono text-[12px] font-medium" style={{ background: p.fill, color: p.ink }}>
-            {p.kind === "none" ? "✕" : p.wheel.replace("FULL", "100%")}
+            {p.kind === "none" ? "✕" : p.id === 0 ? "100%" : prizeWheel(t, p)}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-semibold leading-tight">{p.label}</div>
-            <div className="font-mono text-[12.5px] text-muted">{p.amount}</div>
+            <div className="text-[15px] font-semibold leading-tight">{prizeLabel(t, p)}</div>
+            <div className="font-mono text-[12.5px] text-muted">{prizeAmount(t, p)}</div>
           </div>
           <div className="text-right">
             <div className="font-mono text-[13.5px] font-medium">
               {p.slots.toLocaleString("en-US")} / {DECK_SIZE.toLocaleString("en-US")}
             </div>
-            <div className="font-mono text-[11.5px] text-dim">{remaining ? `${remaining[p.id].toLocaleString("en-US")} left` : `${((p.slots / DECK_SIZE) * 100).toFixed(p.slots < 50 ? 1 : 0)}% odds`}</div>
+            <div className="font-mono text-[11.5px] text-dim">{remaining ? t("wheel.legendLeft", { n: remaining[p.id].toLocaleString("en-US") }) : t("wheel.legendOdds", { p: ((p.slots / DECK_SIZE) * 100).toFixed(p.slots < 50 ? 1 : 0) })}</div>
           </div>
         </div>
       ))}
@@ -173,20 +178,21 @@ export function PrizeLegend({ remaining }: { remaining?: number[] }) {
   );
 }
 
-function ago(now: number, t?: number) {
-  if (!t || !now) return "";
-  const s = Math.max(0, now - t);
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+function ago(t: TFn, now: number, at?: number) {
+  if (!at || !now) return "";
+  const s = Math.max(0, now - at);
+  if (s < 60) return t("common.agoS", { n: s });
+  if (s < 3600) return t("common.agoM", { n: Math.floor(s / 60) });
+  if (s < 86400) return t("common.agoH", { n: Math.floor(s / 3600) });
+  return t("common.agoD", { n: Math.floor(s / 86400) });
 }
 
 /** Live ticker of recent PrizeAssigned events. */
-export function SpinFeed({ spins, emptyText = "No spins yet. The feed fills in live as prizes are assigned." }: { spins: Spin[]; emptyText?: string }) {
+export function SpinFeed({ spins, emptyText }: { spins: Spin[]; emptyText?: string }) {
   const now = useNow(10_000);
+  const { t } = useLocale();
   if (spins.length === 0) {
-    return <div className="rounded-2xl border border-dashed border-line-2 bg-card-2 px-4 py-6 text-center font-medium text-muted">{emptyText}</div>;
+    return <div className="rounded-2xl border border-dashed border-line-2 bg-card-2 px-4 py-6 text-center font-medium text-muted">{emptyText ?? t("wheel.feedEmpty")}</div>;
   }
   return (
     <ul className="overflow-hidden rounded-xl border border-line">
@@ -205,8 +211,8 @@ export function SpinFeed({ spins, emptyText = "No spins yet. The feed fills in l
             >
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.kind === "none" ? "#3A414B" : p.fill }} aria-hidden="true" />
               <span className="font-mono text-[13px] text-sub">{shortAddr(s.minter)}</span>
-              <span className={`flex-1 text-right text-[14px] font-semibold ${p.jackpot ? "text-gold" : p.kind === "none" ? "text-muted" : ""}`}>{p.label}</span>
-              <span className="w-[62px] text-right font-mono text-[11.5px] text-dim">{s.demo ? "demo" : ago(now, s.time)}</span>
+              <span className={`flex-1 text-right text-[14px] font-semibold ${p.jackpot ? "text-gold" : p.kind === "none" ? "text-muted" : ""}`}>{prizeLabel(t, p)}</span>
+              <span className="w-[62px] text-right font-mono text-[11.5px] text-dim">{s.demo ? t("common.demo") : ago(t, now, s.time)}</span>
             </motion.li>
           );
         })}

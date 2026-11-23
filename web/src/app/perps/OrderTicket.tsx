@@ -16,7 +16,6 @@ import {
   isMarketExec,
   leverageParams,
   marginTypeParams,
-  ORDER_TYPE_LABEL,
   sizeFromPercent,
   type BuiltOrder,
   type MarginType,
@@ -26,6 +25,9 @@ import {
   type WorkingType,
 } from "@/lib/aster/orders";
 import { useAsterBalance, useHedgeMode, useMaxLeverage, usePositionRisk } from "./useAsterAccount";
+import { useLocale, type MessageKey } from "@/lib/i18n";
+
+const otKey = (type: OrderType) => `perps.ot.${type}` as MessageKey;
 
 export type OrderForm = {
   side: OrderSide;
@@ -94,6 +96,7 @@ export function OrderTicket({
   onNeedAgent: () => void;
 }) {
   const qc = useQueryClient();
+  const { t: tr, rich } = useLocale();
   const [review, setReview] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result>();
@@ -153,11 +156,11 @@ export function OrderTicket({
   const hedgeMode = hedge.data === true;
 
   const sizeDisabledNote = !agent
-    ? "Connect an Aster API wallet to size from balance."
+    ? tr("perps.t.noAgentSize")
     : balance.isPending
-      ? "Reading your USDT balance…"
+      ? tr("perps.t.readingBal")
       : !balance.data || Number(balance.data.available) <= 0
-        ? "No available USDT margin on Aster."
+        ? tr("perps.t.noMargin")
         : undefined;
 
   function sizePct(pct: number) {
@@ -167,7 +170,7 @@ export function OrderTicket({
     if (r.ok) {
       setForm({ ...form, quantity: r.quantity });
       setReview(false);
-      setSizeNote(`${pct}% of ${trimDecimal(balance.data.available)} USDT available × ${effLev ?? 1}x, before fees.`);
+      setSizeNote(tr("perps.t.sizeNote", { pct, avail: trimDecimal(balance.data.available), lev: effLev ?? 1 }));
     } else setSizeNote(r.error);
   }
 
@@ -179,15 +182,15 @@ export function OrderTicket({
     try {
       if (plan.leverage) await signedRequest(agent, "POST", "/fapi/v3/leverage", leverageParams(rules.symbol, plan.leverage)!);
       const res = (await signedRequest(agent, "POST", "/fapi/v3/order", plan.entry.params)) as { orderId?: number; status?: string };
-      lines.push(`Entry ${res?.orderId ?? ""} accepted by Aster${res?.status ? ` (${res.status})` : ""}.`);
+      lines.push(tr("perps.t.entryOk", { id: res?.orderId ?? "", status: res?.status ? ` (${res.status})` : "" }));
       let legFail = false;
       for (const l of plan.legs) {
         try {
           const r = (await signedRequest(agent, "POST", "/fapi/v3/order", l.order.params)) as { orderId?: number };
-          lines.push(`${l.leg} ${r?.orderId ?? ""} placed (reduce-only trigger ${l.order.stopPrice}).`);
+          lines.push(tr("perps.t.legOk", { leg: l.leg, id: r?.orderId ?? "", p: l.order.stopPrice ?? "" }));
         } catch (e) {
           legFail = true;
-          lines.push(`${l.leg} was rejected: ${explainAsterError(e)} The entry is live without this ${l.leg}.`);
+          lines.push(tr("perps.t.legFail", { leg: l.leg, e: explainAsterError(e) }));
         }
       }
       setResult({ ok: !legFail, text: lines.join(" ") });
@@ -203,7 +206,7 @@ export function OrderTicket({
   return (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[16px] font-semibold tracking-tight">Order ticket</h2>
+        <h2 className="text-[16px] font-semibold tracking-tight">{tr("perps.t.title")}</h2>
         <Pill tone="gold">Aster</Pill>
       </div>
 
@@ -218,7 +221,7 @@ export function OrderTicket({
         onLev={(v) => set({ leverage: v })}
       />
 
-      <div className="mt-3 grid grid-cols-2 gap-1 rounded-[10px] border border-line bg-surface p-1" role="tablist" aria-label="Side">
+      <div className="mt-3 grid grid-cols-2 gap-1 rounded-[10px] border border-line bg-surface p-1" role="tablist" aria-label={tr("perps.t.sideAria")}>
         {(["BUY", "SELL"] as const).map((s) => (
           <button
             key={s}
@@ -228,12 +231,12 @@ export function OrderTicket({
             onClick={() => set({ side: s })}
             className={`rounded-lg py-2 text-[14px] font-semibold ${form.side === s ? (s === "BUY" ? "bg-up text-[#0B0E11]" : "bg-down text-white") : "text-muted hover:text-fg"}`}
           >
-            {s === "BUY" ? "Buy / Long" : "Sell / Short"}
+            {s === "BUY" ? tr("perps.buyLong") : tr("perps.sellShort")}
           </button>
         ))}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-1" role="tablist" aria-label="Order type">
+      <div className="mt-3 flex flex-wrap items-center gap-1" role="tablist" aria-label={tr("perps.t.typeAria")}>
         {(["LIMIT", "MARKET"] as const).map((k) => (
           <button
             key={k}
@@ -243,20 +246,20 @@ export function OrderTicket({
             onClick={() => set({ type: k })}
             className={`rounded-md px-3 py-1.5 text-[13px] font-semibold ${t === k ? "bg-card-2 text-fg" : "text-muted hover:text-fg"}`}
           >
-            {ORDER_TYPE_LABEL[k]}
+            {tr(otKey(k))}
           </button>
         ))}
         <select
-          aria-label="Conditional order type"
+          aria-label={tr("perps.t.condAria")}
           value={CONDITIONAL.includes(t) ? t : ""}
           onChange={(e) => e.target.value && set({ type: e.target.value as OrderType })}
           className={`min-w-0 rounded-md border border-line bg-card px-2 py-1.5 text-[13px] font-semibold focus:border-gold focus:outline-none ${CONDITIONAL.includes(t) ? "text-fg" : "text-muted"}`}
         >
-          <option value="">Conditional…</option>
+          <option value="">{tr("perps.t.conditional")}</option>
           {CONDITIONAL.map((k) => (
             <option key={k} value={k} disabled={!offered(k)}>
-              {ORDER_TYPE_LABEL[k]}
-              {offered(k) ? "" : " (not on this market)"}
+              {tr(otKey(k))}
+              {offered(k) ? "" : tr("perps.t.notOnMarket")}
             </option>
           ))}
         </select>
@@ -265,20 +268,20 @@ export function OrderTicket({
       <div className="mt-3 space-y-2.5">
         {hasStopPrice(t) ? (
           <div className="grid grid-cols-[1fr_auto] gap-2">
-            <Num label="Trigger" unit="USDT" value={form.stopPrice} onChange={(v) => set({ stopPrice: v })} />
+            <Num label={tr("perps.t.trigger")} unit="USDT" value={form.stopPrice} onChange={(v) => set({ stopPrice: v })} />
             <TriggerBy value={form.workingType} onChange={(w) => set({ workingType: w })} />
           </div>
         ) : null}
         {hasLimitPrice(t) ? (
           <Num
-            label="Price"
+            label={tr("perps.t.price")}
             unit="USDT"
             value={form.price}
             onChange={(v) => set({ price: v })}
             extra={
               row?.markPrice ? (
                 <button type="button" className="text-[11.5px] font-semibold text-gold hover:underline" onClick={() => set({ price: trimDecimal(rules ? floorToStep(row.markPrice!, rules.tickSize) : row.markPrice) })}>
-                  Mark
+                  {tr("perps.t.markBtn")}
                 </button>
               ) : null
             }
@@ -287,14 +290,14 @@ export function OrderTicket({
         {t === "TRAILING_STOP_MARKET" ? (
           <>
             <div className="grid grid-cols-[1fr_auto] gap-2">
-              <Num label="Callback" unit="%" value={form.callbackRate} onChange={(v) => set({ callbackRate: v })} />
+              <Num label={tr("perps.t.callback")} unit="%" value={form.callbackRate} onChange={(v) => set({ callbackRate: v })} />
               <TriggerBy value={form.workingType} onChange={(w) => set({ workingType: w })} />
             </div>
-            <Num label="Activation (optional)" unit="USDT" value={form.activationPrice} onChange={(v) => set({ activationPrice: v })} />
-            <p className="text-[11.5px] text-dim">Callback 0.1–5%. Leave activation empty to start trailing from the current price.</p>
+            <Num label={tr("perps.t.activation")} unit="USDT" value={form.activationPrice} onChange={(v) => set({ activationPrice: v })} />
+            <p className="text-[11.5px] text-dim">{tr("perps.t.trailNote")}</p>
           </>
         ) : null}
-        <Num label="Size" unit={base || "base"} value={form.quantity} onChange={(v) => set({ quantity: v })} />
+        <Num label={tr("perps.t.size")} unit={base || tr("perps.t.base")} value={form.quantity} onChange={(v) => set({ quantity: v })} />
         <div>
           <div className="grid grid-cols-4 gap-1">
             {PCTS.map((p) => (
@@ -312,87 +315,94 @@ export function OrderTicket({
           <p className="mt-1 text-[11.5px] text-dim">
             {sizeDisabledNote ??
               sizeNote ??
-              (rules ? `Step ${trimDecimal(isMarketExec(t) ? rules.marketStepSize : rules.stepSize)} · min ${trimDecimal(isMarketExec(t) ? rules.marketMinQty : rules.minQty)} · min value ${trimDecimal(rules.minNotional)} ${rules.quote}` : "")}
+              (rules
+                ? tr("perps.t.rules", {
+                    step: trimDecimal(isMarketExec(t) ? rules.marketStepSize : rules.stepSize),
+                    min: trimDecimal(isMarketExec(t) ? rules.marketMinQty : rules.minQty),
+                    minVal: trimDecimal(rules.minNotional),
+                    quote: rules.quote,
+                  })
+                : "")}
           </p>
         </div>
 
         {hasLimitPrice(t) ? (
           <label className="flex items-center justify-between gap-2 text-[12.5px] text-muted">
-            Time in force
+            {tr("perps.t.tif")}
             <select
               className="rounded-md border border-line bg-card px-2 py-1 text-[12.5px] text-fg focus:border-gold focus:outline-none"
               value={form.timeInForce}
               onChange={(e) => set({ timeInForce: e.target.value as TimeInForce })}
-              aria-label="Time in force"
+              aria-label={tr("perps.t.tif")}
             >
               <option value="GTC">GTC</option>
               <option value="IOC">IOC</option>
-              {t === "LIMIT" ? <option value="GTX">Post-only (GTX)</option> : null}
+              {t === "LIMIT" ? <option value="GTX">{tr("perps.t.postOnly")}</option> : null}
             </select>
           </label>
         ) : null}
 
         <label className="flex items-center gap-2 text-[13px] font-medium">
           <input type="checkbox" className="h-4 w-4 accent-gold" checked={form.reduceOnly} onChange={(e) => set({ reduceOnly: e.target.checked })} />
-          Reduce-only <span className="text-[11.5px] font-normal text-dim">close, never open or flip</span>
+          {tr("perps.t.reduceOnly")} <span className="text-[11.5px] font-normal text-dim">{tr("perps.t.reduceOnlyNote")}</span>
         </label>
 
         <div className={tpslAllowed ? "" : "opacity-60"}>
           <label className="flex items-center gap-2 text-[13px] font-medium">
             <input type="checkbox" className="h-4 w-4 accent-gold" disabled={!tpslAllowed} checked={tpslAllowed && form.tpsl} onChange={(e) => set({ tpsl: e.target.checked })} />
-            Attach TP / SL
+            {tr("perps.t.attach")}
           </label>
           {!tpslAllowed ? (
             <p className="mt-1 text-[11.5px] text-dim">
-              {form.reduceOnly ? "Not with reduce-only orders." : !TPSL_ENTRY.includes(t) ? "Only for limit, market and stop entries." : "This market doesn't list TAKE_PROFIT_MARKET / STOP_MARKET."}
+              {form.reduceOnly ? tr("perps.t.noReduce") : !TPSL_ENTRY.includes(t) ? tr("perps.t.onlyEntries") : tr("perps.t.noTpslMarket")}
             </p>
           ) : form.tpsl ? (
             <div className="mt-2 space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <Num label="Take profit" unit="" value={form.takeProfit} onChange={(v) => set({ takeProfit: v })} />
-                <Num label="Stop loss" unit="" value={form.stopLoss} onChange={(v) => set({ stopLoss: v })} />
+                <Num label={tr("perps.t.tp")} unit="" value={form.takeProfit} onChange={(v) => set({ takeProfit: v })} />
+                <Num label={tr("perps.t.sl")} unit="" value={form.stopLoss} onChange={(v) => set({ stopLoss: v })} />
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11.5px] text-dim">Reduce-only market triggers, same size, opposite side.</span>
+                <span className="text-[11.5px] text-dim">{tr("perps.t.tpslNote")}</span>
                 <TriggerBy value={form.workingType} onChange={(w) => set({ workingType: w })} />
               </div>
             </div>
           ) : null}
         </div>
-        {effLev && effLev > 10 ? <p className="text-[12px] font-medium text-down">High leverage: a small move against you can liquidate the position.</p> : null}
+        {effLev && effLev > 10 ? <p className="text-[12px] font-medium text-down">{tr("perps.t.highLev")}</p> : null}
       </div>
 
       <div className="mt-3 rounded-xl border border-line bg-surface p-3">
         {plan ? (
           <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[12.5px] text-sub">
-            <dt>Size</dt>
+            <dt>{tr("perps.t.size")}</dt>
             <dd className="text-right font-mono tabular-nums">
               {plan.entry.quantity} {base}
             </dd>
             {plan.entry.stopPrice ? (
               <>
-                <dt>Trigger</dt>
+                <dt>{tr("perps.t.trigger")}</dt>
                 <dd className="text-right font-mono tabular-nums">{plan.entry.stopPrice}</dd>
               </>
             ) : null}
             {plan.entry.price ? (
               <>
-                <dt>Price</dt>
+                <dt>{tr("perps.t.price")}</dt>
                 <dd className="text-right font-mono tabular-nums">{plan.entry.price}</dd>
               </>
             ) : null}
-            <dt>Value ≈</dt>
+            <dt>{tr("perps.t.value")}</dt>
             <dd className="text-right font-mono tabular-nums">{plan.entry.notional !== undefined ? `${plan.entry.notional.toFixed(2)} USDT` : "—"}</dd>
-            <dt>Margin ≈ {effLev ? `at ${effLev}x` : ""}</dt>
-            <dd className="text-right font-mono tabular-nums">{margin !== undefined ? `${margin.toFixed(2)} USDT` : agent ? "—" : "set leverage"}</dd>
+            <dt>{tr("perps.t.margin", { at: effLev ? tr("perps.t.atLev", { lev: effLev }) : "" })}</dt>
+            <dd className="text-right font-mono tabular-nums">{margin !== undefined ? `${margin.toFixed(2)} USDT` : agent ? "—" : tr("perps.t.setLev")}</dd>
             {plan.legs.map((l) => (
               <div key={l.leg} className="contents">
-                <dt>{l.leg === "TP" ? "Take profit" : "Stop loss"}</dt>
+                <dt>{l.leg === "TP" ? tr("perps.t.tp") : tr("perps.t.sl")}</dt>
                 <dd className="text-right font-mono tabular-nums">{l.order.stopPrice ?? "—"}</dd>
               </div>
             ))}
             {plan.legs.length ? (
-              <dd className="col-span-2 mt-1 text-[11px] text-dim">TP / SL are placed after Aster accepts the entry, as reduce-only orders.</dd>
+              <dd className="col-span-2 mt-1 text-[11px] text-dim">{tr("perps.t.tpslAfter")}</dd>
             ) : null}
           </dl>
         ) : (
@@ -403,11 +413,11 @@ export function OrderTicket({
       <div className="mt-3 space-y-2">
         {!agent ? (
           <Button tone="soft" size="md" className="w-full" onClick={onNeedAgent}>
-            Set up your Aster API wallet to trade
+            {tr("perps.t.setup")}
           </Button>
         ) : hedgeMode ? (
           <p className="rounded-lg border border-line bg-card px-3 py-2 text-[12.5px]">
-            Your Aster account is in <b>Hedge mode</b>. This terminal sends one-way (BOTH) orders only. Switch to One-way mode on Aster to trade here.
+            {rich("perps.t.hedge", { b: (c) => <b>{c}</b> })}
           </p>
         ) : !review ? (
           <button
@@ -416,22 +426,28 @@ export function OrderTicket({
             onClick={() => setReview(true)}
             className={`press h-11 w-full rounded-[10px] text-[14.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${form.side === "BUY" ? "bg-up text-[#0B0E11]" : "bg-down text-white"}`}
           >
-            Review {form.side === "BUY" ? "long" : "short"}
+            {form.side === "BUY" ? tr("perps.t.reviewLong") : tr("perps.t.reviewShort")}
           </button>
         ) : (
           <div className="rounded-xl border border-gold/30 bg-gold/5 p-3">
             <p className="text-[13px] font-medium">
-              Send this {ORDER_TYPE_LABEL[t].toLowerCase()} {form.side === "BUY" ? "long" : "short"} of {plan?.entry.quantity} {base}
-              {plan?.entry.price ? ` at ${plan.entry.price}` : ""}
-              {plan?.entry.stopPrice ? `, trigger ${plan.entry.stopPrice}` : ""} to Aster{plan?.leverage ? ` at ${plan.leverage}x` : ""}
-              {plan?.legs.length ? ` with ${plan.legs.map((l) => l.leg).join(" + ")}` : ""}? Your API wallet signs in this browser; nothing goes to Towack.
+              {tr("perps.t.confirm", {
+                type: tr(otKey(t)).toLowerCase(),
+                dir: form.side === "BUY" ? tr("perps.t.long") : tr("perps.t.short"),
+                qty: plan?.entry.quantity ?? "",
+                base,
+                price: plan?.entry.price ? tr("perps.t.cAt", { p: plan.entry.price }) : "",
+                trigger: plan?.entry.stopPrice ? tr("perps.t.cTrigger", { p: plan.entry.stopPrice }) : "",
+                lev: plan?.leverage ? tr("perps.t.cLev", { lev: plan.leverage }) : "",
+                legs: plan?.legs.length ? tr("perps.t.cLegs", { legs: plan.legs.map((l) => l.leg).join(" + ") }) : "",
+              })}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button tone="gold" size="sm" disabled={busy || !plan} onClick={send}>
-                {busy ? "Sending…" : "Yes, sign & send"}
+                {busy ? tr("common.sending") : tr("perps.t.signSend")}
               </Button>
               <Button tone="line" size="sm" disabled={busy} onClick={() => setReview(false)}>
-                Back
+                {tr("common.back")}
               </Button>
             </div>
           </div>
@@ -443,7 +459,7 @@ export function OrderTicket({
         ) : null}
       </div>
       <p className="mt-3 text-[11.5px] text-dim">
-        One-way mode. Perps are leveraged: you can lose your whole margin and be liquidated. Orders go to Aster, not Towack. Towack adds no fee.
+        {tr("perps.t.footer")}
       </p>
     </div>
   );
@@ -468,15 +484,16 @@ function Num({ label, unit, value, onChange, extra }: { label: string; unit: str
 }
 
 function TriggerBy({ value, onChange }: { value: WorkingType; onChange: (w: WorkingType) => void }) {
+  const { t } = useLocale();
   return (
     <select
-      aria-label="Trigger price type"
+      aria-label={t("perps.t.triggerAria")}
       value={value}
       onChange={(e) => onChange(e.target.value as WorkingType)}
       className="rounded-lg border border-line-2 bg-card-2 px-2 text-[12px] text-sub focus:border-gold focus:outline-none"
     >
-      <option value="CONTRACT_PRICE">Last</option>
-      <option value="MARK_PRICE">Mark</option>
+      <option value="CONTRACT_PRICE">{t("perps.t.last")}</option>
+      <option value="MARK_PRICE">{t("perps.t.mark")}</option>
     </select>
   );
 }
@@ -505,6 +522,8 @@ function MarginLev({
   const [pending, setPending] = useState<MarginType>();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string>();
+  const { t } = useLocale();
+  const modeName = (m: MarginType) => (m === "ISOLATED" ? t("perps.t.isolated") : t("perps.t.cross"));
   const shown = Number(value) || currentLev || Math.min(10, maxLev);
 
   async function switchMode(m: MarginType) {
@@ -513,9 +532,9 @@ function MarginLev({
     setNote(undefined);
     try {
       await signedRequest(agent, "POST", "/fapi/v3/marginType", marginTypeParams(symbol, m));
-      setNote(`${symbol} is now ${m === "ISOLATED" ? "isolated" : "cross"} margin.`);
+      setNote(t("perps.t.nowMode", { symbol, mode: modeName(m) }));
     } catch (e) {
-      setNote(`Aster kept the current mode: ${explainAsterError(e)}`);
+      setNote(t("perps.t.keptMode", { e: explainAsterError(e) }));
     } finally {
       setBusy(false);
       setPending(undefined);
@@ -526,7 +545,7 @@ function MarginLev({
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2">
-        <div className="grid flex-1 grid-cols-2 gap-1 rounded-[10px] border border-line bg-surface p-1" role="group" aria-label="Margin mode">
+        <div className="grid flex-1 grid-cols-2 gap-1 rounded-[10px] border border-line bg-surface p-1" role="group" aria-label={t("perps.t.marginAria")}>
           {(["CROSSED", "ISOLATED"] as const).map((m) => (
             <button
               key={m}
@@ -536,7 +555,7 @@ function MarginLev({
               onClick={() => current !== m && setPending(m)}
               className={`rounded-md py-1 text-[12.5px] font-semibold disabled:cursor-not-allowed ${current === m ? "bg-card-2 text-fg" : "text-muted hover:text-fg"} ${!agent || !current ? "opacity-50" : ""}`}
             >
-              {m === "CROSSED" ? "Cross" : "Isolated"}
+              {modeName(m)}
             </button>
           ))}
         </div>
@@ -544,29 +563,29 @@ function MarginLev({
       {pending ? (
         <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2 text-[12px]">
           <span>
-            Switch {symbol} to {pending === "ISOLATED" ? "isolated" : "cross"} margin?
+            {t("perps.t.switchQ", { symbol, mode: modeName(pending) })}
           </span>
           <div className="mt-1.5 flex gap-2">
             <Button tone="gold" size="sm" disabled={busy} onClick={() => switchMode(pending)}>
-              {busy ? "Sending…" : `Switch to ${pending === "ISOLATED" ? "isolated" : "cross"}`}
+              {busy ? t("common.sending") : t("perps.t.switchTo", { mode: modeName(pending) })}
             </Button>
             <Button tone="line" size="sm" disabled={busy} onClick={() => setPending(undefined)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
       ) : null}
-      {!agent ? <p className="text-[11.5px] text-dim">Margin mode and current leverage are read from your Aster account once an API wallet is set up.</p> : note ? <p className="text-[11.5px] text-sub">{note}</p> : null}
+      {!agent ? <p className="text-[11.5px] text-dim">{t("perps.t.modeNote")}</p> : note ? <p className="text-[11.5px] text-sub">{note}</p> : null}
 
       <div>
         <div className="flex items-center justify-between text-[12.5px]">
-          <span className="text-muted">Leverage</span>
+          <span className="text-muted">{t("perps.t.leverage")}</span>
           <span className="font-mono tabular-nums">
             {shown}x
-            <span className="ml-1 text-[11px] text-dim">{value ? (currentLev && Number(value) === currentLev ? "(current)" : `(was ${currentLev ? `${currentLev}x` : "—"})`) : currentLev ? "(current)" : "(unchanged)"}</span>
+            <span className="ml-1 text-[11px] text-dim">{value ? (currentLev && Number(value) === currentLev ? t("perps.t.current") : t("perps.t.was", { v: currentLev ? `${currentLev}x` : "—" })) : currentLev ? t("perps.t.current") : t("perps.t.unchanged")}</span>
             {value ? (
               <button type="button" className="ml-2 text-[11px] text-gold hover:underline" onClick={() => onLev("")}>
-                reset
+                {t("perps.t.reset")}
               </button>
             ) : null}
           </span>
@@ -578,13 +597,13 @@ function MarginLev({
           step={1}
           value={Math.min(shown, maxLev)}
           onChange={(e) => onLev(e.target.value)}
-          aria-label="Leverage"
+          aria-label={t("perps.t.leverage")}
           className="mt-1 w-full accent-gold"
         />
         <div className="flex justify-between font-mono text-[10.5px] text-dim">
           <span>1x</span>
           <span>
-            {maxLev}x {maxKnown ? "max" : "cap"}
+            {maxLev}x {maxKnown ? t("perps.t.maxLev") : t("perps.t.capLev")}
           </span>
         </div>
       </div>

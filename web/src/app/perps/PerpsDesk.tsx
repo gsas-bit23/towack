@@ -8,6 +8,7 @@ import { AgentPathToggle } from "@/components/AgentPath";
 import { ConnectPill } from "@/components/ConnectPill";
 import { Panel, Pill } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
+import { useLocale } from "@/lib/i18n";
 import { ASTER_APP_URL, fetchMarkets, trimDecimal, type AsterNet, type MarketRow } from "@/lib/aster/markets";
 import {
   fetchDepth,
@@ -45,6 +46,7 @@ export function PerpsDesk() {
   const [sheet, setSheet] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const agent = useAsterAgent(net);
+  const { t } = useLocale();
   const key = `${net}|${symbol}`;
 
   const markets = useQuery({
@@ -182,11 +184,11 @@ export function PerpsDesk() {
       />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_300px_340px]">
-        <section aria-label="Price chart" className={`${panel} h-[380px] sm:h-[440px] lg:col-start-1 lg:row-start-1 lg:h-[500px] xl:h-[560px]`}>
+        <section aria-label={t("perps.chartAria")} className={`${panel} h-[380px] sm:h-[440px] lg:col-start-1 lg:row-start-1 lg:h-[500px] xl:h-[560px]`}>
           <PriceChart net={net} symbol={symbol} interval={interval} setInterval={setIv} decimals={decimals} tick={rules?.tickSize} status={status} subscribe={subscribe} />
         </section>
 
-        <section aria-label="Order book and trades" className={`${panel} lg:col-start-1 lg:row-start-2 xl:col-start-2 xl:row-start-1 xl:h-[560px]`}>
+        <section aria-label={t("perps.bookAria")} className={`${panel} lg:col-start-1 lg:row-start-2 xl:col-start-2 xl:row-start-1 xl:h-[560px]`}>
           <BookTrades
             book={book}
             trades={trades}
@@ -200,21 +202,21 @@ export function PerpsDesk() {
           />
         </section>
 
-        <section aria-label="Account" className={`${panel} lg:col-start-1 lg:row-start-3 xl:col-span-2 xl:row-start-2`}>
+        <section aria-label={t("perps.accountAria")} className={`${panel} lg:col-start-1 lg:row-start-3 xl:col-span-2 xl:row-start-2`}>
           <Blotter agent={agent} symbol={symbol} onNeedAgent={needAgent} />
         </section>
 
         {sheet ? <div className="fixed inset-0 z-[65] bg-black/60 lg:hidden" aria-hidden="true" onClick={() => setSheet(false)} /> : null}
         <section
-          aria-label="Order ticket"
+          aria-label={t("perps.ticketAria")}
           role={sheet ? "dialog" : undefined}
           aria-modal={sheet ? true : undefined}
           className={`${sheet ? "fixed inset-x-0 bottom-0 z-[70] block max-h-[88vh] overflow-y-auto rounded-t-2xl border-line-2 bg-card p-4 pb-[max(16px,env(safe-area-inset-bottom))]" : "hidden"} lg:static lg:z-auto lg:block lg:max-h-none lg:overflow-visible lg:rounded-2xl lg:border lg:border-line lg:bg-card lg:p-4 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:self-start xl:col-start-3 xl:row-span-2`}
         >
           {sheet ? (
             <div className="mb-2 flex justify-end lg:hidden">
-              <button type="button" onClick={() => setSheet(false)} className="rounded-md px-2 py-1 text-[13px] text-muted hover:text-fg" aria-label="Close order ticket">
-                Close ✕
+              <button type="button" onClick={() => setSheet(false)} className="rounded-md px-2 py-1 text-[13px] text-muted hover:text-fg" aria-label={t("perps.closeTicket")}>
+                {t("perps.close")}
               </button>
             </div>
           ) : null}
@@ -233,10 +235,10 @@ export function PerpsDesk() {
       {/* Phone / tablet: ticket opens as a bottom sheet. */}
       <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-line bg-[rgba(11,14,17,.94)] px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
         <button type="button" className="press h-11 rounded-[10px] bg-up text-[14.5px] font-semibold text-[#0B0E11]" onClick={() => openSheet("BUY")}>
-          Buy / Long
+          {t("perps.buyLong")}
         </button>
         <button type="button" className="press h-11 rounded-[10px] bg-down text-[14.5px] font-semibold text-white" onClick={() => openSheet("SELL")}>
-          Sell / Short
+          {t("perps.sellShort")}
         </button>
       </div>
     </div>
@@ -244,16 +246,17 @@ export function PerpsDesk() {
 }
 
 function TitleBar({ net }: { net: AsterNet }) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
-        <h1 className="text-[21px] font-semibold tracking-tight">Perps on Aster</h1>
-        <p className="text-[12.5px] text-muted">Live Aster markets. Trade with a trade-only API wallet kept in this browser. Towack adds no fee.</p>
+        <h1 className="text-[21px] font-semibold tracking-tight">{t("perps.title")}</h1>
+        <p className="text-[12.5px] text-muted">{t("perps.sub")}</p>
       </div>
       <span className="text-[12px] text-muted">
-        Real money.{" "}
+        {t("perps.realMoney")}{" "}
         <a className="underline hover:text-fg" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
-          Open Aster ↗
+          {t("perps.openAster")}
         </a>
       </span>
     </div>
@@ -271,40 +274,36 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
     query: { enabled: Boolean(addresses.agentId && account) },
   });
   const hasAgent = bal === undefined ? undefined : bal > 0n;
+  const { t, rich } = useLocale();
 
   return (
     <Panel tone="card" shadow={false} className="!p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[16px] font-semibold tracking-tight">Agent ID perks · AI-agent path</h2>
-        {hasAgent ? <Pill tone="neutral">Agent ID ✓</Pill> : hasAgent === false ? <Pill tone="gold">No Agent ID</Pill> : null}
+        <h2 className="text-[16px] font-semibold tracking-tight">{t("perps.perksTitle")}</h2>
+        {hasAgent ? <Pill tone="neutral">{t("perps.agentOk")}</Pill> : hasAgent === false ? <Pill tone="gold">{t("perps.noAgent")}</Pill> : null}
       </div>
       <ul className="mt-2 space-y-1 text-[12.5px] leading-relaxed text-sub">
-        <li>Anyone can view markets and trade here with their own wallet.</li>
-        <li>
-          Agent ID holders unlock <b>Give this to your AI agent</b> for Binance Agentic Wallet. The instruction carries the exact ticket above (type, trigger, TP / SL, leverage).
-        </li>
-        <li>No Towack fee and no rebates on Aster trades.</li>
+        <li>{t("perps.perk1")}</li>
+        <li>{rich("perps.perk2", { b: (c) => <b>{c}</b> })}</li>
+        <li>{t("perps.perk3")}</li>
       </ul>
 
       <div className="mt-3">
         {!isConnected ? (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-3">
-            <p className="text-[13px] text-sub">Connect to check your Agent ID.</p>
+            <p className="text-[13px] text-sub">{t("perps.connectCheck")}</p>
             <ConnectPill />
           </div>
         ) : !addresses.agentId ? (
-          <p className="rounded-xl border border-line bg-gold/5 px-3 py-2 text-[13px]">Agent ID check is unavailable right now.</p>
+          <p className="rounded-xl border border-line bg-gold/5 px-3 py-2 text-[13px]">{t("perps.checkUnavailable")}</p>
         ) : hasAgent === undefined ? (
-          <p className="text-[13px] text-muted">Checking Agent ID…</p>
+          <p className="text-[13px] text-muted">{t("perps.checking")}</p>
         ) : hasAgent ? (
           <AgentPathToggle flow="perps" perps={intent} />
         ) : (
           <div className="rounded-xl border border-dashed border-line bg-surface px-3 py-3 text-[13px]">
-            <Pill tone="gold">Agent path locked</Pill>
-            <p className="mt-2 text-sub">
-              The AI-agent path is for Agent ID wallets. This wallet holds none. You can still trade with the order ticket. Agent IDs are issued in the
-              official Binance App.
-            </p>
+            <Pill tone="gold">{t("perps.locked")}</Pill>
+            <p className="mt-2 text-sub">{t("perps.lockedBody")}</p>
           </div>
         )}
       </div>

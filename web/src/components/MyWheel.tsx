@@ -13,6 +13,7 @@ import { ShareButton, WheelStage, type WheelStatus } from "./PrizeBooth";
 import { AgentPathToggle } from "./AgentPath";
 import { TxNotice } from "./status";
 import { Button, Pill } from "./ui";
+import { useLocale } from "@/lib/i18n";
 
 const DEMO_PRIZES = [5, 0, 7, 10, 2];
 
@@ -20,6 +21,7 @@ const DEMO_PRIZES = [5, 0, 7, 10, 2];
 export function DemoWheel({ size }: { size?: number }) {
   const [round, setRound] = useState(1);
   const [status, setStatus] = useState<WheelStatus>("waiting");
+  const { t } = useLocale();
   useEffect(() => {
     const t = setTimeout(() => setStatus("assigned"), 2800);
     return () => clearTimeout(t);
@@ -34,7 +36,7 @@ export function DemoWheel({ size }: { size?: number }) {
       fresh
       demo
       size={size}
-      waitingNote="Demo only — no transaction, no VRF."
+      waitingNote={t("wheel.demoOnly")}
       actions={
         <Button
           tone="line"
@@ -44,7 +46,7 @@ export function DemoWheel({ size }: { size?: number }) {
             setRound((r) => r + 1);
           }}
         >
-          Spin the demo again
+          {t("wheel.demoAgain")}
         </Button>
       }
     />
@@ -61,6 +63,7 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
   const now = useNow(5_000);
+  const { t } = useLocale();
 
   const status: WheelStatus = !prize?.minted ? "none" : prize.assigned ? "assigned" : "waiting";
   const launch = addresses.launch;
@@ -69,24 +72,24 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
   const vrf = useVrfFee(launch, chainId); // a retry is a new VRF request: the caller pays its fee
 
   const claim = () =>
-    launch && tx.run("Claim prize", () => writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "claim", chainId }));
+    launch && tx.run(t("wheel.claim"), () => writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "claim", chainId }));
   const retry = () =>
     launch &&
     account &&
     vrf.value !== undefined &&
-    tx.run("Retry VRF", () =>
+    tx.run(t("wheel.txRetry"), () =>
       writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "retryPrize", args: [account], value: vrf.value, chainId }),
     );
 
   const waitingNote = (
     <>
-      {mintIndex ? <Pill tone="neutral">MINT #{mintIndex}</Pill> : null}{" "}
-      {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago. ` : ""}
-      The prize is drawn on-chain from the remaining deck when Chainlink VRF answers.
+      {mintIndex ? <Pill tone="neutral">{t("wheel.mintPill", { n: mintIndex })}</Pill> : null}{" "}
+      {requestedAt && now ? t("wheel.requested", { d: fmtDuration(now - requestedAt) }) : ""}
+      {t("wheel.drawnNote")}
       {canRetry ? (
         <div className="mt-3 flex justify-center">
           <Button tone="line" size="sm" disabled={tx.busy || vrf.value === undefined} onClick={retry}>
-            {vrf.supported === false ? "Retry VRF request" : `Retry VRF request (+${vrf.label} VRF fee)`}
+            {vrf.supported === false ? t("wheel.retry") : t("wheel.retryFee", { fee: vrf.label })}
           </Button>
         </div>
       ) : null}
@@ -98,10 +101,10 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
       <>
         {winsSomething && !prize.claimed ? (
           <Button tone="gold" size="sm" disabled={tx.busy} onClick={claim}>
-            {tx.busy ? "Check your wallet…" : "Claim prize"}
+            {tx.busy ? t("wallet.checkWallet") : t("wheel.claim")}
           </Button>
         ) : null}
-        {winsSomething && prize.claimed ? <Pill tone="gold" className="border border-line px-4 py-2 text-sm">CLAIMED ✓</Pill> : null}
+        {winsSomething && prize.claimed ? <Pill tone="gold" className="border border-line px-4 py-2 text-sm">{t("wheel.claimedPill")}</Pill> : null}
         <ShareButton prizeId={prize.prizeId} />
       </>
     ) : undefined;

@@ -7,7 +7,9 @@ import { useReadContract, useWriteContract } from "wagmi";
 import { towackGenesisAbi } from "@/abi";
 import { useTowack } from "@/lib/chain";
 import { agentNftAbi, useGenesisState, useMyGenesis } from "@/lib/genesis";
-import { GENESIS_BASE, GENESIS_BUDGET, GENESIS_COST_TEXT, genesisShareText } from "@/lib/genesisPrizes";
+import { GENESIS_BASE, GENESIS_BUDGET } from "@/lib/genesisPrizes";
+import { useLocale } from "@/lib/i18n";
+import { genesisShareText } from "@/lib/prizeText";
 import { useTx } from "@/lib/tx";
 import { AnimatedNumber, Confetti, ProgressFill, SuccessCheck } from "./motion";
 import { ShareButton } from "./PrizeBooth";
@@ -31,6 +33,7 @@ function parseTokenOrHandle(raw: string): { id?: bigint; handle?: string } {
 
 /** Claimed state: 20,000 TWAK already in the wallet (sent in the mint tx itself). */
 function GenesisClaimed({ mintIndex, burst }: { mintIndex?: number; burst: number }) {
+  const { t } = useLocale();
   return (
     <div className="relative">
       <div className="pointer-events-none absolute -inset-x-4 -top-4 bottom-0 overflow-hidden rounded-2xl" aria-hidden="true">
@@ -44,11 +47,11 @@ function GenesisClaimed({ mintIndex, burst }: { mintIndex?: number; burst: numbe
         aria-live="polite"
       >
         <SuccessCheck className="mx-auto mb-2 h-9 w-9" />
-        <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Genesis claimed{mintIndex ? ` · #${mintIndex}` : ""}</div>
+        <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{t("genesis.claimedHead")}{mintIndex ? ` · #${mintIndex}` : ""}</div>
         <div className="mt-1 text-[28px] font-semibold leading-tight tracking-tight text-gold">{BASE_TEXT}</div>
-        <div className="mt-1 text-sm font-medium text-muted">Already in your wallet. Nothing else to claim.</div>
+        <div className="mt-1 text-sm font-medium text-muted">{t("genesis.inWallet")}</div>
         <div className="mt-4 flex justify-center">
-          <ShareButton prizeId={0} path="/mint" text={genesisShareText(mintIndex)} />
+          <ShareButton prizeId={0} path="/mint" text={genesisShareText(t, mintIndex)} />
         </div>
       </motion.div>
     </div>
@@ -63,6 +66,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
   const [typed, setTyped] = useState("");
+  const { t } = useLocale();
   const reg = registry ?? addresses.agentId;
 
   // Mainnet SPACE ID HandleRegistry exposes handleOf(address) where tokenId = keccak256(bytes(handle)).
@@ -123,7 +127,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   async function mint() {
     if (!genesis || !canMint || tokenId === undefined) return;
     // Non-payable: no `value` (0 BNB). The wallet only pays ordinary network gas.
-    const ok = await tx.run("Genesis claim", () =>
+    const ok = await tx.run(t("genesis.txLabel"), () =>
       writeContractAsync({ address: genesis, abi: towackGenesisAbi, functionName: "mint", args: [tokenId], chainId }),
     );
     if (ok) onMinted();
@@ -132,7 +136,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   if (!account) {
     return (
       <div className="rounded-2xl border border-line bg-card px-4 py-4 text-center">
-        <p className="font-medium text-sub">Connect the wallet that holds your Agent ID.</p>
+        <p className="font-medium text-sub">{t("genesis.connect")}</p>
         <div className="mt-3 flex justify-center">
           <ConnectPill />
         </div>
@@ -144,16 +148,16 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
   return (
     <div>
       <label className="block text-[13px] font-semibold uppercase tracking-[.15em] text-muted" htmlFor="genesis-token-id">
-        Agent ID handle or token id
+        {t("genesis.inputLabel")}
       </label>
       <input
         id="genesis-token-id"
         placeholder={
           autoHandle
-            ? `${autoHandle}.ai (found in your wallet)`
+            ? t("genesis.foundHandle", { h: `${autoHandle}.ai` })
             : autoId !== undefined
-              ? `#${autoId.toString()} (found in your wallet)`
-              : "e.g. yourname.ai or token id"
+              ? t("genesis.foundHandle", { h: `#${autoId.toString()}` })
+              : t("genesis.placeholder")
         }
         value={typed}
         onChange={(e) => setTyped(e.target.value)}
@@ -162,22 +166,22 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
       <ul className="mt-4 space-y-2.5">
         <Check ok={tokenId === undefined ? false : owns}>
           {tokenId === undefined
-            ? "Enter your Agent ID handle or token id"
+            ? t("genesis.chk.enter")
             : owns
-              ? `You own Agent ID ${displayId}`
+              ? t("genesis.chk.own", { id: displayId ?? "" })
               : owns === false
-                ? `This wallet does not own ${displayId}`
-                : "Checking owner…"}
+                ? t("genesis.chk.notOwn", { id: displayId ?? "" })
+                : t("genesis.chk.checking")}
         </Check>
-        <Check ok={used === undefined ? undefined : !used}>{used ? "That Agent ID already claimed Genesis" : "Agent ID not used yet"}</Check>
-        <Check ok={minted === undefined ? undefined : !minted}>{minted ? "This wallet already claimed its 20,000 TWAK" : "Wallet not used yet"}</Check>
-        <Check ok={isOpen === undefined ? undefined : isOpen && !soldOut}>{soldOut ? "All 300 claimed" : isOpen ? "Genesis window open" : "Genesis window closed"}</Check>
+        <Check ok={used === undefined ? undefined : !used}>{used ? t("genesis.chk.used") : t("genesis.chk.notUsed")}</Check>
+        <Check ok={minted === undefined ? undefined : !minted}>{minted ? t("genesis.chk.walletUsed") : t("genesis.chk.walletFree")}</Check>
+        <Check ok={isOpen === undefined ? undefined : isOpen && !soldOut}>{soldOut ? t("genesis.chk.allClaimed") : isOpen ? t("genesis.chk.open") : t("genesis.chk.closed")}</Check>
       </ul>
       <Button tone="gold" size="lg" className="mt-5 w-full min-h-14" disabled={!canMint || tx.busy} onClick={mint}>
-        {tx.busy ? "Check your wallet…" : minted ? "Already claimed" : `Claim ${BASE_TEXT} free`}
+        {tx.busy ? t("wallet.checkWallet") : minted ? t("genesis.btn.already") : t("genesis.btn.claim", { base: BASE_TEXT })}
       </Button>
       <p className="mt-2 text-center text-sm font-medium text-muted">
-        {GENESIS_COST_TEXT}. 0 BNB is attached; you only confirm the network gas in your wallet.
+        {t("genesis.gasNote", { cost: t("genesis.cost") })}
       </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       {!minted ? <AgentPathToggle flow="genesis" className="mt-4" /> : null}
@@ -187,16 +191,17 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
 
 /** Right-hand summary: what a claim gives, before the wallet has claimed. */
 function GenesisOffer() {
+  const { t } = useLocale();
   return (
     <div className="rounded-2xl border border-line-2 bg-card-2 px-5 py-6 text-center">
-      <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Every Genesis claim</div>
+      <div className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{t("genesis.every")}</div>
       <div className="mt-1 font-display text-[44px] font-semibold leading-none text-gold sm:text-[52px]">{BASE_TEXT}</div>
-      <div className="mt-2 text-sm font-medium text-sub">Sent to your wallet in the same transaction</div>
+      <div className="mt-2 text-sm font-medium text-sub">{t("genesis.sameTx")}</div>
       <ul className="mx-auto mt-5 max-w-sm space-y-2.5 text-left">
-        <Check ok>0 BNB attached: no mint price, no fee, no deposit</Check>
-        <Check ok>Only ordinary network gas (~$0.002)</Check>
-        <Check ok>One transaction: no spin, no waiting, no second claim</Check>
-        <Check ok>One claim per Agent ID and per wallet</Check>
+        <Check ok>{t("genesis.offer1")}</Check>
+        <Check ok>{t("genesis.offer2")}</Check>
+        <Check ok>{t("genesis.offer3")}</Check>
+        <Check ok>{t("genesis.offer4")}</Check>
       </ul>
     </div>
   );
@@ -208,6 +213,7 @@ export function GenesisCard() {
   const { genesis, mintCount, cap, refetch } = useGenesisState();
   const my = useMyGenesis();
   const [burst, setBurst] = useState(0);
+  const { t, rich } = useLocale();
   const pct = mintCount !== undefined ? Math.min(100, (Number(mintCount) / Number(cap)) * 100) : 0;
   const claimed = Boolean(genesis && account && my.minted);
 
@@ -218,13 +224,14 @@ export function GenesisCard() {
           {/* copy + counter */}
           <div className="lg:col-start-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Kicker>Genesis 300 · free</Kicker>
-              <Pill tone="neutral" className="border border-line">GAS ONLY</Pill>
+              <Kicker>{t("genesis.kicker")}</Kicker>
+              <Pill tone="neutral" className="border border-line">
+                {t("genesis.gasOnly")}
+              </Pill>
             </div>
-            <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">300 free 20,000 TWAK claims for Agent ID holders</h2>
+            <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">{t("genesis.title")}</h2>
             <p className="mt-3 font-medium text-sub">
-              <b className="text-fg">{GENESIS_COST_TEXT}.</b> One claim per Agent ID and per wallet: you attach 0 BNB, pay only ordinary network gas, and{" "}
-              <b className="text-fg">{BASE_TEXT}</b> lands in your wallet in the same transaction. Funded from the 5% ecosystem allocation ({GENESIS_BUDGET} budget) and separate from the paid 5,000.
+              {rich("genesis.body", { b: (c) => <b className="text-fg">{c}</b> }, { cost: t("genesis.cost"), base: BASE_TEXT, budget: GENESIS_BUDGET })}
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-3">
@@ -232,7 +239,9 @@ export function GenesisCard() {
                 <AnimatedNumber value={mintCount !== undefined ? Number(mintCount) : undefined} />
                 <span className="text-[24px] text-muted sm:text-[28px]"> / {Number(cap)}</span>
               </div>
-              <Pill tone="neutral" className="shrink-0">CLAIMED</Pill>
+              <Pill tone="neutral" className="shrink-0">
+                {t("genesis.claimedPill")}
+              </Pill>
             </div>
             <div
               className="mt-3 h-7 overflow-hidden rounded-full border border-line bg-card"
@@ -240,7 +249,7 @@ export function GenesisCard() {
               aria-valuenow={Number(mintCount ?? 0)}
               aria-valuemin={0}
               aria-valuemax={Number(cap)}
-              aria-label="Genesis spots claimed"
+              aria-label={t("genesis.progressAria")}
             >
               <ProgressFill pct={pct} className="rounded-full bg-gold" />
             </div>
@@ -265,8 +274,8 @@ export function GenesisCard() {
               )
             ) : (
               <div className="rounded-2xl border border-dashed border-line bg-card px-4 py-5 text-center">
-                <div className="font-display text-[20px] font-semibold">Genesis 300 unavailable</div>
-                <p className="mt-1 text-sm font-medium text-sub">Not available right now. Nothing to sign or send.</p>
+                <div className="font-display text-[20px] font-semibold">{t("genesis.unavailable")}</div>
+                <p className="mt-1 text-sm font-medium text-sub">{t("genesis.unavailableBody")}</p>
                 <AgentPathToggle flow="genesis" className="mt-4" />
               </div>
             )}

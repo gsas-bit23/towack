@@ -4,22 +4,26 @@ import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { BonusBars, BnbTierStubs } from "@/components/PrizeTables";
 import { TokenomicsChart } from "@/components/TokenomicsChart";
 import { ButtonLink, Pill } from "@/components/ui";
+import { T, type MessageKey } from "@/lib/i18n";
+import type { ReactNode } from "react";
 import { FeaturedLaunch, HomeHero } from "./HomeLive";
 
-const PATHS: { href: string; icon: IconName; title: string; body: string; go: string }[] = [
-  { href: "/mint", icon: "launch", title: "Launch", body: "0.1 BNB per Agent ID. 80,000 TWAK instantly, plus one Chainlink VRF prize draw.", go: "Mint a slot" },
-  { href: "/swap", icon: "swap", title: "Swap", body: "Best-route quotes across PancakeSwap, Uniswap and Relay, plus bridging out of BNB Chain.", go: "Open Swap" },
-  { href: "/lottery", icon: "draw", title: "Draw V2", body: "Instant pool wheel. Enter TWAK, VRF multiplier 0×–10×, 95% expected return.", go: "Open Draw V2" },
-  { href: "/perps", icon: "perps", title: "Perps", body: "Live Aster perpetual markets. Trade with an API wallet your own wallet approves.", go: "Open Perps" },
+const PATHS: { href: string; icon: IconName; key: "launch" | "swap" | "draw" | "perps" }[] = [
+  { href: "/mint", icon: "launch", key: "launch" },
+  { href: "/swap", icon: "swap", key: "swap" },
+  { href: "/lottery", icon: "draw", key: "draw" },
+  { href: "/perps", icon: "perps", key: "perps" },
 ];
 
-const FEES = [
-  { pct: "50%", color: "bg-gold", text: "text-gold", title: "Active-trader rebate boosts", body: "Earned from your trading activity and claimed on-chain. Not sit-and-earn staking." },
-  { pct: "30%", color: "bg-up", text: "text-up", title: "Lottery / Draw V2 treasury", body: "Stocks the BNB pot. 5× and 10× pool-wheel wins take a capped 1–2% bonus from it." },
-  { pct: "20%", color: "bg-[#4A525E]", text: "text-sub", title: "Dev", body: "Keeps the contracts, router, and site moving." },
+const FEES: { pct: string; color: string; text: string; key: "rebate" | "treasury" | "dev" }[] = [
+  { pct: "50%", color: "bg-gold", text: "text-gold", key: "rebate" },
+  { pct: "30%", color: "bg-up", text: "text-up", key: "treasury" },
+  { pct: "20%", color: "bg-[#4A525E]", text: "text-sub", key: "dev" },
 ];
 
-function SecHead({ title, href, link }: { title: string; href?: string; link?: string }) {
+const k = (s: string) => s as MessageKey;
+
+function SecHead({ title, href, link }: { title: ReactNode; href?: string; link?: ReactNode }) {
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
       <h2 className="text-[22px] font-semibold tracking-[-0.02em]">{title}</h2>
@@ -44,12 +48,10 @@ export default function Home() {
 
         {/* Draw V1 prize deck */}
         <section id="draw" className="pt-14">
-          <SecHead title="Every mint spins the wheel" href="/draw" link="Prize booth" />
+          <SecHead title={<T k="home.deck.title" />} href="/draw" link={<T k="home.deck.link" />} />
           <Reveal className="rounded-2xl border border-line bg-card p-5 sm:p-7">
             <p className="max-w-[820px] text-[15px] leading-relaxed text-sub">
-              Each mint gets its own <b className="font-semibold text-fg">Chainlink VRF</b> random draw: one slot from a fixed
-              5,000-slot deck and the wheel stops on it — a BNB refund, a TWAK bonus, or better luck next time.{" "}
-              <b className="font-semibold text-fg">One outcome per spin</b>, and the odds shift as the deck empties.
+              <T k="home.deck.body" tags={{ b: "font-semibold text-fg" }} />
             </p>
             <div className="mt-6">
               <BnbTierStubs />
@@ -57,19 +59,24 @@ export default function Home() {
           </Reveal>
           <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <Reveal className="min-w-0 rounded-2xl border border-line bg-card p-5 sm:p-7">
-              <h3 className="text-[18px] font-semibold">Bonus slots: extra TWAK</h3>
+              <h3 className="text-[18px] font-semibold">
+                <T k="home.deck.bonusTitle" />
+              </h3>
               <p className="mt-1 text-[14px] text-muted">
-                Paid from the 50M Draw V1 bonus reserve. A bonus slot replaces a refund — the wheel has one needle, so each mint wins exactly one
-                outcome. A 5× slot means 80,000 + 320,000 TWAK.
+                <T k="home.deck.bonusBody" />
               </p>
               <BonusBars />
             </Reveal>
             <Reveal className="gold-hairline flex min-w-0 flex-col rounded-2xl border border-line bg-card p-5 sm:p-7" delay={0.08}>
-              <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Whole prize deck</span>
+              <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">
+                <T k="home.deck.whole" />
+              </span>
               <div className="mt-3 font-mono text-[36px] font-medium leading-none tracking-tight text-gold sm:text-[44px]">166.25 BNB</div>
-              <div className="mt-2 text-[14px] text-sub">+ 35.2M TWAK in bonuses: the whole prize pool at a 5,000 sellout</div>
+              <div className="mt-2 text-[14px] text-sub">
+                <T k="home.deck.wholeSub" />
+              </div>
               <p className="mt-auto pt-5 text-[13.5px] text-muted">
-                That&apos;s a refund-style prize deck, not a profit promise. The draw is a game of chance, and most spins get back less than they paid.
+                <T k="home.deck.wholeNote" />
               </p>
             </Reveal>
           </div>
@@ -77,53 +84,58 @@ export default function Home() {
 
         {/* Router */}
         <section id="router" className="pt-14">
-          <SecHead title="Open router · Agent ID rebates" href="/trade" link="Open the router" />
+          <SecHead title={<T k="home.router.title" />} href="/trade" link={<T k="home.router.link" />} />
           <Reveal className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line bg-card lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
             <div className="min-w-0 border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
               <p className="text-[15px] leading-relaxed text-sub">
-                Any wallet can trade through the official Towack router. It charges <b className="font-semibold text-fg">1% on the BNB leg</b> of a trade —
-                not a transfer tax on the token. Rebates accrue only to Agent ID wallets. You set your own on-chain daily spend limit.
+                <T k="home.router.body" tags={{ b: "font-semibold text-fg" }} />
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                {[
-                  ["You + Agent ID", "daily limit set"],
-                  ["Towack router", "1% · BNB leg"],
-                  ["PancakeSwap v2", "swap executes"],
-                ].map(([t, s], i) => (
-                  <div key={t} className="flex items-center gap-3">
+                {[1, 2, 3].map((n, i) => (
+                  <div key={n} className="flex items-center gap-3">
                     {i ? <Arrow /> : null}
                     <div className={`rounded-xl border px-4 py-3 ${i === 1 ? "border-gold/40 bg-gold/[.06]" : "border-line-2 bg-card-2"}`}>
-                      <div className="text-[14px] font-semibold">{t}</div>
-                      <div className="font-mono text-[12.5px] text-muted">{s}</div>
+                      <div className="text-[14px] font-semibold">
+                        <T k={k(`home.router.step${n}`)} />
+                      </div>
+                      <div className="font-mono text-[12.5px] text-muted">
+                        <T k={k(`home.router.step${n}Sub`)} />
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
             <div className="min-w-0 p-5 sm:p-7">
-              <div className="text-[13px] text-muted">Where the 1% router fee goes</div>
+              <div className="text-[13px] text-muted">
+                <T k="home.router.where" />
+              </div>
               <div className="mt-3 flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
                 {FEES.map((f) => (
-                  <i key={f.pct + f.title} className={f.color} style={{ flex: parseInt(f.pct, 10) }} />
+                  <i key={f.key} className={f.color} style={{ flex: parseInt(f.pct, 10) }} />
                 ))}
               </div>
               <ul className="mt-4 space-y-3">
                 {FEES.map((f) => (
-                  <li key={f.title} className="flex gap-3">
+                  <li key={f.key} className="flex gap-3">
                     <span className={`w-11 shrink-0 font-mono text-[15px] font-medium ${f.text}`}>{f.pct}</span>
                     <span className="min-w-0">
-                      <span className="block text-[14px] font-semibold">{f.title}</span>
-                      <span className="block text-[13px] text-muted">{f.body}</span>
+                      <span className="block text-[14px] font-semibold">
+                        <T k={k(`home.fee.${f.key}`)} />
+                      </span>
+                      <span className="block text-[13px] text-muted">
+                        <T k={k(`home.fee.${f.key}Body`)} />
+                      </span>
                     </span>
                   </li>
                 ))}
               </ul>
               <div className="mt-5 flex flex-wrap gap-2">
                 <ButtonLink href="/trade" tone="line" size="sm">
-                  Open the router
+                  <T k="home.router.link" />
                 </ButtonLink>
                 <ButtonLink href="/rebates" tone="soft" size="sm">
-                  Rebates
+                  <T k="home.router.rebates" />
                 </ButtonLink>
               </div>
             </div>
@@ -132,59 +144,83 @@ export default function Home() {
 
         {/* Tokenomics */}
         <section id="tokenomics" className="pt-14">
-          <SecHead title="1B TWAK, fixed supply" href="/tokenomics" link="Tokenomics" />
+          <SecHead title={<T k="home.tok.title" />} href="/tokenomics" link={<T k="home.tok.link" />} />
           <Reveal className="rounded-2xl border border-line bg-card p-5 sm:p-7">
             <div className="mb-6 flex flex-wrap gap-2">
-              <Pill>18 decimals</Pill>
-              <Pill>No transfer tax</Pill>
-              <Pill tone="gold">Unsold mint tokens burned</Pill>
+              <Pill>
+                <T k="home.tok.decimals" />
+              </Pill>
+              <Pill>
+                <T k="home.tok.noTax" />
+              </Pill>
+              <Pill tone="gold">
+                <T k="home.tok.burned" />
+              </Pill>
             </div>
             <TokenomicsChart />
             <div className="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card-2 px-4 py-3 text-[14px] text-sub">
-              <Pill tone="up">Listing</Pill>
-              Planned on PancakeSwap v2 at the mint price, once the mint closes and every spin has landed. LP tokens are burned.
+              <Pill tone="up">
+                <T k="home.tok.listing" />
+              </Pill>
+              <T k="home.tok.listingBody" />
             </div>
           </Reveal>
         </section>
 
         {/* Roadmap */}
         <section id="roadmap" className="pt-14">
-          <SecHead title="Roadmap" />
+          <SecHead title={<T k="home.road.title" />} />
           <Stagger className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <StaggerItem className="lift min-w-0 rounded-2xl border border-line bg-card p-6">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[13px] text-muted">01 · Phase 1</span>
-                <Pill tone="up">Core stack</Pill>
+                <span className="font-mono text-[13px] text-muted">
+                  <T k="home.road.p1" />
+                </span>
+                <Pill tone="up">
+                  <T k="home.road.p1Pill" />
+                </Pill>
               </div>
               <ul className="mt-4 space-y-2 text-[14px] text-sub">
-                <li>Agent ID slot mint + 5% referrals</li>
-                <li>Genesis 300 free 20,000 TWAK claim + Draw V1 wheel</li>
-                <li>Draw V2 instant pool wheel</li>
-                <li>Open PancakeSwap v2 router + rebates</li>
-                <li>All on BNB Smart Chain</li>
+                {["a", "b", "c", "d", "e"].map((x) => (
+                  <li key={x}>
+                    <T k={k(`home.road.p1${x}`)} />
+                  </li>
+                ))}
               </ul>
             </StaggerItem>
             <StaggerItem className="lift min-w-0 rounded-2xl border border-line bg-card p-6">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[13px] text-muted">02 · Phase 2</span>
-                <Pill tone="up">Live</Pill>
+                <span className="font-mono text-[13px] text-muted">
+                  <T k="home.road.p2" />
+                </span>
+                <Pill tone="up">
+                  <T k="home.road.live" />
+                </Pill>
               </div>
-              <div className="mt-4 text-[16px] font-semibold">Aster perps</div>
+              <div className="mt-4 text-[16px] font-semibold">
+                <T k="home.road.p2Title" />
+              </div>
               <p className="mt-2 text-[14px] text-muted">
-                Live Aster perpetual markets, open to any wallet through a trade-only Aster API wallet you set up and keep in your browser. It cannot withdraw funds. An Agent ID unlocks the &ldquo;Give this to your AI agent&rdquo; box.
+                <T k="home.road.p2Body" />
               </p>
               <Link href="/perps" className="mt-3 inline-block text-[14px] font-semibold text-sub transition-colors hover:text-gold">
-                Open Perps →
+                <T k="home.road.p2Link" />
               </Link>
             </StaggerItem>
             <StaggerItem className="lift min-w-0 rounded-2xl border border-line bg-card p-6">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[13px] text-muted">03 · Phase 3</span>
-                <Pill tone="up">Live</Pill>
+                <span className="font-mono text-[13px] text-muted">
+                  <T k="home.road.p3" />
+                </span>
+                <Pill tone="up">
+                  <T k="home.road.live" />
+                </Pill>
               </div>
-              <div className="mt-4 text-[16px] font-semibold">Live on BNB Smart Chain</div>
+              <div className="mt-4 text-[16px] font-semibold">
+                <T k="home.road.p3Title" />
+              </div>
               <p className="mt-2 text-[14px] text-muted">
-                Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free claim are open, and the Draw V2 pool is funded.
+                <T k="home.road.p3Body" />
               </p>
             </StaggerItem>
           </Stagger>
@@ -192,7 +228,7 @@ export default function Home() {
 
         {/* Paths */}
         <section className="pb-4 pt-14">
-          <SecHead title="Where to go next" />
+          <SecHead title={<T k="home.next" />} />
           <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
             {PATHS.map((p) => (
               <StaggerItem key={p.href} className="min-w-0">
@@ -200,9 +236,15 @@ export default function Home() {
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-card-2 text-gold">
                     <Icon name={p.icon} />
                   </span>
-                  <h3 className="mt-1.5 text-[17px] font-semibold">{p.title}</h3>
-                  <p className="text-[14px] text-muted">{p.body}</p>
-                  <span className="mt-auto pt-1.5 text-[14px] font-semibold text-sub transition-colors group-hover:text-gold">{p.go} →</span>
+                  <h3 className="mt-1.5 text-[17px] font-semibold">
+                    <T k={k(`home.path.${p.key}`)} />
+                  </h3>
+                  <p className="text-[14px] text-muted">
+                    <T k={k(`home.path.${p.key}Body`)} />
+                  </p>
+                  <span className="mt-auto pt-1.5 text-[14px] font-semibold text-sub transition-colors group-hover:text-gold">
+                    <T k={k(`home.path.${p.key}Go`)} /> →
+                  </span>
                 </Link>
               </StaggerItem>
             ))}

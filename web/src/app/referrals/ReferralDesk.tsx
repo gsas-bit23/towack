@@ -12,6 +12,7 @@ import { fmt18 } from "@/lib/format";
 import { agentNftAbi } from "@/lib/genesis";
 import { normalizeHandle, referralLink } from "@/lib/referral";
 import { useTx } from "@/lib/tx";
+import { useLocale } from "@/lib/i18n";
 
 const HANDLE_KEY = "towack.referralHandle";
 
@@ -19,6 +20,7 @@ export function ReferralDesk() {
   const { account, addresses, chainId } = useTowack();
   const [typed, setTyped] = useState("");
   const [origin, setOrigin] = useState("");
+  const { t } = useLocale();
 
   // On mainnet, SPACE ID HandleRegistry exposes handleOf(address) on-chain; if the read fails it degrades gracefully.
   const { data: onchainHandle } = useReadContract({
@@ -51,17 +53,13 @@ export function ReferralDesk() {
       <div className="col-span-12 space-y-8 lg:col-span-7">
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-[21px] font-semibold tracking-tight">Your referral link</h2>
+            <h2 className="text-[21px] font-semibold tracking-tight">{t("ref.linkTitle")}</h2>
             <ChainNote />
           </div>
           <div className="mt-5">
             <Field
-              label="Your .ai handle (optional)"
-              hint={
-                onchainHandle
-                  ? `Detected ${onchainHandle}.ai on-chain for this wallet. The referrer is always your wallet address.`
-                  : "Optional label on your link (auto-detected). The referrer is always the wallet address in the link."
-              }
+              label={t("ref.handle")}
+              hint={onchainHandle ? t("ref.detected", { h: `${onchainHandle}.ai` }) : t("ref.handleHint")}
             >
               <input
                 className={inputClass}
@@ -74,31 +72,31 @@ export function ReferralDesk() {
             </Field>
           </div>
           <div className="mt-6">
-            <NeedsWallet why="Connect the wallet that should earn referrals (it must hold an Agent ID).">
+            <NeedsWallet why={t("ref.connectWhy")}>
               {account ? <ShareBox origin={origin} account={account} handle={handle} /> : null}
             </NeedsWallet>
           </div>
         </Panel>
 
         <Panel tone="raised" shadow={false}>
-          <h2 className="text-[20px] font-semibold tracking-tight">How referrals work</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight">{t("ref.how")}</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
-            <li>Your link carries your wallet address. Friends who open it mint with you as their referrer.</li>
-            <li>Each referred paid mint credits you 0.005 BNB (5% of the 0.1 BNB price). It comes out of the share that would otherwise go to LP / Draw V2, so your friend pays nothing extra.</li>
-            <li>Your wallet must hold an Agent ID, and you can&apos;t refer yourself: the contract rejects both.</li>
-            <li>Claim any time. Referral BNB has no deadline and is never swept.</li>
-            <li>Paid mint only. Genesis 300 has no referrals.</li>
+            <li>{t("ref.how1")}</li>
+            <li>{t("ref.how2")}</li>
+            <li>{t("ref.how3")}</li>
+            <li>{t("ref.how4")}</li>
+            <li>{t("ref.how5")}</li>
           </ol>
-          <p className="mt-4 font-semibold text-sub">Minting is a game of chance, not an investment. Only share with friends who understand that.</p>
+          <p className="mt-4 font-semibold text-sub">{t("ref.note")}</p>
         </Panel>
       </div>
 
       <div className="col-span-12 space-y-8 lg:col-span-5">
         <Panel>
-          <h2 className="text-[21px] font-semibold tracking-tight">Your referrals</h2>
+          <h2 className="text-[21px] font-semibold tracking-tight">{t("ref.yours")}</h2>
           <div className="mt-5">
             <NeedsContracts keys={["launch"]}>
-              <NeedsWallet why="Connect to see your referrals and claim." agent="referralClaim">
+              <NeedsWallet why={t("ref.dashWhy")} agent="referralClaim">
                 {account ? <Dashboard account={account} /> : null}
               </NeedsWallet>
             </NeedsContracts>
@@ -112,6 +110,7 @@ export function ReferralDesk() {
 function ShareBox({ origin, account, handle }: { origin: string; account: Address; handle?: string }) {
   const { addresses, chainId } = useTowack();
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
+  const { t } = useLocale();
   const link = origin ? referralLink(origin, account, handle) : "";
 
   const { data: agentBal } = useReadContract({
@@ -137,21 +136,20 @@ function ShareBox({ origin, account, handle }: { origin: string; account: Addres
     <div>
       {agentBal === 0n ? (
         <p className="mb-4 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
-          <Pill tone="gold">NO AGENT ID</Pill> This wallet holds no Agent ID, so mints naming it would revert. Get an Agent ID in the official
-          Binance App (mainnet) first.
+          <Pill tone="gold">{t("ref.noAgentPill")}</Pill> {t("ref.noAgent")}
         </p>
       ) : null}
-      <div className="rounded-2xl border border-line bg-card-2 px-4 py-3 font-mono text-[13px] font-medium break-all" aria-label="Your referral link">
+      <div className="rounded-2xl border border-line bg-card-2 px-4 py-3 font-mono text-[13px] font-medium break-all" aria-label={t("ref.linkAria")}>
         {link || "…"}
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button tone="soft" size="sm" onClick={copy} disabled={!link}>
-          {copied === "ok" ? "Copied ✓" : copied === "fail" ? "Copy failed: select the text" : "Copy link"}
+          {copied === "ok" ? t("common.copied") : copied === "fail" ? t("common.copyFailed") : t("ref.copy")}
         </Button>
         {handle ? <Pill tone="neutral">{handle}</Pill> : null}
       </div>
-      <h3 className="mt-6 text-[17px] font-semibold tracking-tight">For friends with an AI agent</h3>
-      <p className="mt-1 font-medium text-sub">Send them this ready-made instruction. It mints on mainnet (chain 56) with your wallet as referrer.</p>
+      <h3 className="mt-6 text-[17px] font-semibold tracking-tight">{t("ref.agentTitle")}</h3>
+      <p className="mt-1 font-medium text-sub">{t("ref.agentBody")}</p>
       <AgentPathPanel flow="launch" referral={{ address: account, handle }} className="mt-3" />
     </div>
   );
@@ -162,6 +160,7 @@ function Dashboard({ account }: { account: Address }) {
   const launch = addresses.launch;
   const { writeContractAsync } = useWriteContract();
   const tx = useTx();
+  const { t } = useLocale();
 
   const { data, isError: dashErr, refetch } = useReadContracts({
     contracts: [
@@ -182,7 +181,7 @@ function Dashboard({ account }: { account: Address }) {
 
   const claim = async () => {
     if (!launch) return;
-    const ok = await tx.run("Claim referral BNB", () =>
+    const ok = await tx.run(t("ref.txClaim"), () =>
       writeContractAsync({ address: launch, abi: towackLaunchAbi, functionName: "claimReferral", chainId }),
     );
     if (ok) void refetch();
@@ -191,27 +190,27 @@ function Dashboard({ account }: { account: Address }) {
   if (unsupported) {
     return (
       <p className="rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-3 font-medium">
-        The launch contract on this network was deployed before referrals. Referral stats and claims go live with the next launch deploy.
+        {t("ref.unsupported")}
       </p>
     );
   }
 
   return (
     <div>
-      {dashErr ? <RpcErrorNotice onRetry={() => void refetch()} label="Could not load referral stats." /> : null}
+      {dashErr ? <RpcErrorNotice onRetry={() => void refetch()} label={t("ref.loadErr")} /> : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        <Stat label="Friends minted" value={count !== undefined ? count.toString() : "—"} />
-        <Stat label="Lifetime earned" value={earned !== undefined ? `${fmt18(earned, 4)} BNB` : "—"} />
-        <Stat label="Claimable" value={unclaimed !== undefined ? `${fmt18(unclaimed, 4)} BNB` : "—"} sub="never expires" className="sm:col-span-2 lg:col-span-1 xl:col-span-2" />
+        <Stat label={t("ref.friends")} value={count !== undefined ? count.toString() : "—"} />
+        <Stat label={t("ref.lifetime")} value={earned !== undefined ? `${fmt18(earned, 4)} BNB` : "—"} />
+        <Stat label={t("ref.claimable")} value={unclaimed !== undefined ? `${fmt18(unclaimed, 4)} BNB` : "—"} sub={t("ref.neverExpires")} className="sm:col-span-2 lg:col-span-1 xl:col-span-2" />
       </div>
       <Button tone="gold" size="lg" className="mt-6 w-full" disabled={!unclaimed || tx.busy} onClick={claim}>
-        {tx.busy ? "Check your wallet…" : unclaimed ? `Claim ${fmt18(unclaimed, 4)} BNB` : "Nothing to claim yet"}
+        {tx.busy ? t("wallet.checkWallet") : unclaimed ? t("ref.claimAmt", { n: fmt18(unclaimed, 4) }) : t("ref.nothing")}
       </Button>
-      <p className="mt-3 text-center text-sm font-medium text-muted">Your wallet will ask you to confirm. We never sign for you.</p>
+      <p className="mt-3 text-center text-sm font-medium text-muted">{t("wallet.confirmNote")}</p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       <AgentPathToggle flow="referralClaim" className="mt-4" />
 
-      <h3 className="mt-8 text-[17px] font-semibold tracking-tight">Friends who minted</h3>
+      <h3 className="mt-8 text-[17px] font-semibold tracking-tight">{t("ref.friendsTitle")}</h3>
       {referees && referees.length > 0 ? (
         <ul className="mt-3 max-h-[280px] space-y-2 overflow-auto pr-1">
           {referees.map((r, i) => (
@@ -222,7 +221,7 @@ function Dashboard({ account }: { account: Address }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-2 font-medium text-muted">{referees ? "No referred mints yet. Share your link!" : "—"}</p>
+        <p className="mt-2 font-medium text-muted">{referees ? t("ref.noReferred") : "—"}</p>
       )}
     </div>
   );

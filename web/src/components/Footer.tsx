@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale } from "@/lib/i18n";
 import { CoinMark } from "./art";
 import { NAV_LINKS } from "./NavLinks";
 import { RiskNote } from "./RiskNote";
@@ -14,6 +17,7 @@ function XMark({ className = "h-3.5 w-3.5" }: { className?: string }) {
 }
 
 export function Footer() {
+  const { t } = useLocale();
   return (
     <footer className="mt-auto border-t border-line bg-bg">
       <div className="mx-auto max-w-[1200px] px-4 pb-10 pt-12 sm:px-8 sm:pt-14">
@@ -23,10 +27,10 @@ export function Footer() {
               <CoinMark size={28} />
               Towack
             </div>
-            <nav aria-label="Footer" className="mt-5 grid grid-cols-2 gap-x-2 text-[14px]">
+            <nav aria-label={t("footer.nav")} className="mt-5 grid grid-cols-2 gap-x-2 text-[14px]">
               {NAV_LINKS.map((l) => (
                 <Link key={l.href} href={l.href} className="flex min-h-10 items-center text-muted transition-colors hover:text-fg">
-                  {l.label}
+                  {t(l.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -34,14 +38,14 @@ export function Footer() {
           <RiskNote className="col-span-12 md:col-span-8" />
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-6 text-[13px] text-dim">
-          <span>© 2026 Towack. We never ask for keys, seed phrases, or pairing codes.</span>
+          <span>{t("footer.copyright")}</span>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <a
               href={X_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-10 items-center gap-1.5 font-medium text-muted transition-colors hover:text-fg"
-              aria-label="Towack on X, @towackxyz"
+              aria-label={t("footer.xAria")}
             >
               <XMark />
               @towackxyz

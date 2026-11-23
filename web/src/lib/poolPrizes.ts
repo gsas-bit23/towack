@@ -79,7 +79,4 @@ export const POOL_SPLIT = {
   more: POOL_PRIZES.filter((p) => p.multBps > 10_000).reduce((a, p) => a + p.slots, 0) / 100,
 };
 
-export function poolShareText(prizeId: number): string {
-  const p = POOL_PRIZES[prizeId];
-  return `I spun the Towack pool wheel on BNB Chain and landed ${p.wheel} 🎡 Expected return is 95% — a game of chance, not an investment.`;
-}
+// Localized labels / share text: lib/prizeText.ts.

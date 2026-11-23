@@ -1,6 +1,7 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useLocale } from "@/lib/i18n";
 
 const BASE =
   "press inline-flex items-center justify-center rounded-[10px] border font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60";
@@ -8,7 +9,9 @@ const FULL = "h-11 px-5 text-[14.5px]";
 const COMPACT = "h-10 px-3.5 text-[13.5px] sm:px-4 sm:text-[14px]";
 
 /** `compact`: Atlas outline button for the top bar (shows just "Connect" on phones). Full size = the gold in-page CTA. */
-export function ConnectPill({ label = "Connect wallet", compact = false }: { label?: string; compact?: boolean }) {
+export function ConnectPill({ label: labelProp, compact = false }: { label?: string; compact?: boolean }) {
+  const { t } = useLocale();
+  const label = labelProp ?? t("wallet.connect");
   const cls = `${BASE} ${compact ? COMPACT : FULL}`;
   const normal = compact
     ? `${cls} border-line-2 bg-transparent text-fg hover:border-[#4A525E] hover:bg-card`
@@ -16,7 +19,7 @@ export function ConnectPill({ label = "Connect wallet", compact = false }: { lab
   const connectedCls = `${cls} border-line-2 bg-card text-fg hover:bg-card-2`;
   const text = compact ? (
     <>
-      <span className="sm:hidden">Connect</span>
+      <span className="sm:hidden">{t("wallet.connectShort")}</span>
       <span className="hidden sm:inline">{label}</span>
     </>
   ) : (
@@ -44,7 +47,7 @@ export function ConnectPill({ label = "Connect wallet", compact = false }: { lab
         if (chain.unsupported) {
           return (
             <button type="button" onClick={openChainModal} className={`${cls} border-down/40 bg-down/10 text-down`}>
-              Wrong network
+              {t("wallet.wrongNetwork")}
             </button>
           );
         }

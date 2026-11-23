@@ -3,6 +3,8 @@
 import { animate, motion, useAnimationFrame, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useRef } from "react";
 import { PRIZES, SLICES, landingAngleIn, sliceIn, type Slice } from "@/lib/prizes";
+import { useLocale } from "@/lib/i18n";
+import { prizeWheel } from "@/lib/prizeText";
 
 /** What a slice needs to draw itself. Defaults to the paid Draw V1 deck. */
 export type WheelPrize = { wheel: string; fill: string; ink: string };
@@ -62,6 +64,7 @@ export function SpinWheel({
   prizes?: readonly WheelPrize[];
   slices?: readonly Slice[];
 }) {
+  const { t } = useLocale();
   const reduce = useReducedMotion();
   const rot = useMotionValue(0);
   const speed = useRef(0);
@@ -139,7 +142,9 @@ export function SpinWheel({
             {slices.map((s) => {
               const p = prizes[s.id];
               const width = s.end - s.start;
-              const fs = width < 16 ? 13 : width < 30 ? 14 : p.wheel.length > 5 ? 12 : 17;
+              const label = prizes === PRIZES ? prizeWheel(t, PRIZES[s.id]) : p.wheel;
+              const cols = /[^\x00-\x7F]/.test(label) ? label.length * 2 : label.length; // CJK glyphs are ~2 mono columns
+              const fs = width < 16 ? 13 : width < 30 ? 14 : cols > 5 ? 12 : 17;
               return (
                 <g key={s.id}>
                   <path d={slicePath(s.start, s.end)} fill={p.fill} stroke="#0B0E11" strokeWidth="2" strokeLinejoin="round" />
@@ -155,7 +160,7 @@ export function SpinWheel({
                       fontSize={fs}
                       fill={p.ink}
                     >
-                      {p.wheel}
+                      {label}
                     </text>
                   </g>
                 </g>

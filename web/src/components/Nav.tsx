@@ -4,7 +4,9 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "@/lib/i18n";
 import { CoinMark } from "./art";
+import { LanguageToggle } from "./LanguageToggle";
 import { ConnectPill } from "./ConnectPill";
 import { NetworkBadge } from "./NetworkBadge";
 import { NAV_LINKS, PRIMARY_COUNT } from "./NavLinks";
@@ -16,6 +18,7 @@ const PILL = "nav-pill relative flex h-9 items-center whitespace-nowrap rounded-
 
 export function Nav() {
   const pathname = usePathname();
+  const { t } = useLocale();
   const reduce = useReducedMotion();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const [open, setOpen] = useState(false);
@@ -59,8 +62,8 @@ export function Nav() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-[rgba(11,14,17,.86)] backdrop-blur-[12px]">
-      <nav className="mx-auto flex h-[58px] max-w-[1280px] items-center gap-3 px-4 sm:px-6 xl:h-16 xl:gap-8 xl:px-8" aria-label="Main">
-        <Link href="/" className="flex min-h-10 shrink-0 items-center gap-2.5 text-[18px] font-bold tracking-[-0.02em]" aria-label="Towack home">
+      <nav className="mx-auto flex h-[58px] max-w-[1280px] items-center gap-3 px-4 sm:px-6 xl:h-16 xl:gap-8 xl:px-8" aria-label={t("nav.main")}>
+        <Link href="/" className="flex min-h-10 shrink-0 items-center gap-2.5 text-[18px] font-bold tracking-[-0.02em]" aria-label={t("nav.home")}>
           <CoinMark size={28} />
           <span className="hidden min-[360px]:inline">Towack</span>
         </Link>
@@ -82,7 +85,7 @@ export function Nav() {
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 ) : null}
-                {l.label}
+                {t(l.labelKey)}
               </Link>
             );
           })}
@@ -95,7 +98,7 @@ export function Nav() {
               onClick={() => setMoreOpen((o) => !o)}
               className={`${PILL} gap-1 ${moreActive || moreOpen ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}
             >
-              More
+              {t("nav.more")}
               <svg viewBox="0 0 12 12" className={`h-3 w-3 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden="true">
                 <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -119,7 +122,7 @@ export function Nav() {
                           active ? "bg-card-2 text-fg" : "text-sub hover:bg-card-2 hover:text-fg"
                         }`}
                       >
-                        {l.label}
+                        {t(l.labelKey)}
                         {active ? <span className="h-1.5 w-1.5 rounded-full bg-gold" aria-hidden="true" /> : null}
                       </Link>
                     );
@@ -131,6 +134,8 @@ export function Nav() {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-2.5">
+          <LanguageToggle size="sm" className="flex sm:hidden" />
+          <LanguageToggle className="hidden sm:flex" />
           <NetworkBadge className="hidden md:flex" />
           <ConnectPill compact />
           <button
@@ -138,7 +143,7 @@ export function Nav() {
             className="press grid h-10 w-10 shrink-0 place-items-center rounded-[10px] border border-line-2 text-fg hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 xl:hidden"
             aria-expanded={open}
             aria-controls="mobile-menu"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t("nav.closeMenu") : t("nav.openMenu")}
             onClick={() => setOpen((o) => !o)}
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -174,7 +179,7 @@ export function Nav() {
                           active ? "border-line-2 bg-card-2 text-fg" : "border-line bg-card text-sub hover:text-fg"
                         }`}
                       >
-                        {l.label}
+                        {t(l.labelKey)}
                         <span aria-hidden="true" className={active ? "text-gold" : "text-dim"}>
                           →
                         </span>
@@ -183,8 +188,12 @@ export function Nav() {
                   );
                 })}
               </ul>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 md:hidden">
-                <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Network</span>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 sm:hidden">
+                <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{t("lang.label")}</span>
+                <LanguageToggle className="flex" />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 md:hidden">
+                <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">{t("nav.network")}</span>
                 <NetworkBadge className="flex" />
               </div>
             </div>

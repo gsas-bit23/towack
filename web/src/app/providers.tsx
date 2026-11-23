@@ -9,6 +9,7 @@ import { WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/config/wagmi";
 import { ViewChainProvider } from "@/lib/chain";
 import { DEFAULT_CHAIN_ID } from "@/config/chains";
+import { LocaleProvider, useLocale } from "@/lib/i18n";
 
 // RainbowKit in the Atlas palette: dark surfaces, hairline borders, gold accent.
 const theme = darkTheme({
@@ -44,15 +45,27 @@ export function Providers({ children }: { children: ReactNode }) {
     () => new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, staleTime: 8_000 } } }),
   );
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={theme} initialChain={DEFAULT_CHAIN_ID} modalSize="compact">
-          <ViewChainProvider>
-            {/* Honour prefers-reduced-motion for every motion component (transforms off, fades kept). */}
-            <MotionConfig reducedMotion="user">{children}</MotionConfig>
-          </ViewChainProvider>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <LocaleProvider>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <LocalizedRainbowKit>
+            <ViewChainProvider>
+              {/* Honour prefers-reduced-motion for every motion component (transforms off, fades kept). */}
+              <MotionConfig reducedMotion="user">{children}</MotionConfig>
+            </ViewChainProvider>
+          </LocalizedRainbowKit>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </LocaleProvider>
+  );
+}
+
+/** RainbowKit's own modal copy follows the site language. */
+function LocalizedRainbowKit({ children }: { children: ReactNode }) {
+  const { locale } = useLocale();
+  return (
+    <RainbowKitProvider theme={theme} initialChain={DEFAULT_CHAIN_ID} modalSize="compact" locale={locale === "zh" ? "zh-CN" : "en-US"}>
+      {children}
+    </RainbowKitProvider>
   );
 }

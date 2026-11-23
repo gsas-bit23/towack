@@ -250,3 +250,11 @@ input[type="number"] {
     transition: none !important;
   }
 }
+
+/* 中文: Inter keeps Latin letters and numbers; CJK glyphs fall through to the best installed system font (no webfont).
+   Font utilities are @theme inline (values baked in), so override the selectors directly. */
+html[lang="zh-CN"] body,
+html[lang="zh-CN"] .font-display,
+html[lang="zh-CN"] .font-sans {
+  font-family: var(--font-inter), "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+}

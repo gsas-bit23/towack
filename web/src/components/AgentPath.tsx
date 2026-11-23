@@ -5,6 +5,7 @@ import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } fro
 import { ADDRESSES } from "@/config/addresses";
 import { buildSwapInstruction, type AgentRoute } from "@/lib/agentSwap";
 import { buildPerpsInstruction, type PerpsAgentIntent } from "@/lib/aster/instruction";
+import { useLocale } from "@/lib/i18n";
 import { Button, Pill } from "./ui";
 
 /**
@@ -219,11 +220,12 @@ export function AgentPathToggle({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const { t } = useLocale();
   return (
     <div className={className}>
       <div className="flex justify-center">
         <Button tone="line" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          <span aria-hidden="true">🤖</span> {open ? "Hide AI agent steps" : "Give this to your AI agent"}
+          <span aria-hidden="true">🤖</span> {open ? t("agent.hide") : t("agent.show")}
         </Button>
       </div>
       {open ? <AgentPathPanel flow={flow} referral={referral} perps={perps} swap={swap} className="mt-4 text-left" /> : null}
@@ -247,6 +249,8 @@ export function AgentPathPanel({
   const { text, missing } = buildInstruction(flow, referral, perps, swap);
   const isPerps = flow === "perps";
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
+  const { t, rich, locale } = useLocale();
+  const code = (c: string) => <code className="rounded bg-card px-1">{c}</code>;
 
   async function copy() {
     try {
@@ -261,50 +265,41 @@ export function AgentPathPanel({
   return (
     <div className={`rounded-2xl border border-line bg-card-2 p-5 ${className}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <Pill tone="neutral">BINANCE AGENTIC WALLET</Pill>
-        <Pill tone="gold">MAINNET ONLY · CHAIN 56</Pill>
+        <Pill tone="neutral">{t("agent.bawPill")}</Pill>
+        <Pill tone="gold">{t("agent.mainnetPill")}</Pill>
       </div>
 
       <p className="mt-4 font-medium text-sub">
-        Paste this into your AI agent (e.g. Claude Code) that has Binance&apos;s official{" "}
-        <a className="underline" href={BAW_SKILL_URL} target="_blank" rel="noreferrer">
-          binance-agentic-wallet
-        </a>{" "}
-        skill.{" "}
-        {isPerps ? (
-          <>
-            Aster orders are <b>not</b> a BSC contract call, so BAW can&apos;t place them directly. BAW signs one{" "}
-            <code className="rounded bg-card px-1">sign-message</code> (preview, your OK, then execute) that approves a trade-only Aster API wallet your
-            agent keeps locally; that wallet signs each order after you say yes.
-          </>
-        ) : (
-          <>
-            It runs <code className="rounded bg-card px-1">baw contract-call preview</code> first and waits for your explicit OK before{" "}
-            <code className="rounded bg-card px-1">execute</code>.
-          </>
-        )}{" "}
-        This site only shows text: it never signs, never sends, and never asks for keys.
+        {rich("agent.intro", {
+          a: (c) => (
+            <a className="underline" href={BAW_SKILL_URL} target="_blank" rel="noreferrer">
+              {c}
+            </a>
+          ),
+        })}{" "}
+        {isPerps ? rich("agent.perpsNote", { b: (c) => <b>{c}</b>, code }) : rich("agent.contractNote", { code })} {t("agent.siteNote")}
+        {locale === "zh" ? ` ${t("agent.instructionLang")}` : null}
       </p>
 
       {missing.length > 0 ? (
         <p className="mt-3 rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-3 font-medium">
-          Some contract addresses are unavailable right now ({missing.join(", ")}). Do not send anything.
+          {t("agent.missing", { list: missing.join(", ") })}
         </p>
       ) : null}
 
       <pre
         className={`mt-4 max-h-[320px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-line bg-card p-4 font-mono text-[12.5px] leading-relaxed text-fg`}
-        aria-label="Instruction for your AI agent"
+        aria-label={t("agent.aria")}
       >
         {text}
       </pre>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button tone="soft" size="sm" onClick={copy}>
-          {copied === "ok" ? "Copied ✓" : copied === "fail" ? "Copy failed: select the text" : "Copy for my agent"}
+          {copied === "ok" ? t("common.copied") : copied === "fail" ? t("common.copyFailed") : t("agent.copy")}
         </Button>
         <a className="inline-flex min-h-10 items-center text-sm font-semibold underline" href={TOWACK_SKILL_PATH} target="_blank" rel="noreferrer">
-          Towack agent skill (SKILL.md)
+          {t("agent.skill")}
         </a>
       </div>
     </div>

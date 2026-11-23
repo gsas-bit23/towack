@@ -94,7 +94,7 @@ export function Pill({ children, tone = "neutral", className = "" }: { children:
   );
 }
 
-export function Stat({ label, value, sub, className = "" }: { label: string; value: ReactNode; sub?: ReactNode; className?: string }) {
+export function Stat({ label, value, sub, className = "" }: { label: ReactNode; value: ReactNode; sub?: ReactNode; className?: string }) {
   return (
     <div className={`min-w-0 rounded-xl bg-card-2 px-4 py-3.5 ${className}`}>
       <div className="text-[12.5px] font-medium text-muted">{label}</div>
@@ -104,7 +104,7 @@ export function Stat({ label, value, sub, className = "" }: { label: string; val
   );
 }
 
-export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+export function Field({ label, hint, children }: { label: ReactNode; hint?: ReactNode; children: ReactNode }) {
   return (
     <label className="block">
       <span className="block text-[13px] font-medium text-muted">{label}</span>
@@ -131,7 +131,7 @@ export function Check({ ok, children }: { ok: boolean | undefined; children: Rea
 }
 
 /** Atlas page header: eyebrow, large title, lead. `art` renders behind on the right (decorative). */
-export function PageHeader({ kicker, title, children, art }: { kicker: string; title: ReactNode; children?: ReactNode; art?: ReactNode }) {
+export function PageHeader({ kicker, title, children, art }: { kicker: ReactNode; title: ReactNode; children?: ReactNode; art?: ReactNode }) {
   return (
     <section className="relative overflow-hidden border-b border-line">
       {art}
