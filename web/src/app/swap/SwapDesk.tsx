@@ -231,7 +231,7 @@ function SwapCard() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-semibold">Swap &amp; bridge</h2>
+        <h2 className="text-[21px] font-semibold tracking-tight">Swap &amp; bridge</h2>
         <ChainNote />
       </div>
 
@@ -473,7 +473,7 @@ function RouteList({
                     <span className="font-display text-[18px] font-semibold">{q.label}</span>
                     {q.best ? <Pill tone="gold">BEST</Pill> : null}
                     {q.crossChain ? <Pill tone="gold">CROSS-CHAIN</Pill> : null}
-                    <span className="ml-auto font-display text-[20px] font-semibold">
+                    <span className="ml-auto font-mono text-[18px] font-medium tabular-nums">
                       {fmtAmt(q.amountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
                     </span>
                   </div>
@@ -547,7 +547,7 @@ function RelayTracker({ status, error, dest, id }: { status?: string; error?: st
 function HowRouting() {
   return (
     <Panel tone="raised" shadow={false}>
-      <h2 className="font-display text-[24px] font-semibold">How the best route is picked</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">How the best route is picked</h2>
       <ol className="mt-3 list-decimal space-y-2 pl-5 font-medium text-sub">
         <li>Every provider is asked in parallel for the same amount and slippage.</li>
         <li>
@@ -572,7 +572,7 @@ function ProvidersPanel() {
   ];
   return (
     <Panel>
-      <h2 className="font-display text-[24px] font-semibold">Providers</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">Providers</h2>
       <ul className="mt-4 space-y-3">
         {rows.map((r) => (
           <li key={r.id} className="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-3 sm:gap-y-1.5">
@@ -597,7 +597,7 @@ function ProvidersPanel() {
 function TwakDeskCard() {
   return (
     <Panel tone="gold" shadow={false}>
-      <h2 className="font-display text-[24px] font-semibold">Trading TWAK?</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">Trading TWAK?</h2>
       <p className="mt-2 font-medium text-sub">
         TWAK ⇄ BNB lives on the Towack desk: it goes through TowackRouter, so Agent ID wallets earn weekly rebates. Swaps on this page go straight to
         third-party contracts and earn no Towack rebate.

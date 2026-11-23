@@ -31,4 +31,24 @@ describe("buildPerpsInstruction", () => {
     expect(c).toContain("orderId=<ORDER_ID>");
     expect(c).not.toContain("/fapi/v3/leverage");
   });
+  it("carries stop / trailing params and attached TP / SL legs in the same layout as buildOrder", () => {
+    expect(intentParams({ kind: "order", symbol: "BTCUSDT", side: "BUY", type: "STOP", quantity: "0.002", price: "61000", stopPrice: "60900", timeInForce: "GTC" })).toBe(
+      "symbol=BTCUSDT&side=BUY&type=STOP&timeInForce=GTC&quantity=0.002&price=61000&stopPrice=60900",
+    );
+    expect(intentParams({ kind: "order", symbol: "BTCUSDT", side: "SELL", type: "STOP_MARKET", quantity: "0.002", stopPrice: "59000", workingType: "MARK_PRICE" })).toBe(
+      "symbol=BTCUSDT&side=SELL&type=STOP_MARKET&quantity=0.002&stopPrice=59000&workingType=MARK_PRICE",
+    );
+    expect(intentParams({ kind: "order", symbol: "BTCUSDT", side: "SELL", type: "TRAILING_STOP_MARKET", quantity: "0.002" })).toBe(
+      "symbol=BTCUSDT&side=SELL&type=TRAILING_STOP_MARKET&quantity=0.002&callbackRate=<CALLBACK_PCT>",
+    );
+    const t = buildPerpsInstruction({ kind: "order", symbol: "BTCUSDT", side: "BUY", type: "LIMIT", quantity: "0.002", price: "60000", takeProfit: "63000", stopLoss: "58000", marginType: "ISOLATED", leverage: 5 });
+    expect(t).toContain("symbol=BTCUSDT&side=SELL&type=TAKE_PROFIT_MARKET&quantity=0.002&stopPrice=63000&reduceOnly=true");
+    expect(t).toContain("symbol=BTCUSDT&side=SELL&type=STOP_MARKET&quantity=0.002&stopPrice=58000&reduceOnly=true");
+    expect(t).toContain("Only if the entry was accepted");
+    expect(t).toContain("not batchOrders");
+    expect(t).toContain("POST https://fapi.asterdex.com/fapi/v3/marginType with symbol=BTCUSDT&marginType=ISOLATED");
+    expect(t.indexOf("/fapi/v3/marginType")).toBeLessThan(t.indexOf("/fapi/v3/leverage with"));
+    expect(t.indexOf("/fapi/v3/leverage with")).toBeLessThan(t.indexOf("TAKE_PROFIT_MARKET&quantity"));
+    expect(t).toContain("attached TP 63000, SL 58000 (reduce-only)");
+  });
 });

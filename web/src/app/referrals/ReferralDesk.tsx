@@ -51,7 +51,7 @@ export function ReferralDesk() {
       <div className="col-span-12 space-y-8 lg:col-span-7">
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[28px] font-semibold">Your referral link</h2>
+            <h2 className="text-[21px] font-semibold tracking-tight">Your referral link</h2>
             <ChainNote />
           </div>
           <div className="mt-5">
@@ -81,7 +81,7 @@ export function ReferralDesk() {
         </Panel>
 
         <Panel tone="raised" shadow={false}>
-          <h2 className="font-display text-[24px] font-semibold">How referrals work</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight">How referrals work</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
             <li>Your link carries your wallet address. Friends who open it mint with <code className="rounded bg-card px-1">mint(your address)</code>.</li>
             <li>Each referred paid mint credits you 0.005 BNB (5% of the 0.1 BNB price). It comes out of the share that would otherwise go to LP / Draw V2, so your friend pays nothing extra.</li>
@@ -95,7 +95,7 @@ export function ReferralDesk() {
 
       <div className="col-span-12 space-y-8 lg:col-span-5">
         <Panel>
-          <h2 className="font-display text-[28px] font-semibold">Your referrals</h2>
+          <h2 className="text-[21px] font-semibold tracking-tight">Your referrals</h2>
           <div className="mt-5">
             <NeedsContracts keys={["launch"]}>
               <NeedsWallet why="Connect to see your referrals and claim." agent="referralClaim">
@@ -150,7 +150,7 @@ function ShareBox({ origin, account, handle }: { origin: string; account: Addres
         </Button>
         {handle ? <Pill tone="neutral">{handle}</Pill> : null}
       </div>
-      <h3 className="mt-6 font-display text-[20px] font-semibold">For friends with an AI agent</h3>
+      <h3 className="mt-6 text-[17px] font-semibold tracking-tight">For friends with an AI agent</h3>
       <p className="mt-1 font-medium text-sub">Send them this ready-made instruction. It mints on mainnet (chain 56) with your wallet as referrer.</p>
       <AgentPathPanel flow="launch" referral={{ address: account, handle }} className="mt-3" />
     </div>
@@ -211,7 +211,7 @@ function Dashboard({ account }: { account: Address }) {
       <TxNotice state={tx.state} onClose={tx.reset} />
       <AgentPathToggle flow="referralClaim" className="mt-4" />
 
-      <h3 className="mt-8 font-display text-[20px] font-semibold">Friends who minted</h3>
+      <h3 className="mt-8 text-[17px] font-semibold tracking-tight">Friends who minted</h3>
       {referees && referees.length > 0 ? (
         <ul className="mt-3 max-h-[280px] space-y-2 overflow-auto pr-1">
           {referees.map((r, i) => (

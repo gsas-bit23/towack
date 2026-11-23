@@ -56,7 +56,7 @@ export function RefLanding() {
       </div>
       <div className="col-span-12 lg:col-span-7">
         <Panel tone="raised" shadow={false}>
-          <h2 className="font-display text-[24px] font-semibold">Minting with an AI agent?</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight">Minting with an AI agent?</h2>
           <p className="mt-1 font-medium text-sub">Give your agent this instruction. The referrer is already filled in.</p>
           <AgentPathPanel flow="launch" referral={ref.address ? ref : undefined} className="mt-4" />
         </Panel>

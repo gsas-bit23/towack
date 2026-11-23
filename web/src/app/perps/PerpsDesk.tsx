@@ -1,29 +1,52 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReadContract } from "wagmi";
 import { agentIdAbi } from "@/abi";
 import { AgentPathToggle } from "@/components/AgentPath";
 import { ConnectPill } from "@/components/ConnectPill";
-import { Panel, Pill, Stat } from "@/components/ui";
+import { Panel, Pill } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
-import { ASTER_APP_URL, ASTER_DOCS_URL, fetchMarkets, fmtFunding, fmtPrice, trimDecimal, type AsterNet, type MarketRow } from "@/lib/aster/markets";
+import { ASTER_APP_URL, ASTER_DOCS_URL, fetchMarkets, trimDecimal, type AsterNet, type MarketRow } from "@/lib/aster/markets";
+import {
+  fetchDepth,
+  fetchTrades,
+  mergeTrades,
+  parseDepth,
+  parseKlineEvent,
+  parseMarkEvent,
+  parseTickerEvent,
+  parseTrades,
+  terminalStreams,
+  type Book,
+  type Candle,
+  type ChartInterval,
+  type Trade,
+} from "@/lib/aster/marketData";
 import type { PerpsAgentIntent } from "@/lib/aster/instruction";
-import { floorToStep } from "@/lib/aster/orders";
-import { useNow } from "@/lib/useNow";
-import { AsterAccountCard, OpenOrders, useAsterAgent } from "./AsterAccount";
-import { MarketsBoard } from "./MarketsBoard";
+import { floorToStep, hasLimitPrice, hasStopPrice, isMarketExec } from "@/lib/aster/orders";
+import { AsterAccountCard, useAsterAgent } from "./AsterAccount";
+import { Blotter } from "./Blotter";
+import { BookTrades } from "./BookTrades";
+import { MarketHeader } from "./MarketHeader";
 import { EMPTY_FORM, OrderTicket, parseLeverage, type OrderForm } from "./OrderTicket";
+import { PriceChart } from "./PriceChart";
+import { useAsterStream } from "./useAsterStream";
+
+type Live = { key: string; book?: Book; trades: Trade[]; mark?: ReturnType<typeof parseMarkEvent>; ticker?: ReturnType<typeof parseTickerEvent> };
 
 export function PerpsDesk() {
   const { meta } = useTowack();
   const [netPick, setNetPick] = useState<AsterNet>();
   const net: AsterNet = netPick ?? (meta.testnet ? "testnet" : "mainnet");
   const [symbol, setSymbol] = useState("BTCUSDT");
+  const [interval, setIv] = useState<ChartInterval>("15m");
   const [form, setForm] = useState<OrderForm>(EMPTY_FORM);
+  const [sheet, setSheet] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const agent = useAsterAgent(net);
+  const key = `${net}|${symbol}`;
 
   const markets = useQuery({
     queryKey: ["aster-markets", net],
@@ -31,126 +54,234 @@ export function PerpsDesk() {
     refetchInterval: 15_000,
   });
   const rules = markets.data?.rules.get(symbol);
-  const row = markets.data?.rows.find((r) => r.symbol === symbol);
+  const baseRow = markets.data?.rows.find((r) => r.symbol === symbol);
 
+  // ---- live feed: one combined websocket for candles, book, trades, mark and ticker ----
+  const names = useMemo(() => terminalStreams(symbol, interval), [symbol, interval]);
+  const streams = useMemo(() => [names.kline, names.depth, names.trades, names.mark, names.ticker], [names]);
+  const klineSubs = useRef(new Set<(c: Candle) => void>());
+  const subscribe = useCallback((cb: (c: Candle) => void) => {
+    klineSubs.current.add(cb);
+    return () => {
+      klineSubs.current.delete(cb);
+    };
+  }, []);
+  const [live, setLive] = useState<Live>({ key: "", trades: [] });
+  const pending = useRef<Live>({ key: "", trades: [] });
+  const flushTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const onMessage = (stream: string, data: unknown) => {
+    if (stream === names.kline) {
+      const c = parseKlineEvent(data, interval);
+      if (c) klineSubs.current.forEach((f) => f(c));
+      return;
+    }
+    const p = pending.current.key === key ? pending.current : (pending.current = { key, trades: [] });
+    if (stream === names.depth) p.book = parseDepth(data);
+    else if (stream === names.trades) p.trades = mergeTrades(p.trades, parseTrades(data));
+    else if (stream === names.mark) p.mark = parseMarkEvent(data) ?? p.mark;
+    else if (stream === names.ticker) p.ticker = parseTickerEvent(data) ?? p.ticker;
+    // Throttle React updates to ~4/s; data is never altered, only batched.
+    if (!flushTimer.current) {
+      flushTimer.current = setTimeout(() => {
+        flushTimer.current = undefined;
+        const batch = pending.current;
+        pending.current = { key: batch.key, trades: [], mark: batch.mark, ticker: batch.ticker };
+        setLive((prev) => {
+          const b = prev.key === batch.key ? prev : { key: batch.key, trades: [] };
+          return { key: batch.key, book: batch.book ?? b.book, trades: mergeTrades(b.trades, batch.trades), mark: batch.mark ?? b.mark, ticker: batch.ticker ?? b.ticker };
+        });
+      }, 250);
+    }
+  };
+  useEffect(() => () => clearTimeout(flushTimer.current), []);
+  const { status } = useAsterStream(net, streams, onMessage);
+  const fresh = live.key === key ? live : undefined;
+
+  // REST snapshots: first paint, and the fallback when the websocket is unavailable.
+  const depth = useQuery({
+    queryKey: ["aster-depth", net, symbol],
+    queryFn: ({ signal }) => fetchDepth(net, symbol, 20, signal),
+    refetchInterval: status === "poll" ? 3_000 : 30_000,
+  });
+  const restTrades = useQuery({
+    queryKey: ["aster-trades", net, symbol],
+    queryFn: ({ signal }) => fetchTrades(net, symbol, 50, signal),
+    refetchInterval: status === "poll" ? 3_000 : 60_000,
+  });
+  const book = fresh?.book ?? depth.data;
+  const trades = restTrades.data ? mergeTrades(fresh?.trades ?? [], restTrades.data) : fresh?.trades.length ? fresh.trades : undefined;
+
+  const row: MarketRow | undefined = baseRow
+    ? {
+        ...baseRow,
+        ...(fresh?.ticker?.lastPrice ? { lastPrice: fresh.ticker.lastPrice } : {}),
+        ...(fresh?.ticker?.changePct !== undefined ? { changePct: fresh.ticker.changePct } : {}),
+        ...(fresh?.ticker?.quoteVolume !== undefined ? { quoteVolume: fresh.ticker.quoteVolume } : {}),
+        ...(fresh?.mark?.markPrice ? { markPrice: fresh.mark.markPrice } : {}),
+        ...(fresh?.mark?.indexPrice ? { indexPrice: fresh.mark.indexPrice } : {}),
+        ...(fresh?.mark?.fundingRate !== undefined ? { fundingRate: fresh.mark.fundingRate } : {}),
+        ...(fresh?.mark?.nextFundingTime ? { nextFundingTime: fresh.mark.nextFundingTime } : {}),
+      }
+    : undefined;
+  const decimals = row?.priceDecimals ?? 2;
+
+  const selectSymbol = (s: string) => {
+    setSymbol(s);
+    setForm({ ...form, quantity: "", price: "", stopPrice: "", activationPrice: "", takeProfit: "", stopLoss: "", leverage: "" });
+  };
+  const openSheet = (side: OrderForm["side"]) => {
+    setForm({ ...form, side });
+    setSheet(true);
+  };
+  const needAgent = () => {
+    setSheet(false);
+    accountRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  useEffect(() => {
+    if (!sheet) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && setSheet(false);
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [sheet]);
+
+  const step = rules ? (isMarketExec(form.type) ? rules.marketStepSize : rules.stepSize) : undefined;
+  const fl = (v: string, s?: string) => (v && s ? floorToStep(v, s) : v) || undefined;
+  const lev = parseLeverage(form.leverage);
+  const tpsl = form.tpsl && !form.reduceOnly;
   const intent: PerpsAgentIntent = {
     kind: "order",
     symbol,
     side: form.side,
     type: form.type,
-    quantity: rules && form.quantity ? floorToStep(form.quantity, form.type === "MARKET" ? rules.marketStepSize : rules.stepSize) : form.quantity,
-    price: rules && form.price ? floorToStep(form.price, rules.tickSize) : form.price,
+    quantity: fl(form.quantity, step) ?? "",
+    price: hasLimitPrice(form.type) ? fl(form.price, rules?.tickSize) : undefined,
+    stopPrice: hasStopPrice(form.type) ? fl(form.stopPrice, rules?.tickSize) : undefined,
+    callbackRate: form.type === "TRAILING_STOP_MARKET" ? fl(form.callbackRate, "0.1") : undefined,
+    activationPrice: form.type === "TRAILING_STOP_MARKET" ? fl(form.activationPrice, rules?.tickSize) : undefined,
+    workingType: hasStopPrice(form.type) || form.type === "TRAILING_STOP_MARKET" || (tpsl && (form.takeProfit || form.stopLoss)) ? form.workingType : undefined,
     timeInForce: form.timeInForce,
     reduceOnly: form.reduceOnly,
-    leverage: (() => {
-      const l = parseLeverage(form.leverage);
-      return l && !Number.isNaN(l) ? l : undefined;
-    })(),
+    leverage: lev && !Number.isNaN(lev) ? lev : undefined,
+    takeProfit: tpsl ? fl(form.takeProfit, rules?.tickSize) : undefined,
+    stopLoss: tpsl ? fl(form.stopLoss, rules?.tickSize) : undefined,
     base: rules?.base,
   };
 
+  const panel = "min-w-0 overflow-hidden rounded-2xl border border-line bg-card";
+
   return (
-    <div className="space-y-8">
-      <NetBar net={net} setNet={setNetPick} />
-      <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
-        <div className="col-span-12 space-y-8 lg:col-span-7">
-          <MarketStats net={net} symbol={symbol} row={row} />
-          <MarketsBoard
-            rows={markets.data?.rows}
-            loading={markets.isPending}
-            error={markets.error ? (markets.error as Error).message : undefined}
-            selected={symbol}
-            onSelect={(s) => {
-              setSymbol(s);
-              setForm({ ...form, quantity: "", price: "" });
-            }}
+    <div className="space-y-3">
+      <TitleBar net={net} setNet={setNetPick} />
+      <MarketHeader
+        net={net}
+        symbol={symbol}
+        row={row}
+        rows={markets.data?.rows}
+        loading={markets.isPending}
+        error={markets.error ? (markets.error as Error).message : undefined}
+        onSelect={selectSymbol}
+      />
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_300px_340px]">
+        <section aria-label="Price chart" className={`${panel} h-[380px] sm:h-[440px] lg:col-start-1 lg:row-start-1 lg:h-[500px] xl:h-[560px]`}>
+          <PriceChart net={net} symbol={symbol} interval={interval} setInterval={setIv} decimals={decimals} tick={rules?.tickSize} status={status} subscribe={subscribe} />
+        </section>
+
+        <section aria-label="Order book and trades" className={`${panel} lg:col-start-1 lg:row-start-2 xl:col-start-2 xl:row-start-1 xl:h-[560px]`}>
+          <BookTrades
+            book={book}
+            trades={trades}
+            decimals={decimals}
+            base={rules?.base ?? ""}
+            status={status}
+            lastPrice={row?.lastPrice}
+            markPrice={row?.markPrice}
+            bookError={depth.error ? (depth.error as Error).message : undefined}
+            onPickPrice={(p) => setForm({ ...form, price: trimDecimal(p), type: hasLimitPrice(form.type) ? form.type : "LIMIT" })}
           />
-        </div>
-        <div className="col-span-12 lg:col-span-5">
-          <OrderTicket
-            net={net}
-            row={row}
-            rules={rules}
-            agent={agent}
-            form={form}
-            setForm={setForm}
-            onNeedAgent={() => accountRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
-        <div ref={accountRef} className="col-span-12 scroll-mt-24 space-y-8 lg:col-span-7">
+        </section>
+
+        <section aria-label="Account" className={`${panel} lg:col-start-1 lg:row-start-3 xl:col-span-2 xl:row-start-2`}>
+          <Blotter agent={agent} symbol={symbol} onNeedAgent={needAgent} />
+        </section>
+
+        {sheet ? <div className="fixed inset-0 z-[65] bg-black/60 lg:hidden" aria-hidden="true" onClick={() => setSheet(false)} /> : null}
+        <section
+          aria-label="Order ticket"
+          role={sheet ? "dialog" : undefined}
+          aria-modal={sheet ? true : undefined}
+          className={`${sheet ? "fixed inset-x-0 bottom-0 z-[70] block max-h-[88vh] overflow-y-auto rounded-t-2xl border-line-2 bg-card p-4 pb-[max(16px,env(safe-area-inset-bottom))]" : "hidden"} lg:static lg:z-auto lg:block lg:max-h-none lg:overflow-visible lg:rounded-2xl lg:border lg:border-line lg:bg-card lg:p-4 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:self-start xl:col-start-3 xl:row-span-2`}
+        >
+          {sheet ? (
+            <div className="mb-2 flex justify-end lg:hidden">
+              <button type="button" onClick={() => setSheet(false)} className="rounded-md px-2 py-1 text-[13px] text-muted hover:text-fg" aria-label="Close order ticket">
+                Close ✕
+              </button>
+            </div>
+          ) : null}
+          <OrderTicket net={net} row={row} rules={rules} agent={agent} form={form} setForm={setForm} onNeedAgent={needAgent} />
+        </section>
+
+        <div ref={accountRef} className="min-w-0 scroll-mt-24 lg:col-start-2 lg:row-start-4 xl:col-start-3 xl:row-start-3">
           <AsterAccountCard net={net} agent={agent} />
-          <OpenOrders agent={agent} />
         </div>
-        <div className="col-span-12 lg:col-span-5">
+
+        <div className="min-w-0 lg:col-start-1 lg:row-start-4 xl:col-span-2 xl:row-start-3">
           <AgentPerks intent={intent} />
         </div>
+      </div>
+
+      {/* Phone / tablet: ticket opens as a bottom sheet. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-line bg-[rgba(11,14,17,.94)] px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
+        <button type="button" className="press h-11 rounded-[10px] bg-up text-[14.5px] font-semibold text-[#0B0E11]" onClick={() => openSheet("BUY")}>
+          Buy / Long
+        </button>
+        <button type="button" className="press h-11 rounded-[10px] bg-down text-[14.5px] font-semibold text-white" onClick={() => openSheet("SELL")}>
+          Sell / Short
+        </button>
       </div>
     </div>
   );
 }
 
-function NetBar({ net, setNet }: { net: AsterNet; setNet: (n: AsterNet) => void }) {
+function TitleBar({ net, setNet }: { net: AsterNet; setNet: (n: AsterNet) => void }) {
   return (
-    <Panel tone="flat" shadow={false} className="!p-4 sm:!p-5">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-full border border-line bg-card p-1" role="tablist" aria-label="Aster network">
-            {(["mainnet", "testnet"] as const).map((n) => (
-              <button
-                key={n}
-                type="button"
-                role="tab"
-                aria-selected={net === n}
-                onClick={() => setNet(n)}
-                className={`rounded-full px-4 py-1.5 font-display text-[15px] font-semibold ${net === n ? (n === "mainnet" ? "bg-gold/15" : "bg-card-2") : "text-muted"}`}
-              >
-                {n === "mainnet" ? "Aster mainnet" : "Aster testnet"}
-              </button>
-            ))}
-          </div>
-          <Pill tone="line">PUBLIC DATA · NO KEY</Pill>
-        </div>
-        <p className="min-w-0 text-sm font-medium text-sub">
-          {net === "testnet" ? "Test USDT from Aster's faucet, no real value. " : "Real money. Only trade what you can afford to lose. "}
-          <a className="underline" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
-            Open Aster ↗
-          </a>{" "}
-          ·{" "}
-          <a className="underline" href={ASTER_DOCS_URL} target="_blank" rel="noreferrer">
-            API docs ↗
-          </a>
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="min-w-0">
+        <h1 className="text-[21px] font-semibold tracking-tight">Perps on Aster</h1>
+        <p className="text-[12.5px] text-muted">
+          Live Aster data, read straight from Aster&apos;s public API. You trade with a trade-only API wallet kept in this browser. Towack holds no key and adds no fee.
         </p>
       </div>
-    </Panel>
-  );
-}
-
-function MarketStats({ net, symbol, row }: { net: AsterNet; symbol: string; row: MarketRow | undefined }) {
-  const now = useNow(1_000);
-  const left = row?.nextFundingTime && now ? Math.max(0, Math.floor(row.nextFundingTime / 1000) - now) : undefined;
-  const hms = left === undefined ? "—" : `${String(Math.floor(left / 3600)).padStart(2, "0")}:${String(Math.floor((left % 3600) / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
-  const up = (row?.changePct ?? 0) >= 0;
-  return (
-    <Panel tone="gold">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-[13px] font-semibold uppercase tracking-widest text-muted">{net === "testnet" ? "Aster testnet" : "Aster"} · perpetual</div>
-          <h2 className="break-words font-display text-[34px] font-semibold leading-tight sm:text-[40px]">{symbol}</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-[10px] border border-line bg-card p-1" role="tablist" aria-label="Aster network">
+          {(["mainnet", "testnet"] as const).map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="tab"
+              aria-selected={net === n}
+              onClick={() => setNet(n)}
+              className={`rounded-md px-3 py-1 text-[12.5px] font-semibold ${net === n ? (n === "mainnet" ? "bg-gold/15 text-gold" : "bg-card-2 text-fg") : "text-muted hover:text-fg"}`}
+            >
+              {n === "mainnet" ? "Mainnet" : "Testnet"}
+            </button>
+          ))}
         </div>
-        <div className="text-right">
-          <div className="font-mono text-[28px] font-medium leading-tight tracking-tight">{trimDecimal(row?.lastPrice)}</div>
-          <div className={`font-semibold ${up ? "text-up" : "text-down"}`}>{row?.changePct === undefined ? "" : `${up ? "+" : ""}${row.changePct.toFixed(2)}% 24h`}</div>
-        </div>
+        <Pill tone="line">Public data · no key</Pill>
+        <span className="text-[12px] text-muted">
+          {net === "testnet" ? "Faucet USDT, no real value. " : "Real money. "}
+          <a className="underline hover:text-fg" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
+            Aster ↗
+          </a>{" "}
+          ·{" "}
+          <a className="underline hover:text-fg" href={ASTER_DOCS_URL} target="_blank" rel="noreferrer">
+            API docs ↗
+          </a>
+        </span>
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Mark" value={<span className="text-[20px]">{fmtPrice(row?.markPrice, row?.priceDecimals ?? 8)}</span>} />
-        <Stat label="Index" value={<span className="text-[20px]">{fmtPrice(row?.indexPrice, row?.priceDecimals ?? 8)}</span>} />
-        <Stat label="Funding" value={<span className="whitespace-nowrap text-[18px]">{fmtFunding(row?.fundingRate)}</span>} sub="last rate" />
-        <Stat label="Next funding" value={<span className="text-[20px]">{hms}</span>} />
-      </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -167,42 +298,37 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
   const hasAgent = bal === undefined ? undefined : bal > 0n;
 
   return (
-    <Panel tone="raised" shadow={false}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[24px] font-semibold">Agent ID perks</h2>
-        {hasAgent ? <Pill tone="neutral">AGENT ID ✓</Pill> : hasAgent === false ? <Pill tone="gold">NO AGENT ID</Pill> : null}
+    <Panel tone="card" shadow={false} className="!p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-[16px] font-semibold tracking-tight">Agent ID perks · AI-agent path</h2>
+        {hasAgent ? <Pill tone="neutral">Agent ID ✓</Pill> : hasAgent === false ? <Pill tone="gold">No Agent ID</Pill> : null}
       </div>
-      <ul className="mt-3 space-y-2 font-medium text-sub">
+      <ul className="mt-2 space-y-1 text-[12.5px] leading-relaxed text-sub">
         <li>Anyone can view markets and trade here with their own wallet.</li>
         <li>
-          Agent ID holders unlock the <b>Give this to your AI agent</b> path for Binance Agentic Wallet.
+          Agent ID holders unlock <b>Give this to your AI agent</b> for Binance Agentic Wallet. The instruction carries the exact ticket above (type, trigger, TP / SL, leverage).
         </li>
-        <li>
-          Rebates: none on Aster trades today. Towack takes no fee and has no on-chain rebate hook on Aster. Agent ID is where any future rebate
-          alignment would land; nothing is promised.
-        </li>
+        <li>Rebates: none on Aster trades today. Towack takes no fee and has no on-chain rebate hook on Aster. Nothing is promised.</li>
       </ul>
 
-      <div className="mt-5">
+      <div className="mt-3">
         {!isConnected ? (
-          <div className="rounded-2xl border border-line bg-card p-5 text-center">
-            <p className="font-medium text-sub">Connect to check your Agent ID ({meta.name}).</p>
-            <div className="mt-4 flex justify-center">
-              <ConnectPill />
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-3">
+            <p className="text-[13px] text-sub">Connect to check your Agent ID ({meta.name}).</p>
+            <ConnectPill />
           </div>
         ) : !addresses.agentId ? (
-          <p className="rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">The Agent ID registry isn&apos;t configured on {meta.name}.</p>
+          <p className="rounded-xl border border-line bg-gold/5 px-3 py-2 text-[13px]">The Agent ID registry isn&apos;t configured on {meta.name}.</p>
         ) : hasAgent === undefined ? (
-          <p className="font-medium text-muted">Checking Agent ID…</p>
+          <p className="text-[13px] text-muted">Checking Agent ID…</p>
         ) : hasAgent ? (
           <AgentPathToggle flow="perps" perps={intent} />
         ) : (
-          <div className="rounded-2xl border border-dashed border-line bg-card px-4 py-4 font-medium">
-            <Pill tone="gold">AGENT PATH LOCKED</Pill>
-            <p className="mt-2">
-              The AI-agent path is for Agent ID wallets. This wallet holds none on {meta.name}. You can still trade with the order ticket. Agent IDs are
-              issued in the official Binance App (mainnet).
+          <div className="rounded-xl border border-dashed border-line bg-surface px-3 py-3 text-[13px]">
+            <Pill tone="gold">Agent path locked</Pill>
+            <p className="mt-2 text-sub">
+              The AI-agent path is for Agent ID wallets. This wallet holds none on {meta.name}. You can still trade with the order ticket. Agent IDs are issued in the
+              official Binance App (mainnet).
             </p>
           </div>
         )}

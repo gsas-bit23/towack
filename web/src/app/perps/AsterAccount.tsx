@@ -1,8 +1,5 @@
 "use client";
 
-import { Skeleton } from "@/components/motion";
-
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { isAddress, getAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -18,12 +15,11 @@ import {
   parseStoredAgent,
   registerAgent,
   saveAgent,
-  signedRequest,
   subscribeAgent,
   type StoredAgent,
 } from "@/lib/aster/client";
 import { ASTER_API_WALLET_URL, trimDecimal, type AsterNet } from "@/lib/aster/markets";
-import { cancelParams, parseOpenOrders, parseUsdtBalance } from "@/lib/aster/orders";
+import { useAsterBalance } from "./useAsterAccount";
 import { useNow } from "@/lib/useNow";
 import { AGENT_SCOPE, AGENT_TTL_DAYS, ASTER_EVM_SIGNATURE_CHAIN_ID, approvalMessage, asterTypedData, defaultAgentName, nextNonce } from "@/lib/aster/sign";
 
@@ -37,16 +33,16 @@ export function useAsterAgent(net: AsterNet): StoredAgent | undefined {
 
 export function AsterAccountCard({ net, agent }: { net: AsterNet; agent: StoredAgent | undefined }) {
   return (
-    <Panel tone="raised" shadow={false}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[24px] font-semibold">Your Aster API wallet</h2>
-        <Pill tone="neutral">STAYS IN THIS BROWSER</Pill>
+    <Panel tone="card" shadow={false} className="!p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-[16px] font-semibold tracking-tight">Your Aster API wallet</h2>
+        <Pill tone="neutral">Stays in this browser</Pill>
       </div>
-      <p className="mt-2 text-sm font-medium text-sub">
+      <p className="mt-2 text-[12.5px] leading-relaxed text-sub">
         Aster trades are signed by an <b>API wallet</b>: a key that can place and cancel perp orders for your account but can never withdraw. It lives
         only in this browser&apos;s storage. Towack has no server that sees it; only signatures go, straight to Aster.
       </p>
-      <div className="mt-5">{agent ? <AgentStatus agent={agent} /> : <AgentSetup net={net} />}</div>
+      <div className="mt-4 text-[13px]">{agent ? <AgentStatus agent={agent} /> : <AgentSetup net={net} />}</div>
     </Panel>
   );
 }
@@ -56,12 +52,7 @@ function AgentStatus({ agent }: { agent: StoredAgent }) {
   const exp = agent.expired ? new Date(agent.expired) : undefined;
   const now = useNow(60_000);
   const expired = exp && now ? exp.getTime() < now * 1000 : false;
-  const balance = useQuery({
-    queryKey: ["aster-balance", agent.net, agent.signer],
-    queryFn: async () => parseUsdtBalance(await signedRequest(agent, "GET", "/fapi/v3/balance")),
-    refetchInterval: 30_000,
-    retry: false,
-  });
+  const balance = useAsterBalance(agent);
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -132,7 +123,7 @@ function AgentSetup({ net }: { net: AsterNet }) {
             role="tab"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`rounded-full px-4 py-2 font-display text-[14px] font-semibold sm:text-[15px] ${mode === m ? "bg-card-2" : "text-muted"}`}
+            className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${mode === m ? "bg-card-2" : "text-muted"}`}
           >
             {label}
           </button>
@@ -269,81 +260,5 @@ function PasteKey({ net, remember }: { net: AsterNet; remember: boolean }) {
         Use this API wallet
       </Button>
     </div>
-  );
-}
-
-export function OpenOrders({ agent }: { agent: StoredAgent | undefined }) {
-  const qc = useQueryClient();
-  const [confirm, setConfirm] = useState<number>();
-  const [msg, setMsg] = useState<string>();
-  const orders = useQuery({
-    queryKey: ["aster-open-orders", agent?.net, agent?.signer],
-    queryFn: async () => parseOpenOrders(await signedRequest(agent!, "GET", "/fapi/v3/openOrders")),
-    enabled: Boolean(agent),
-    refetchInterval: 20_000,
-    retry: false,
-  });
-
-  async function cancel(symbol: string, orderId: number) {
-    if (!agent) return;
-    setMsg(undefined);
-    try {
-      await signedRequest(agent, "DELETE", "/fapi/v3/order", cancelParams(symbol, orderId));
-      setMsg(`Cancelled order ${orderId}.`);
-    } catch (e) {
-      setMsg(explainAsterError(e));
-    } finally {
-      setConfirm(undefined);
-      qc.invalidateQueries({ queryKey: ["aster-open-orders"] });
-    }
-  }
-
-  return (
-    <Panel>
-      <h2 className="font-display text-[24px] font-semibold">Open orders</h2>
-      {!agent ? (
-        <p className="mt-2 font-medium text-muted">Set up your API wallet to see and cancel your open Aster orders.</p>
-      ) : orders.isPending ? (
-        <div className="mt-3 space-y-2">
-          <Skeleton className="h-10 w-full" label="Loading open orders" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : orders.error ? (
-        <p className="mt-3 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">{explainAsterError(orders.error)}</p>
-      ) : orders.data.length === 0 ? (
-        <p className="mt-2 font-medium text-muted">No open orders.</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {orders.data.map((o) => (
-            <li key={o.orderId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-card-2 px-4 py-3 font-medium">
-              <span className="min-w-0 break-words">
-                <span className={o.side === "BUY" ? "text-up" : "text-down"}>{o.side === "BUY" ? "Long" : "Short"}</span> {o.symbol} · {o.type} ·{" "}
-                {trimDecimal(o.origQty)} @ {trimDecimal(o.price)}
-                {o.reduceOnly ? " · reduce-only" : ""}
-              </span>
-              {confirm === o.orderId ? (
-                <span className="flex gap-2">
-                  <Button tone="gold" size="sm" onClick={() => cancel(o.symbol, o.orderId)}>
-                    Confirm cancel
-                  </Button>
-                  <Button tone="line" size="sm" onClick={() => setConfirm(undefined)}>
-                    Keep
-                  </Button>
-                </span>
-              ) : (
-                <Button tone="line" size="sm" onClick={() => setConfirm(o.orderId)}>
-                  Cancel
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {msg ? (
-        <p role="status" className="mt-3 font-medium">
-          {msg}
-        </p>
-      ) : null}
-    </Panel>
   );
 }

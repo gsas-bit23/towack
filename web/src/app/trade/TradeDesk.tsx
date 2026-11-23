@@ -162,7 +162,7 @@ function SwapCard() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-semibold">Swap booth</h2>
+        <h2 className="text-[21px] font-semibold tracking-tight">Swap booth</h2>
         <ChainNote />
       </div>
 
@@ -221,7 +221,7 @@ function SwapCard() {
 
         <div className="rounded-2xl border border-line bg-card-2 p-5">
           <div className="text-[13px] font-semibold uppercase tracking-widest text-muted">You get (estimate)</div>
-          <div className="mt-1 font-display text-[32px] font-semibold">
+          <div className="mt-1 font-mono text-[26px] font-medium tabular-nums tracking-tight">
             {q ? `${fmt18(q.out, side === "buy" ? 2 : 6)} ${outUnit}` : quoteError && amountIn ? "No quote" : `— ${outUnit}`}
           </div>
           {q ? (
@@ -301,7 +301,7 @@ function SwapCard() {
 function FeeSplit() {
   return (
     <Panel tone="raised" shadow={false}>
-      <h2 className="font-display text-[24px] font-semibold">Where the 1% goes</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">Where the 1% goes</h2>
       <div className="mt-4 flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
         <div className="bg-gold" style={{ flex: 50 }} />
         <div className="bg-up" style={{ flex: 30 }} />
@@ -355,7 +355,7 @@ function LimitCard() {
 
   return (
     <Panel>
-      <h2 className="font-display text-[24px] font-semibold">Your daily limit</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight">Your daily limit</h2>
       <p className="mt-1 font-semibold text-sub">
         A leash on how much BNB-leg volume this wallet can trade per UTC day. <b>Lowering it is immediate. Raising it takes effect after 24 hours</b>, so a
         leaked key can&apos;t lift its own leash.

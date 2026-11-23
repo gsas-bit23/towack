@@ -22,7 +22,7 @@ export function RebateBooth() {
       </div>
       <div className="col-span-12 lg:col-span-4">
         <Panel tone="raised" shadow={false}>
-          <h2 className="font-display text-[24px] font-semibold">How rebates work</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight">How rebates work</h2>
           <ul className="mt-3 space-y-2 font-medium text-sub">
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Every swap through the Towack router pays 1% on the BNB leg.</li>
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Half of that fee goes into this week&apos;s BNB rebate pot.</li>
@@ -127,7 +127,7 @@ function EpochTable() {
   return (
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[28px] font-semibold">Epochs</h2>
+        <h2 className="text-[21px] font-semibold tracking-tight">Epochs</h2>
         <ChainNote />
       </div>
       {metaErr ? <RpcErrorNotice onRetry={() => void refetchMeta()} label="Could not load rebate epochs." /> : null}
