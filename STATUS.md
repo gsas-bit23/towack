@@ -48,6 +48,8 @@ Full record + on-chain probe results: `deployments/bsc-mainnet.expected.json` (n
 - **Verification:** `forge test` **175 passed, 0 failed, 2 skipped** (gated fork tests); `BSC_MAINNET_FORK=1 forge test --match-contract ForkMainnetFullStack` **PASS**; `FOUNDRY_FUZZ_RUNS=2000 forge test --match-test testFuzz` **14/14 passed**; `slither` re-run on `src/` **17 results** (all reviewed false positives / intentional patterns; 0 unmitigated high/medium findings); `web`: `tsc --noEmit`, `npm run lint`, `NEXT_PUBLIC_DEFAULT_CHAIN_ID=56 npm run build` green; Playwright mainnet-mode audit across all 10 routes × 2 viewports (1440px & 360px): **20/20 HTTP 200, 0px overflow, 0 console/page errors, 0 testnet leaks**, `/r/delben96.ai` resolves on-chain, `/icon.svg` + `/opengraph-image` + `/robots.txt` + 404 verified.
 
 ### Mainnet go checklist (MATEEN-ONLY — DO NOT RUN UNTIL MATEEN SAYS GO)
+The canonical checklist now lives in [`docs/MAINNET_GO.md`](docs/MAINNET_GO.md).
+
 1. **Prepare multisig / Safe wallets on BSC mainnet (chain 56)** for: `SEASONS_WALLET`, `ECOSYSTEM_WALLET`, `POL_BUFFER_WALLET`, `TEAM_BENEFICIARY`, `DEV_WALLET` (must accept plain BNB transfers), `TIMELOCK_PROPOSER`, and `GENESIS_OWNER` (or leave `GENESIS_OWNER` as multisig / hand off via 2-step transfer to Timelock after opening).
 2. **Fund the mainnet deployer wallet** with at least **`0.03 BNB`** (`GAS_RESERVE` enforced by script; actual deploy gas is ~0.0016 BNB @ 0.1 gwei / ~0.0155 BNB @ 1 gwei; no VRF subscription deposit required).
 3. **Keyless pre-flight simulation (safe, no broadcast):**
