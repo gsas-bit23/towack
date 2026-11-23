@@ -18,7 +18,7 @@ Requires Binance's official skill: https://github.com/binance/binance-skills-hub
   2. Show the user the parsed tx, the risks and `authorityChanges`. Wait for an explicit "yes".
   3. Only then `baw contract-call execute --requestId <requestId> --json`. Never execute without a fresh preview and the user's "yes"; a two-step flow (approve, then sell/enter) needs a preview + "yes" for **each** step.
 - `--value` is raw wei (integer). Never pass a gas price.
-- **VRF fee.** Every randomness request is paid by the user in native BNB to the Chainlink VRF v2.5 direct-funding wrapper. Quote it with `vrfFeeAt(uint256 gasPrice)` (selector `0xa3eaf9d8`) via an `eth_call` at the current BSC gas price, on the contract you are about to call. Underpaying reverts; any excess is refunded by the Towack contract in the same tx.
+- **VRF fee.** Every randomness request is paid by the user in native BNB to the Chainlink VRF v2.5 direct-funding wrapper. Quote it with `vrfFeeAt(uint256 gasPrice)` (selector `0xa3eaf9d8`) via an `eth_call` at `gasPrice = max(liveGasPrice * 3, 0.25 gwei)` (`0.25 gwei` = `250000000` wei), on the contract you are about to call. BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the Towack contract in the same tx.
 - Exact TWAK approvals only, never unlimited (never `type(uint256).max`).
 
 ## Addresses (chain 56)
@@ -47,7 +47,7 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 ## Flows
 
 ### Paid mint (Agent ID required), optionally with a referrer
-1. `fee = TowackLaunch.vrfFeeAt(gasPrice)`.
+1. `fee = TowackLaunch.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))`.
 2. `TowackLaunch.mint(address referrer)` payable (selector `0x6a627842`): `--inputData = 0x6a627842 ++ abi.encode(referrer)`, `--value = 100000000000000000 + fee` (0.1 BNB + VRF fee). One mint per Agent ID wallet.
    - No referrer: `referrer = address(0)` → `--inputData 0x6a6278420000000000000000000000000000000000000000000000000000000000000000`. (The zero-arg `mint()`, `0x1249c58b`, is equivalent.)
    - With a referrer (from a friend's link `/r/<handle>?ref=<address>` or `/mint?ref=<address>`): use exactly that `ref` address. Handles like `name.ai` are labels only; there is no on-chain resolver, so never resolve a handle yourself — ask the user for the `ref` address.
@@ -60,14 +60,14 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 2. `TowackLaunch.claimReferral()`: `--inputData 0xe02f1ebd`, `--value 0`. Pull-based, any phase, no deadline (never swept). Reverts `NothingToClaimReferral()` if zero.
 
 ### Genesis 300 (Agent ID required)
-1. `fee = TowackGenesis.vrfFeeAt(gasPrice)`.
+1. `fee = TowackGenesis.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))`.
 2. Easiest on mainnet (`HandleRegistry`): `TowackGenesis.mintByHandle()` payable (selector `0x748049f4`): `--inputData 0x748049f4`, `--value = fee` (no mint price; resolves `handleOf(msg.sender)` on-chain).
    Or `TowackGenesis.mint(uint256 agentTokenId)` payable (selector `0xa0712d68`): where `agentTokenId = uint256(keccak256(bytes(handle)))`, `--value = fee`. One per Agent ID and per wallet.
 3. Later: `TowackGenesis.claim()` (`--inputData 0x4e71d92d`, `--value 0`).
 
 ### Draw V2 pool wheel (anyone, no Agent ID)
 1. `TWAK.approve(DrawV2, amount)` (selector `0x095ea7b3`): `--to TWAK`, `--value 0`, exact `amount` (18 decimals).
-2. `fee = DrawV2.vrfFeeAt(gasPrice)`.
+2. `fee = DrawV2.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))`.
 3. `DrawV2.enter(uint256 amount)` payable (selector `0xa59f3e0c`): `--to DrawV2`, `--value = fee`.
 4. Later: `DrawV2.claim()` (`--inputData 0x4e71d92d`, `--value 0`).
 
@@ -125,7 +125,7 @@ When not bridging, BAW's native routing can also be used directly:
 `baw market-order quote --fromTokenQty <qty> --fromToken <in> --toToken <out> --binanceChainId 56 --slippage <slip> --json` -> preview -> explicit yes -> `baw market-order swap` -> poll order status.
 
 ### Retries
-If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch / Genesis) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(gasPrice)` again. Same preview / confirm / execute rules.
+If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch / Genesis) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))` again. Same preview / confirm / execute rules.
 
 ## Aster perps (`/perps`; agent path for Agent ID holders)
 

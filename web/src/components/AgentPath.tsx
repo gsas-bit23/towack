@@ -80,7 +80,7 @@ const BASE_RULES = `Rules (Binance Agentic Wallet, official external-sign flow):
 - --value is raw wei (an integer). Do not pass a gas price.`;
 
 const vrfRule = (contract: string) =>
-  `- VRF fee: read ${contract}.vrfFeeAt(gasPrice) (selector ${SEL_VRF_FEE_AT}) with an eth_call at the current BSC gas price. Underpaying reverts; any excess is refunded by the contract in the same tx.`;
+  `- VRF fee: read ${contract}.vrfFeeAt(gasPrice) (selector ${SEL_VRF_FEE_AT}) with an eth_call at gasPrice = max(liveGasPrice * 3, 0.25 gwei). BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the contract in the same tx.`;
 
 const footer = (rules: string) => `${rules}
 Towack skill: ${TOWACK_SKILL_PATH} on the Towack site.`;
@@ -110,7 +110,7 @@ Contract: TowackLaunch ${l.addr}${l.missing ? PENDING : ""}
 Requirement: my wallet must hold an Agent ID (one mint per Agent ID wallet).
 Referrer: ${who ? `${who}. They earn 0.005 BNB (5% of the mint price) from the contract; my price stays 0.1 BNB.` : "none (address(0))."}
 
-1) Quote fee = TowackLaunch.vrfFeeAt(currentGasPrice).
+1) Quote fee = TowackLaunch.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei)).
 2) mint(address referrer) (selector ${SEL_MINT_REF}), referrer = ${ref ?? zeroAddress}:
    --inputData ${mintCalldata(ref)}
    --value = ${MINT_PRICE_WEI} + fee  (0.1 BNB + VRF fee, in wei).
@@ -127,7 +127,7 @@ Contract: TowackGenesis ${g.addr}${g.missing ? PENDING : ""}
 Agent ID registry (HandleRegistry): ${a.addr}
 Requirement: my wallet must hold an Agent ID handle (one Genesis per Agent ID and per wallet). Genesis has no referrals.
 
-1) Quote fee = TowackGenesis.vrfFeeAt(currentGasPrice).
+1) Quote fee = TowackGenesis.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei)).
 2) Easiest on mainnet: mintByHandle() (selector ${SEL_GENESIS_MINT_BY_HANDLE}): --inputData ${SEL_GENESIS_MINT_BY_HANDLE}  --value = fee (resolves handleOf(my wallet) automatically; no mint price, VRF fee only).
    Or mint(uint256 agentTokenId) (selector ${SEL_GENESIS_MINT}): where agentTokenId = uint256(keccak256(bytes(handle))), --value = fee.
 3) After the spin lands, when I ask: claim(): --inputData ${CLAIM_HEX}  --value 0.
@@ -142,7 +142,7 @@ Contracts: TWAK ${t.addr} · DrawV2 ${d.addr}${pending ? "  (address unavailable
 Anyone can enter (no Agent ID needed). Amount: <AMOUNT_TWAK_WEI> (18 decimals, minimum entry applies).
 
 1) TWAK.approve(DrawV2, amount) (selector ${SEL_APPROVE}): --to TWAK, --value 0. Exact amount only, never unlimited.
-2) Quote fee = DrawV2.vrfFeeAt(currentGasPrice).
+2) Quote fee = DrawV2.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei)).
 3) DrawV2.enter(uint256 amount) (selector ${SEL_ENTER}): --to DrawV2, --value = fee (VRF fee only).
 4) After the spin lands, when I ask: DrawV2.claim(): --inputData ${CLAIM_HEX}  --value 0.
 
