@@ -331,7 +331,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
       <p className="mt-2 text-center text-sm font-medium text-muted">
         {vrf.supported === false
           ? "Free: you only pay gas. Your wallet asks you to confirm."
-          : `No mint price. You pay gas plus a Chainlink VRF fee of about ${vrf.label} for your spin. Your wallet asks you to confirm.`}
+          : `The mint is free: 0 BNB goes to Towack. Your wallet attaches about ${vrf.label} BNB as a Chainlink VRF randomness buffer; most of it (every unused wei) is refunded in the same transaction. You still pay gas.`}
       </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       {!minted ? <AgentPathToggle flow="genesis" className="mt-4" /> : null}
@@ -397,7 +397,7 @@ export function GenesisCard() {
             <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">300 free spins for Agent ID holders</h2>
             <p className="mt-3 font-medium text-sub">
               One free mint per Agent ID and per wallet: <b className="text-fg">{BASE_TEXT}</b> on the spot plus one spin of a TWAK-only wheel (up to 5×,
-              i.e. 100,000 TWAK). No mint price and no BNB prizes: the only BNB you send is the small Chainlink VRF fee that pays for your random spin. Funded from the 5% ecosystem allocation (8M TWAK budget) and separate from the paid 5,000.
+              i.e. 100,000 TWAK). The mint itself is free: 0 BNB goes to Towack. The tiny BNB your wallet attaches is only a Chainlink VRF randomness buffer, and most of it (every unused wei) is refunded automatically in the same transaction. Funded from the 5% ecosystem allocation (8M TWAK budget) and separate from the paid 5,000.
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-3">

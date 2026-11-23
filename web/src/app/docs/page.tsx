@@ -16,7 +16,7 @@ const HOWTO = [
     title: "Connect your wallet",
     body: "Use a browser wallet, the Binance Wallet, or WalletConnect. Connect the same address that holds your Agent ID. We never ask for keys, seed phrases, or pairing codes.",
   },
-  { n: 3, title: "Mint + spin", body: "On Mint, send 0.1 BNB plus the small Chainlink VRF fee shown on the button. Genesis 300 has no mint price but also pays the VRF fee, as does every pool-wheel spin. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One mint per Agent ID wallet." },
+  { n: 3, title: "Mint + spin", body: "On Mint, the paid launch mint costs 0.1 BNB plus a small Chainlink VRF fee. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One paid mint per Agent ID wallet. Genesis 300 is a separate free mint: 0 BNB goes to Towack. The tiny BNB attached is only a Chainlink VRF randomness buffer, and most of it (every unused wei) is refunded automatically in the same transaction. Pool-wheel spins also attach a VRF buffer the same way." },
   {
     n: 4,
     title: "Claim",
@@ -48,8 +48,12 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     a: "Minting (paid mint and Genesis) is limited to Agent ID holders, checked on-chain against the Agent ID registry. Trader rebates also go only to Agent ID wallets. Anyone can trade TWAK and play Draw V2 without one; their trades pay the same 1% but earn no rebate.",
   },
   {
+    q: "Is the Genesis 300 mint free?",
+    a: "Yes. The mint itself is free: 0 BNB goes to Towack. Your wallet will ask you to attach a tiny amount of BNB as a Chainlink VRF randomness buffer so the prize wheel can land fairly. Most of that buffer (every unused wei) is refunded automatically in the same transaction. You still pay ordinary network gas.",
+  },
+  {
     q: "How is the draw kept fair?",
-    a: "Every spin uses its own Chainlink VRF random number, so no one (including the Towack team) can pick or predict the result. Paid mint and Genesis draw from fixed decks with exact slot counts; the Draw V2 pool wheel uses a fixed 10,000-slot table with a 95% expected return. Each spin pays a small BNB fee for the random number.",
+    a: "Every spin uses its own Chainlink VRF random number, so no one (including the Towack team) can pick or predict the result. Paid mint and Genesis draw from fixed decks with exact slot counts; the Draw V2 pool wheel uses a fixed 10,000-slot table with a 95% expected return. Each spin attaches a small BNB randomness buffer; most of it (every unused wei) is refunded automatically in the same transaction.",
   },
   {
     q: "Are rebates staking?",

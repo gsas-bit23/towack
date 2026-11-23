@@ -60,6 +60,7 @@ The authoritative list is `web/src/config/addresses.json` key `"56"` in the Towa
 2. `TowackLaunch.claimReferral()`: `--inputData 0xe02f1ebd`, `--value 0`. Pull-based, any phase, no deadline (never swept). Reverts `NothingToClaimReferral()` if zero.
 
 ### Genesis 300 (Agent ID required)
+This mint is free: 0 BNB goes to Towack. The `--value` you attach is only a Chainlink VRF randomness buffer (quoted at `max(liveGasPrice * 3, 0.25 gwei)` so BAW's higher broadcast gas does not underpay). Most of it (every unused wei) is refunded automatically in the same transaction; the minter still pays ordinary network gas.
 1. `fee = TowackGenesis.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))`.
 2. Easiest on mainnet (`HandleRegistry`): `TowackGenesis.mintByHandle()` payable (selector `0x748049f4`): `--inputData 0x748049f4`, `--value = fee` (no mint price; resolves `handleOf(msg.sender)` on-chain).
    Or `TowackGenesis.mint(uint256 agentTokenId)` payable (selector `0xa0712d68`): where `agentTokenId = uint256(keccak256(bytes(handle)))`, `--value = fee`. One per Agent ID and per wallet.
