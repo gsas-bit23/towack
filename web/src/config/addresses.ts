@@ -27,8 +27,7 @@ export const CONTRACT_KEYS = [
  * subscription-model testnet deploy (that subscription was cancelled). The live wrapper-model contracts have no
  * subscription and their key hash lives on the wrapper; safe to drop.
  */
-export const VRF_META: Record<SupportedChainId, { subId?: string; keyHash?: string }> = {
-  97: { subId: str(97, "vrfSubId"), keyHash: str(97, "vrfKeyHash") },
+export const VRF_META: Record<56, { subId?: string; keyHash?: string }> = {
   56: { subId: str(56, "vrfSubId"), keyHash: str(56, "vrfKeyHash") },
 };
 
@@ -42,19 +41,8 @@ export type SupportedChainId = 97 | 56;
 export type AddressBook = Record<ContractKey, Address | undefined>;
 
 // Next.js only inlines NEXT_PUBLIC_* vars that are referenced literally, so every override is spelled out.
-const ENV_OVERRIDES: Record<SupportedChainId, Partial<Record<ContractKey, string | undefined>>> = {
-  97: {
-    agentId: process.env.NEXT_PUBLIC_TOWACK_97_AGENT_ID,
-    token: process.env.NEXT_PUBLIC_TOWACK_97_TOKEN,
-    launch: process.env.NEXT_PUBLIC_TOWACK_97_LAUNCH,
-    router: process.env.NEXT_PUBLIC_TOWACK_97_ROUTER,
-    rebateDistributor: process.env.NEXT_PUBLIC_TOWACK_97_REBATE_DISTRIBUTOR,
-    teamVesting: process.env.NEXT_PUBLIC_TOWACK_97_TEAM_VESTING,
-    drawV2: process.env.NEXT_PUBLIC_TOWACK_97_DRAW_V2,
-    drawV2Legacy: process.env.NEXT_PUBLIC_TOWACK_97_DRAW_V2_LEGACY,
-    timelock: process.env.NEXT_PUBLIC_TOWACK_97_TIMELOCK,
-    genesis: process.env.NEXT_PUBLIC_TOWACK_97_GENESIS,
-  },
+// Mainnet (56) only: the 97 section of addresses.json is historical and never read at runtime.
+const ENV_OVERRIDES: Record<56, Partial<Record<ContractKey, string | undefined>>> = {
   56: {
     agentId: process.env.NEXT_PUBLIC_TOWACK_56_AGENT_ID,
     token: process.env.NEXT_PUBLIC_TOWACK_56_TOKEN,
@@ -80,7 +68,7 @@ export function cleanAddress(value: string | undefined | null): Address | undefi
 
 const json = raw as Record<string, Partial<Record<ContractKey, string>>>;
 
-function build(chainId: SupportedChainId): AddressBook {
+function build(chainId: 56): AddressBook {
   const base = json[String(chainId)] ?? {};
   const env = ENV_OVERRIDES[chainId];
   const book = {} as AddressBook;
@@ -90,7 +78,7 @@ function build(chainId: SupportedChainId): AddressBook {
   return book;
 }
 
-export const ADDRESSES: Record<SupportedChainId, AddressBook> = {
-  97: build(97),
+/** Runtime address book: BNB Smart Chain mainnet (56) only. The 97 section of addresses.json is history, never read. */
+export const ADDRESSES: Record<56, AddressBook> = {
   56: build(56),
 };

@@ -16,7 +16,7 @@ const HOWTO = [
     title: "Connect your wallet",
     body: "Use a browser wallet, the Binance Wallet, or WalletConnect. Connect the same address that holds your Agent ID. We never ask for keys, seed phrases, or pairing codes.",
   },
-  { n: 3, title: "Mint + spin", body: "On Mint, send 0.1 BNB plus the Chainlink VRF fee shown on the button (a fraction of a cent to a few cents; anything extra is refunded in the same transaction). Genesis 300 has no mint price but also sends the VRF fee, and so does every pool-wheel spin. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One mint per Agent ID wallet." },
+  { n: 3, title: "Mint + spin", body: "On Mint, send 0.1 BNB plus the small Chainlink VRF fee shown on the button. Genesis 300 has no mint price but also pays the VRF fee, as does every pool-wheel spin. You confirm in your wallet and get 80,000 TWAK in the same transaction, and the prize wheel starts spinning while Chainlink VRF answers. One mint per Agent ID wallet." },
   {
     n: 4,
     title: "Claim",
@@ -49,7 +49,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How is the draw kept fair?",
-    a: "Every spin requests its own Chainlink VRF v2.5 random word through Chainlink's official direct-funding wrapper (no subscription). Paid mint and Genesis pop one slot from fixed decks (word mod slots left) so deck counts are exact; Draw V2 maps the word onto a fixed 10,000-slot table (95% expected return, with BNB bonus scaled by entry size up to 2% of the free BNB pot). Each request is paid in native BNB by the caller (vrfFeeAt): the contract forwards Chainlink's exact price and refunds any excess in the same transaction.",
+    a: "Every spin uses its own Chainlink VRF random number, so no one (including the Towack team) can pick or predict the result. Paid mint and Genesis draw from fixed decks with exact slot counts; the Draw V2 pool wheel uses a fixed 10,000-slot table with a 95% expected return. Each spin pays a small BNB fee for the random number.",
   },
   {
     q: "Are rebates staking?",
@@ -57,7 +57,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Does this site ever sign for me?",
-    a: "Not for Towack contracts. Every Towack transaction (mint, spin, buy and sell through the router, rebate, referral and prize claims) opens in your own wallet and waits for you to confirm it. There is no server wallet and no gasless relayer, and we never ask for your seed phrase. The one exception is Aster perps, and only after you set it up: you create a trade-only Aster API wallet (generated in this browser and approved once by your wallet, or pasted from Aster). Its key is stored in this browser (localStorage if you tick Remember, otherwise sessionStorage for this tab) and signs your Aster orders, cancels, leverage and margin changes without a wallet popup per order. Keys set up here are approved with canWithdraw=false, so they cannot withdraw funds. You can forget the key on Perps at any time, and revoke it on Aster. Swap quotes come from public, keyless APIs (PancakeSwap, Uniswap, Relay; 0x and 1inch stay off unless the operator sets an API key), and every swap still executes from your own wallet.",
+    a: "No. Every Towack transaction (mint, spin, trade, claims) opens in your own wallet and waits for your confirmation. We never ask for your seed phrase. The one exception is Aster perps, and only if you set it up: a trade-only Aster API wallet is kept in this browser and signs your Aster orders without a popup each time. It cannot withdraw funds, and you can forget it on Perps or revoke it on Aster at any time. Swaps always execute from your own wallet.",
   },
   {
     q: "Is Aster live?",
@@ -69,7 +69,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Is the code open source?",
-    a: "Yes. The contracts and this site are open source. Always verify the active network badge and published contract addresses before signing.",
+    a: "Yes. The contracts and this site are open source. Always verify the published contract addresses before signing.",
   },
 ];
 

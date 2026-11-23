@@ -1,21 +1,20 @@
-import { bsc, bscTestnet } from "viem/chains";
-import type { SupportedChainId } from "./addresses";
+import { bsc } from "viem/chains";
 
-export const RPC_URLS: Record<SupportedChainId, string> = {
-  97: "https://bsc-testnet-rpc.publicnode.com",
-  56: "https://bsc-dataseed.bnbchain.org",
-};
+/**
+ * Production is locked to BNB Smart Chain mainnet (chain 56). The chain-97 entries in addresses.json are kept as
+ * historical data only and are never read at runtime. NEXT_PUBLIC_DEFAULT_CHAIN_ID is intentionally ignored so a
+ * stale env value (e.g. 97) cannot move the site off mainnet.
+ */
+export const APP_CHAIN_ID = 56 as const;
+export type AppChainId = typeof APP_CHAIN_ID;
 
-export const CHAINS = [bscTestnet, bsc] as const;
+export const DEFAULT_CHAIN_ID: AppChainId = APP_CHAIN_ID;
 
-export const CHAIN_META: Record<SupportedChainId, { name: string; short: string; explorer: string; testnet: boolean }> = {
-  97: { name: "BSC Testnet", short: "Testnet", explorer: "https://testnet.bscscan.com", testnet: true },
-  56: { name: "BNB Smart Chain", short: "Mainnet", explorer: "https://bscscan.com", testnet: false },
-};
+export const APP_CHAIN = bsc;
+export const RPC_URL = "https://bsc-dataseed.bnbchain.org";
 
-export function isSupportedChain(id: number | undefined): id is SupportedChainId {
-  return id === 97 || id === 56;
+export const CHAIN_META = { name: "BNB Smart Chain", short: "BNB Chain", explorer: "https://bscscan.com" } as const;
+
+export function isAppChain(id: number | undefined): id is AppChainId {
+  return id === APP_CHAIN_ID;
 }
-
-const envDefault = Number(process.env.NEXT_PUBLIC_DEFAULT_CHAIN_ID ?? "97");
-export const DEFAULT_CHAIN_ID: SupportedChainId = isSupportedChain(envDefault) ? envDefault : 97;

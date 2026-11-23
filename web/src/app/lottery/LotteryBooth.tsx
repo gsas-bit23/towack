@@ -240,37 +240,16 @@ function HowItWorks() {
 }
 
 function TreasuryNote() {
-  const { addresses, meta } = useTowack();
-  if (!meta.testnet) {
-    return (
-      <Panel tone="raised" shadow={false}>
-        <Pill tone="gold">POOL &amp; VRF</Pill>
-        <p className="mt-3 font-medium text-sub">
-          {addresses.drawV2
-            ? <>The Draw V2 pool wheel is funded with the {POOL_INTENDED_SEED} allocation</>
-            : <>Draw V2 is not yet deployed on BNB Smart Chain mainnet. The {POOL_INTENDED_SEED} pool will be funded at the mainnet deploy</>}{" "}
-          and draws with the official Chainlink VRF v2.5 direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess
-          refunded), with no subscription.
-        </p>
-      </Panel>
-    );
-  }
+  const { addresses } = useTowack();
   return (
     <Panel tone="raised" shadow={false}>
-      <Pill tone="gold">TESTNET NOTE</Pill>
+      <Pill tone="gold">POOL</Pill>
       <p className="mt-3 font-medium text-sub">
-        The live testnet pool wheel was seeded with the full {POOL_INTENDED_SEED} Draw V2 allocation and draws with the official Chainlink VRF v2.5
-        direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess refunded), with no subscription. Earlier
-        testnet pools are retired history, including the skeleton treasury and the mock-VRF pool.
+        The pool wheel is funded with {POOL_INTENDED_SEED}. Every spin is drawn with Chainlink VRF and pays a small BNB fee for the random number.
       </p>
-      {addresses.drawV2Legacy ? (
+      {addresses.drawV2 ? (
         <p className="mt-3 break-all text-sm font-medium text-sub">
-          Old treasury: <AddressLink address={addresses.drawV2Legacy} />
-        </p>
-      ) : null}
-      {addresses.drawV2Mock ? (
-        <p className="mt-1 break-all text-sm font-medium text-sub">
-          Retired test pool: <AddressLink address={addresses.drawV2Mock} />
+          Contract: <AddressLink address={addresses.drawV2} />
         </p>
       ) : null}
     </Panel>
@@ -524,7 +503,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
               </Button>
               <p className="mt-2 text-center text-sm font-medium text-muted">
                 Your entry joins the pool. Most spins pay back less than you put in.
-                {vrf.supported === false ? null : ` Each spin also sends a Chainlink VRF fee of about ${vrf.label} in BNB (pays for the random draw, not the pot; any extra is refunded).`}
+                {vrf.supported === false ? null : ` Each spin also pays a Chainlink VRF fee of about ${vrf.label} in BNB.`}
               </p>
               <AgentPathToggle flow="lottery" className="mt-4" />
             </>
@@ -570,10 +549,10 @@ export function LotteryBooth() {
               <LiveBooth amount={amount} setAmount={setAmount} />
             ) : (
               <>
-                <PoolWheelStage status="none" idleNote="The pool wheel is launching soon on this network. Nothing to sign yet." />
+                <PoolWheelStage status="none" idleNote="The pool wheel is not available right now. Nothing to sign." />
                 <div className="rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-5 text-center">
-                  <div className="font-display text-[20px] font-semibold">Pool wheel launching soon</div>
-                  <p className="mt-1 text-sm font-medium text-sub">Draw V2 contracts are not deployed on this network yet.</p>
+                  <div className="font-display text-[20px] font-semibold">Pool wheel unavailable</div>
+                  <p className="mt-1 text-sm font-medium text-sub">Please check back soon.</p>
                   <AgentPathToggle flow="lottery" className="mt-4" />
                 </div>
               </>

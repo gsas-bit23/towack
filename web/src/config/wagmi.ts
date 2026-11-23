@@ -1,8 +1,8 @@
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import { binanceWallet, injectedWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
 import { createConfig, http } from "wagmi";
-import { bsc, bscTestnet } from "wagmi/chains";
-import { DEFAULT_CHAIN_ID, RPC_URLS } from "./chains";
+import { bsc } from "wagmi/chains";
+import { RPC_URL } from "./chains";
 
 /**
  * WalletConnect needs a project id from https://cloud.reown.com. Without one we only offer injected
@@ -23,15 +23,12 @@ const connectors = connectorsForWallets(
   { appName: "Towack", projectId: WALLETCONNECT_PROJECT_ID },
 );
 
-// Default chain goes first so wagmi treats it as the initial chain.
-const chains = DEFAULT_CHAIN_ID === 56 ? ([bsc, bscTestnet] as const) : ([bscTestnet, bsc] as const);
-
+// Production is BNB Smart Chain mainnet (56) only.
 export const wagmiConfig = createConfig({
-  chains,
+  chains: [bsc],
   connectors,
   transports: {
-    [bscTestnet.id]: http(RPC_URLS[97]),
-    [bsc.id]: http(RPC_URLS[56]),
+    [bsc.id]: http(RPC_URL),
   },
   ssr: true,
 });

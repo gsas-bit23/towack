@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import type { Address } from "viem";
 import { useGasPrice, usePublicClient } from "wagmi";
-import type { SupportedChainId } from "@/config/addresses";
+import type { AppChainId } from "@/config/chains";
 import {
   defaultProviders,
   getBestRoutes,
@@ -43,7 +43,7 @@ export function useDebounced<T>(value: T, ms = 450): T {
 }
 
 export type RoutesArgs = {
-  chainId: SupportedChainId;
+  chainId: AppChainId;
   tokenIn: Token;
   tokenOut: Token;
   amountIn?: bigint;

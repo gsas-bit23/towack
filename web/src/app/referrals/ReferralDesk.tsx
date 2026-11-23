@@ -20,7 +20,7 @@ export function ReferralDesk() {
   const [typed, setTyped] = useState("");
   const [origin, setOrigin] = useState("");
 
-  // On mainnet, SPACE ID HandleRegistry exposes handleOf(address) on-chain; on testnet mocks this fails gracefully.
+  // On mainnet, SPACE ID HandleRegistry exposes handleOf(address) on-chain; if the read fails it degrades gracefully.
   const { data: onchainHandle } = useReadContract({
     address: addresses.agentId,
     abi: agentNftAbi,
@@ -60,7 +60,7 @@ export function ReferralDesk() {
               hint={
                 onchainHandle
                   ? `Detected ${onchainHandle}.ai on-chain for this wallet. The referrer is always your wallet address.`
-                  : "Optional label on your link (auto-detected on mainnet). The referrer is always the wallet address in the link."
+                  : "Optional label on your link (auto-detected). The referrer is always the wallet address in the link."
               }
             >
               <input
@@ -83,10 +83,10 @@ export function ReferralDesk() {
         <Panel tone="raised" shadow={false}>
           <h2 className="text-[20px] font-semibold tracking-tight">How referrals work</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
-            <li>Your link carries your wallet address. Friends who open it mint with <code className="rounded bg-card px-1">mint(your address)</code>.</li>
+            <li>Your link carries your wallet address. Friends who open it mint with you as their referrer.</li>
             <li>Each referred paid mint credits you 0.005 BNB (5% of the 0.1 BNB price). It comes out of the share that would otherwise go to LP / Draw V2, so your friend pays nothing extra.</li>
             <li>Your wallet must hold an Agent ID, and you can&apos;t refer yourself: the contract rejects both.</li>
-            <li>Claim any time with <code className="rounded bg-card px-1">claimReferral()</code>. Referral BNB has no deadline and is never swept.</li>
+            <li>Claim any time. Referral BNB has no deadline and is never swept.</li>
             <li>Paid mint only. Genesis 300 has no referrals.</li>
           </ol>
           <p className="mt-4 font-semibold text-sub">Minting is a game of chance, not an investment. Only share with friends who understand that.</p>

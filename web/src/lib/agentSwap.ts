@@ -114,7 +114,7 @@ ${approveStep(r, 2)}${nativeIn ? 2 : 3}) ${fn}.
     case "pancakeV3":
     case "uniswapV3": {
       const cfg = route.provider === "pancakeV3" ? v.pancakeV3! : v.uniswapV3!;
-      const name = route.provider === "pancakeV3" ? "PancakeSwap v3 (QuoterV2 + SmartRouter)" : "Uniswap v3 (QuoterV2 + SwapRouter02)";
+      const name = route.provider === "pancakeV3" ? "PancakeSwap v3" : "Uniswap v3";
       const fee = route.v3Fee ?? cfg.fees[1];
       const a = nativeIn ? wbnb : tokenIn.address;
       const b = nativeOut ? wbnb : tokenOut.address;

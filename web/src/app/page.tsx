@@ -47,7 +47,7 @@ export default function Home() {
           <SecHead title="Every mint spins the wheel" href="/draw" link="Prize booth" />
           <Reveal className="rounded-2xl border border-line bg-card p-5 sm:p-7">
             <p className="max-w-[820px] text-[15px] leading-relaxed text-sub">
-              Each mint requests its own <b className="font-semibold text-fg">Chainlink VRF v2.5</b> random word. The contract pops one slot from a fixed
+              Each mint gets its own <b className="font-semibold text-fg">Chainlink VRF</b> random draw: one slot from a fixed
               5,000-slot deck and the wheel stops on it — a BNB refund, a TWAK bonus, or better luck next time.{" "}
               <b className="font-semibold text-fg">One outcome per spin</b>, and the odds shift as the deck empties.
             </p>
@@ -182,9 +182,9 @@ export default function Home() {
                 <span className="font-mono text-[13px] text-muted">03 · Phase 3</span>
                 <Pill tone="up">Live</Pill>
               </div>
-              <div className="mt-4 text-[16px] font-semibold">BNB Smart Chain mainnet deploy</div>
+              <div className="mt-4 text-[16px] font-semibold">Live on BNB Smart Chain</div>
               <p className="mt-2 text-[14px] text-muted">
-                Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free mint are open, and the Draw V2 pool is funded. Switch the site to BNB Smart Chain to use the live contracts.
+                Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free mint are open, and the Draw V2 pool is funded.
               </p>
             </StaggerItem>
           </Stagger>

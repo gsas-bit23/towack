@@ -116,7 +116,7 @@ export function DrawMachine() {
             <span className=" h-2.5 w-2.5 rounded-full bg-gold/10" /> LIVE
           </span>
         </div>
-        <p className="mt-1 text-sm font-medium text-sub">Every PrizeAssigned event from the launch contract, as it lands.</p>
+        <p className="mt-1 text-sm font-medium text-sub">Every prize, live as it lands.</p>
         <div className="mt-4 text-fg">
           <SpinFeed spins={demo.active ? DEMO_SPINS : spins} />
         </div>

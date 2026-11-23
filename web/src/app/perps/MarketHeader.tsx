@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fmtCompactUsd, fmtFunding, fmtPrice, trimDecimal, type AsterNet, type MarketRow } from "@/lib/aster/markets";
+import { fmtCompactUsd, fmtFunding, fmtPrice, trimDecimal, type MarketRow } from "@/lib/aster/markets";
 import { useNow } from "@/lib/useNow";
 
 function countdown(next: number | undefined, nowSec: number): string {
@@ -13,7 +13,6 @@ function countdown(next: number | undefined, nowSec: number): string {
 
 /** Symbol selector + live stats strip (last, 24h change / volume, mark, index, funding, next funding countdown). */
 export function MarketHeader({
-  net,
   symbol,
   row,
   rows,
@@ -21,7 +20,6 @@ export function MarketHeader({
   error,
   onSelect,
 }: {
-  net: AsterNet;
   symbol: string;
   row: MarketRow | undefined;
   rows: MarketRow[] | undefined;
@@ -55,7 +53,7 @@ export function MarketHeader({
         >
           <span>
             <span className="block text-[22px] font-semibold leading-tight tracking-tight sm:text-[24px]">{symbol}</span>
-            <span className="block text-[11px] font-medium uppercase tracking-[.1em] text-muted">{net === "testnet" ? "Aster testnet" : "Aster"} · perpetual</span>
+            <span className="block text-[11px] font-medium uppercase tracking-[.1em] text-muted">Aster · perpetual</span>
           </span>
           <span className="text-muted" aria-hidden="true">
             ▾

@@ -11,8 +11,12 @@ npm run lint
 npm run abi                  # forge build + re-export ABIs into src/abi/
 ```
 
-- Addresses: `src/config/addresses.json` (by chain id), overridable via `NEXT_PUBLIC_TOWACK_<chain>_<KEY>`.
-  Empty Towack addresses show a "Contracts deploying soon" state and skip reads/writes.
+- Network: BNB Smart Chain mainnet (chain 56) only. wagmi/RainbowKit are configured with `bsc` alone and there is
+  no network switch; a wallet on any other chain is asked to "Switch to BNB Chain". `NEXT_PUBLIC_DEFAULT_CHAIN_ID`
+  is ignored (a stale `97` cannot move the site off mainnet).
+- Addresses: `src/config/addresses.json` key `"56"`, overridable via `NEXT_PUBLIC_TOWACK_56_<KEY>`. The `"97"` section
+  is historical (old BSC testnet deploy) and is never read at runtime. A missing address shows a neutral
+  "Temporarily unavailable" state and skips reads/writes.
 - Wallets: injected always. Binance Wallet + WalletConnect when a WalletConnect project id is set.
   Without it, Binance Wallet still works as an injected wallet (extension or Binance app browser).
 - Every Towack contract write (mint, draw, router, rebates, referrals, claims) opens in the user's

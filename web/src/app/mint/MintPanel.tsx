@@ -205,14 +205,14 @@ export function MintPanel() {
                 <Stat
                   label="Price"
                   value={`${fmt18(price)} BNB`}
-                  sub={vrf.supported === false ? "exactly, no extra" : `+ VRF fee ~${vrf.label} (excess refunded)`}
+                  sub={vrf.supported === false ? "exactly, no extra" : `+ VRF fee ~${vrf.label}`}
                 />
                 <Stat label="Window" value={windowText} sub={mintEnd ? `ends ${fmtDate(mintEnd)}` : undefined} />
                 <Stat label="You get" value="80,000 TWAK" sub="instantly, plus one spin" />
               </div>
               {bound === false ? (
                 <p className="mt-4 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
-                  The launch contract is deployed but not wired to the token yet. Mint opens once setup finishes.
+                  Mint is not open yet. Please check back soon.
                 </p>
               ) : null}
             </div>
@@ -223,15 +223,11 @@ export function MintPanel() {
         <Panel tone="raised" shadow={false}>
           <h2 className="font-display text-[24px] font-semibold">How the mint works</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
-            <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App on mainnet).</li>
+            <li>Hold an Agent ID in the wallet you connect (Agent IDs are issued in the Binance App).</li>
+            <li>Send 0.1 BNB plus a small Chainlink VRF fee (about {vrf.label}) for your random draw. You confirm it in your own wallet.</li>
+            <li>80,000 TWAK arrives in the same transaction, and your spin starts.</li>
             <li>
-              Send 0.1 BNB plus the Chainlink VRF fee (about {vrf.label}) with <code className="rounded bg-card px-1">mint(address referrer)</code> (referrer is optional: address(0) means none). Exactly
-              Chainlink&apos;s price for your random draw goes straight to the Chainlink VRF wrapper, and anything above 0.1 BNB + that price is
-              refunded in the same transaction. You confirm it in your own wallet.
-            </li>
-            <li>80,000 TWAK arrives in the same transaction, and the contract requests one Chainlink VRF v2.5 random word for you.</li>
-            <li>
-              When the VRF answer lands, the contract pops one slot from the remaining 5,000-slot deck and the wheel stops on it. Exactly one outcome:
+              When Chainlink VRF answers, one slot is drawn from the remaining 5,000-slot deck and the wheel stops on it. Exactly one outcome:
               a BNB refund tier, a TWAK bonus tier, or better luck next time.
             </li>
             <li>Claim your prize whenever you like (within 180 days of listing). Prizes are pulled, never pushed.</li>
@@ -293,8 +289,8 @@ export function MintPanel() {
                 </>
               ) : (
                 <div className="mt-6 rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-5 text-center">
-                  <div className="font-display text-[20px] font-semibold">Launching soon on BNB Smart Chain</div>
-                  <p className="mt-1 text-sm font-medium text-sub">Protocol contracts are not deployed yet. Nothing to sign or send.</p>
+                  <div className="font-display text-[20px] font-semibold">Mint unavailable</div>
+                  <p className="mt-1 text-sm font-medium text-sub">Minting is not available right now. Nothing to sign or send.</p>
                   <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </div>
               )}

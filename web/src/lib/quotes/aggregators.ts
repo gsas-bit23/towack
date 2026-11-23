@@ -33,7 +33,7 @@ export function zeroExProvider(opts: { apiKey?: string; apiUrl?: string }): Prov
     id: "zeroex",
     supports: (req) => Boolean(opts.apiKey) && sameChain(req) && ZEROX_CHAINS.includes(req.tokenIn.chainId),
     async quote(req, ctx) {
-      if (!opts.apiKey) throw new Error("0x needs NEXT_PUBLIC_ZEROX_API_KEY");
+      if (!opts.apiKey) throw new Error("0x quotes are unavailable");
       const qs = new URLSearchParams({
         chainId: String(req.tokenIn.chainId),
         sellToken: asApiToken(req.tokenIn),
@@ -96,7 +96,7 @@ export function oneInchProvider(opts: { apiKey?: string; apiUrl?: string }): Pro
     id: "oneinch",
     supports: (req) => Boolean(opts.apiKey) && sameChain(req) && ONEINCH_CHAINS.includes(req.tokenIn.chainId),
     async quote(req, ctx) {
-      if (!opts.apiKey) throw new Error("1inch needs NEXT_PUBLIC_ONEINCH_API_KEY");
+      if (!opts.apiKey) throw new Error("1inch quotes are unavailable");
       const qs = new URLSearchParams({
         src: asApiToken(req.tokenIn),
         dst: asApiToken(req.tokenOut),

@@ -21,7 +21,7 @@ import {
 import { ASTER_API_WALLET_URL, trimDecimal, type AsterNet } from "@/lib/aster/markets";
 import { useAsterBalance } from "./useAsterAccount";
 import { useNow } from "@/lib/useNow";
-import { AGENT_SCOPE, AGENT_TTL_DAYS, ASTER_EVM_SIGNATURE_CHAIN_ID, approvalMessage, asterTypedData, defaultAgentName, nextNonce } from "@/lib/aster/sign";
+import { AGENT_TTL_DAYS, ASTER_EVM_SIGNATURE_CHAIN_ID, approvalMessage, asterTypedData, defaultAgentName, nextNonce } from "@/lib/aster/sign";
 
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
@@ -133,8 +133,7 @@ function AgentSetup({ net }: { net: AsterNet }) {
       <label className="mt-5 flex items-start gap-3 font-medium">
         <input type="checkbox" className="mt-1 h-5 w-5 accent-gold" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
         <span>
-          Remember on this device (localStorage). Off: kept for this tab only (sessionStorage) and gone when you close it. Don&apos;t tick this on a
-          shared computer.
+          Remember on this device. Off: kept for this tab only and gone when you close it. Don&apos;t tick this on a shared computer.
         </span>
       </label>
     </div>
@@ -185,20 +184,11 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
       <ol className="list-decimal space-y-1 pl-5 font-medium text-sub">
         <li>This page makes a fresh API wallet key in your browser.</li>
         <li>
-          Your wallet signs one EIP-712 message approving it on Aster: perps <b>yes</b>, spot <b>no</b>, withdrawals <b>no</b>, expires in{" "}
+          Your wallet signs one message approving it on Aster: perps <b>yes</b>, spot <b>no</b>, withdrawals <b>no</b>, expires in{" "}
           {AGENT_TTL_DAYS} days. It is a signature, not a transaction: no gas, nothing broadcast.
         </li>
         <li>The approval goes straight to Aster. The key stays here.</li>
       </ol>
-      <p className="rounded-2xl border border-line bg-card px-4 py-2 text-sm font-medium">
-        Signing: <span className="font-mono">AsterSignTransaction</span> · chain 56 · canPerpTrade={String(AGENT_SCOPE.canPerpTrade)} · canSpotTrade=
-        {String(AGENT_SCOPE.canSpotTrade)} · canWithdraw={String(AGENT_SCOPE.canWithdraw)}
-      </p>
-      {net === "testnet" ? (
-        <p className="text-sm font-medium text-sub">
-          Aster testnet still expects the approval signed for chain 56 (its docs), so your wallet must be on BNB Smart Chain just for this signature.
-        </p>
-      ) : null}
       {!onBsc ? (
         <Button tone="soft" size="md" disabled={switching} onClick={() => switchChainAsync({ chainId: ASTER_EVM_SIGNATURE_CHAIN_ID }).catch(() => undefined)}>
           {switching ? "Check your wallet…" : "Switch wallet to BNB Smart Chain to sign"}

@@ -10,7 +10,7 @@ Requires Binance's official skill: https://github.com/binance/binance-skills-hub
 
 ## Hard rules
 
-- **Mainnet only.** BAW supports BNB Smart Chain mainnet only: always `--binanceChainId 56`. BAW does **not** support BSC testnet and cannot connect to the Towack website. Testnet testers must use MetaMask or another browser wallet on the website instead.
+- **Mainnet only.** BAW supports BNB Smart Chain mainnet only: always `--binanceChainId 56`. BAW cannot connect to the Towack website; website users connect a browser wallet instead.
 - **The website never signs or broadcasts.** Towack's site only displays/copies instructions ("Give this to your AI agent" boxes). No keys, no server-side signing, no BAW CLI from the browser. All signing happens in the user's own BAW after their explicit confirmation.
 - **Developer Mode first.** As soon as a request needs `contract-call`, run `baw wallet settings --json` and check `devMode.enabled=true`. If it is off, tell the user to enable Developer Mode in the Binance App and wait.
 - **Preview, then wait, then execute.** For every tx:
@@ -135,7 +135,7 @@ The `/perps` page shows live Aster perpetual markets from Aster's public API. An
 
 - BAW signs exactly **one** EIP-712 message (`baw sign-message`, `--binanceChainId 56`, `--signType EIP712`) that approves a **trade-only Aster API wallet** (agent key) the user's own AI agent generates and keeps locally.
 - That API wallet signs each order (EIP-712, domain chainId 1666) after the user's explicit "yes" to that exact order.
-- In the agent path, Towack never signs, never sends, never sees any key. BAW is mainnet-only; testnet testers use a browser wallet on `/perps` (Aster testnet).
+- In the agent path, Towack never signs, never sends, never sees any key. BAW is mainnet-only.
 
 ### Hard rules (perps)
 - The user's BAW address must already have **deposited USDT margin on Aster** (asterdex.com, same wallet). Until then every trading call returns `{"code":-5050,"msg":"This function can only be used after deposit"}`: stop and tell the user.
@@ -149,7 +149,6 @@ The `/perps` page shows live Aster perpetual markets from Aster's public API. An
 | What | Value |
 |---|---|
 | Mainnet REST | `https://fapi.asterdex.com` |
-| Testnet REST (browser wallets only, not BAW) | `https://fapi.asterdex-testnet.com` |
 | Public, no key | `GET /fapi/v3/exchangeInfo`, `/fapi/v3/ticker/24hr`, `/fapi/v3/premiumIndex` (mark, index, `lastFundingRate`, `nextFundingTime`) |
 | Agent approval (public, main-wallet signature) | `POST /fapi/v3/registerAndApproveAgent` |
 | Agent-signed | `POST /fapi/v3/order`, `DELETE /fapi/v3/order`, `POST /fapi/v3/leverage`, `POST /fapi/v3/marginType`, `GET /fapi/v3/openOrders`, `GET /fapi/v3/balance` |
@@ -161,7 +160,7 @@ EIP-712 typed data for every Aster signature: domain `{"name":"AsterSignTransact
 1. **Approve agent (once, BAW):** `msg = user=<BAW>&nonce=<µs>&agentName=towack-agent&agentAddress=<API wallet>&expired=<ms>&signatureChainId=56&canSpotTrade=false&canPerpTrade=true&canWithdraw=false&ipWhitelist=`, domain chainId **56**.
    `baw sign-message preview --binanceChainId 56 --signType EIP712 --message '{"method":"eth_signTypedData_v4","params":["<BAW>","<typed data JSON string>"]}' --json` → show `parsedMessage` + `risks` → wait for "yes" → `baw sign-message execute --requestId <id> --json` (if `PENDING_CONFIRMATION`, the user confirms in the Binance App, then `baw sign-message result --order-id <orderId> --json`). Use the 65-byte signature (append `27 + signatureRecovery` as one hex byte if BAW returns 64 bytes).
    Then `POST /fapi/v3/registerAndApproveAgent` (form body) with those fields + `signature`. The nonce must be within ~10 s of server time, so post promptly. Expect `{"code":200,"msg":"success"}`.
-2. **Each request (API wallet key, local):** `msg = <params>&nonce=<µs>&user=<BAW>&signer=<API wallet>` (urlencoded, in that order), domain chainId **1666** (testnet: 714). Send `msg&signature=0x…` as the `application/x-www-form-urlencoded` body (GET: query string). Nonce: microseconds, within 60 s, never reused.
+2. **Each request (API wallet key, local):** `msg = <params>&nonce=<µs>&user=<BAW>&signer=<API wallet>` (urlencoded, in that order), domain chainId **1666**. Send `msg&signature=0x…` as the `application/x-www-form-urlencoded` body (GET: query string). Nonce: microseconds, within 60 s, never reused.
 
 ### Order params (`POST /fapi/v3/order`)
 Send params in exactly this field order (it is the order the in-app box emits): `symbol, side, type, [timeInForce], quantity, [price], [stopPrice], [activationPrice], [callbackRate], [workingType], [reduceOnly]`. Never send a param the type does not use (Aster rejects extra params).

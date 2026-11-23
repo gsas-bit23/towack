@@ -14,7 +14,7 @@ export default function MintPage() {
         title="Mint. Spin. See what you pull."
         art={<InstrumentArc progress={0.5} className="pointer-events-none absolute -right-[140px] -top-[120px] hidden h-[440px] w-[440px] opacity-60 md:block" />}
       >
-        One mint per Agent ID wallet. 0.1 BNB (plus a small Chainlink VRF fee for your random draw, excess refunded) gets you 80,000 TWAK on the
+        One mint per Agent ID wallet. 0.1 BNB (plus a small Chainlink VRF fee for your random draw) gets you 80,000 TWAK on the
         spot plus one spin of the Draw V1 prize wheel, drawn by Chainlink VRF. 5,000 slots, then the booth closes.
       </PageHeader>
       <div className="mx-auto max-w-[1220px] px-6 pt-6">

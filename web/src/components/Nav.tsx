@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CoinMark } from "./art";
 import { ConnectPill } from "./ConnectPill";
-import { NetworkToggle } from "./NetworkToggle";
+import { NetworkBadge } from "./NetworkBadge";
 import { NAV_LINKS, PRIMARY_COUNT } from "./NavLinks";
 
 const PRIMARY = NAV_LINKS.slice(0, PRIMARY_COUNT);
@@ -131,7 +131,7 @@ export function Nav() {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-2.5">
-          <NetworkToggle className="hidden md:flex" />
+          <NetworkBadge className="hidden md:flex" />
           <ConnectPill compact />
           <button
             type="button"
@@ -185,7 +185,7 @@ export function Nav() {
               </ul>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 md:hidden">
                 <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-muted">Network</span>
-                <NetworkToggle className="flex" />
+                <NetworkBadge className="flex" />
               </div>
             </div>
           </motion.div>

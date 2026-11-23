@@ -1,14 +1,11 @@
 "use client";
 
-import { useTowack } from "@/lib/chain";
-
 export const RISK_NOTE_BASE =
   "Towack is a game of chance, not an investment. No returns are promised. You can lose the BNB you pay to mint. Trading involves risk. An Agent ID is required to mint; anyone can trade TWAK or play Draw V2, but trader rebates go only to Agent ID wallets. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Contracts are open source.";
 
 export const RISK_NOTE = RISK_NOTE_BASE;
 
 export function RiskNote({ className = "" }: { className?: string }) {
-  const { meta } = useTowack();
   return (
     <div className={`rounded-2xl border border-line bg-card p-6 ${className}`}>
       <div className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] text-gold">
@@ -18,10 +15,7 @@ export function RiskNote({ className = "" }: { className?: string }) {
         Plain-language risk note
       </div>
       <p className="text-[13.5px] leading-relaxed text-muted">
-        {RISK_NOTE_BASE}{" "}
-        {meta.testnet
-          ? "You are viewing BSC Testnet — test BNB has no monetary value."
-          : "Always verify contract addresses before signing."}
+        {RISK_NOTE_BASE} Always verify contract addresses before signing.
       </p>
     </div>
   );

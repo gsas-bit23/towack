@@ -1,7 +1,7 @@
 "use client";
 
 // Live parts of the Atlas home: hero stats + featured Launch card + activity, all from contract reads.
-// Nothing here is placeholder data: when a contract is not deployed on the selected network the value shows "—".
+// Nothing here is placeholder data: when a value cannot be read it shows "—".
 
 import { formatUnits } from "viem";
 import { useReadContracts } from "wagmi";
@@ -57,7 +57,7 @@ export function HomeHero() {
         <StageIn>
           <span className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted">
             <span className="live-dot" aria-hidden="true" />
-            {meta.testnet ? "Live on BSC Testnet" : "BNB Smart Chain"}
+            Live on {meta.name}
           </span>
           <h1 className="mt-4 max-w-[760px] text-[38px] font-bold leading-[1.04] tracking-[-0.035em] sm:text-[48px] md:text-[60px]">
             Towack — Agent ID markets <span className="font-medium text-muted">on BNB Chain.</span>
@@ -125,7 +125,7 @@ export function FeaturedLaunch() {
             <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-gold">Featured · Launch</span>
             <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] sm:text-[26px]">Mint one Towack slot per Agent ID</h3>
           </div>
-          {phase ? <Pill tone={phase === "Minting" ? "up" : "neutral"}>{phase}</Pill> : !s.launch ? <Pill tone="line">Deploying soon</Pill> : null}
+          {phase ? <Pill tone={phase === "Minting" ? "up" : "neutral"}>{phase}</Pill> : !s.launch ? <Pill tone="line">Unavailable</Pill> : null}
         </div>
 
         <div className="grid grid-cols-1 overflow-hidden rounded-xl bg-card-2 sm:grid-cols-3 sm:gap-3 sm:bg-transparent">
@@ -233,7 +233,7 @@ export function FeaturedLaunch() {
         ) : (
           <div className="flex flex-1 flex-col justify-center gap-2 border-t border-line px-5 py-8 text-center sm:px-[22px]">
             <p className="text-[14px] text-sub">No prize-wheel spins in the recent blocks yet.</p>
-            <p className="text-[13px] text-dim">This feed fills in live from PrizeAssigned events as mints land.</p>
+            <p className="text-[13px] text-dim">Fills in live as mints land.</p>
           </div>
         )}
         <div className="mt-auto grid grid-cols-2 border-t border-line">

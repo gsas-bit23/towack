@@ -82,7 +82,7 @@ export function MyWheel({ fresh = false, retryDelay, idleNote, size }: { fresh?:
     <>
       {mintIndex ? <Pill tone="neutral">MINT #{mintIndex}</Pill> : null}{" "}
       {requestedAt && now ? `Requested ${fmtDuration(now - requestedAt)} ago. ` : ""}
-      The prize is drawn on-chain from the remaining deck when the VRF callback lands.
+      The prize is drawn on-chain from the remaining deck when Chainlink VRF answers.
       {canRetry ? (
         <div className="mt-3 flex justify-center">
           <Button tone="line" size="sm" disabled={tx.busy || vrf.value === undefined} onClick={retry}>

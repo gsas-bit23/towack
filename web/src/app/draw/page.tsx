@@ -18,7 +18,7 @@ export default function DrawPage() {
           <ul className="mt-3 space-y-2 font-medium text-sub">
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />The deck always starts at 5,000 slots: 3,500 BNB refunds (500 full, 600 × 75%, 800 × 50%, 1,600 × 25%), 1,020 TWAK bonuses (20 × 5×,
               40 × 3×, 80 × 2×, 160 × 1.5×, 320 × 1.25×, 400 × 1.1×) and 480 “better luck next time”.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Each VRF answer picks one remaining slot uniformly (random word mod slots left) and removes it. The odds shift as the deck empties.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Each Chainlink VRF answer picks one remaining slot at random and removes it. The odds shift as the deck empties.</li>
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />At a full 5,000 sellout the prize pool is 166.25 BNB of refunds and 35.2M TWAK of bonuses. Assigned refunds stay in escrow until claimed.</li>
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />If the mint ends early, undrawn slots are unsold: their BNB goes to liquidity / Draw V2 and their bonus TWAK is burned.</li>
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />This is a game of chance, not an investment. Most spins get back less than the 0.1 BNB paid.</li>

@@ -34,7 +34,6 @@ export const POOL_EV_PCT = 95;
 export const POOL_MAX_PAYOUT_PCT = 5; // a 10× win <= 5% of the free pool
 export const POOL_MAX_ENTRY_PCT = 0.5; // so max entry = 0.5% of the free pool
 export const POOL_INTENDED_SEED = "70M TWAK";
-export const POOL_TESTNET_SEED = "5M TWAK";
 
 const tier = (id: number, wheel: string, multBps: number, slots: number, bnbBonusBps: number, fill: string, ink: string): PoolPrize => ({
   id,

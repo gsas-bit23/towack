@@ -10,77 +10,28 @@ import { ConnectPill } from "./ConnectPill";
 import { AgentPathToggle, type AgentFlow, type AgentReferral } from "./AgentPath";
 import { Button, Pill } from "./ui";
 
-const KEY_LABEL: Record<ContractKey, string> = {
-  agentId: "Agent ID registry",
-  token: "TWAK token",
-  launch: "Launch / mint",
-  router: "Towack router",
-  rebateDistributor: "Rebate distributor",
-  teamVesting: "Team vesting",
-  drawV2: "Draw V2 pool wheel",
-  drawV2Legacy: "Draw V2 treasury (old)",
-  timelock: "Timelock",
-  wbnb: "WBNB",
-  pancakeRouter: "PancakeSwap router",
-  pancakeFactory: "PancakeSwap factory",
-  genesis: "Genesis 300",
-  genesisMock: "Genesis 300 (old, mock VRF)",
-  drawV2Mock: "Draw V2 pool (old, mock VRF)",
-  vrfCoordinator: "Chainlink VRF v2.5 coordinator",
-  vrfWrapper: "Chainlink VRF v2.5 wrapper",
-  launchVrfMock: "Test VRF coordinator (Launch)",
-};
-
-export function DeployingSoon({ keys, children }: { keys: ContractKey[]; children?: ReactNode }) {
-  const { meta, addresses } = useTowack();
-  const missing = keys.filter((k) => !addresses[k]);
+export function DeployingSoon({ children }: { keys?: ContractKey[]; children?: ReactNode }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-dashed border-line-2 bg-card p-8 text-center">
-      <Pill tone="gold">Deploying soon</Pill>
-      <h3 className="mt-4 text-[26px] font-semibold leading-tight tracking-tight">
-        {meta.testnet ? "Contracts deploying soon" : "Launching soon on BNB Smart Chain"}
-      </h3>
-      <p className="mx-auto mt-2 max-w-[560px] font-medium text-sub">
-        {meta.testnet
-          ? `The Towack contracts are not live on ${meta.name} yet, so this machine is switched off. Nothing to sign, nothing to send.`
-          : `Towack contracts are not live on ${meta.name} yet, so this machine is switched off. Nothing to sign, nothing to send — official addresses will appear here once deployed and verified.`}
-      </p>
-      {missing.length > 0 ? (
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          {missing.map((k) => (
-            <span key={k} className="rounded-full border border-line bg-card px-3 py-1 text-xs font-semibold">
-              {KEY_LABEL[k]}: pending deploy
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <Pill tone="neutral">Unavailable</Pill>
+      <h3 className="mt-4 text-[26px] font-semibold leading-tight tracking-tight">Temporarily unavailable</h3>
+      <p className="mx-auto mt-2 max-w-[560px] font-medium text-sub">This part of Towack is not available right now. Please check back soon.</p>
       {children ? <div className="mt-6">{children}</div> : null}
     </div>
   );
 }
 
-/** Global wrong-network and mainnet-launching-soon banner rendered directly below the nav bar. */
+/** Global wrong-network banner rendered directly below the nav bar. */
 export function SiteNetworkBanner() {
-  const { wrongNetwork, meta, addresses, selectChain, isSwitching, chainId } = useTowack();
+  const { wrongNetwork, switchToApp, isSwitching } = useTowack();
   if (wrongNetwork) {
     return (
       <div role="alert" className="border-b border-line bg-gold/10 px-4 py-2.5 text-fg">
         <div className="mx-auto flex max-w-[1220px] flex-wrap items-center justify-between gap-3 text-sm font-semibold">
-          <span>Your wallet is on an unsupported network. Switch to {meta.name} to use Towack.</span>
-          <Button tone="soft" size="sm" disabled={isSwitching} onClick={() => selectChain(chainId)}>
-            Switch to {meta.name}
+          <span>Your wallet is on another network. Towack runs on BNB Chain.</span>
+          <Button tone="soft" size="sm" disabled={isSwitching} onClick={switchToApp}>
+            Switch to BNB Chain
           </Button>
-        </div>
-      </div>
-    );
-  }
-  if (!meta.testnet && !addresses.launch) {
-    return (
-      <div role="status" className="border-b border-line bg-gold/5 px-4 py-2 text-fg">
-        <div className="mx-auto flex max-w-[1220px] flex-wrap items-center justify-between gap-2 text-sm font-medium">
-          <span>
-            <b className="font-semibold">BNB Smart Chain:</b> Launching soon — protocol contracts are not deployed yet. Nothing to sign or send.
-          </span>
         </div>
       </div>
     );
@@ -109,9 +60,9 @@ export function NeedsContracts({ keys, children, soon }: { keys: ContractKey[]; 
   return <>{children}</>;
 }
 
-/** `agent`: also offer the "Give this to your AI agent" (Binance Agentic Wallet, mainnet-only) copy-paste path. */
+/** `agent`: also offer the "Give this to your AI agent" (Binance Agentic Wallet) copy-paste path. */
 export function NeedsWallet({ children, why, agent, referral }: { children: ReactNode; why?: string; agent?: AgentFlow; referral?: AgentReferral }) {
-  const { isConnected, wrongNetwork, selectChain, chainId, meta } = useTowack();
+  const { isConnected, wrongNetwork, switchToApp, isSwitching } = useTowack();
   if (!isConnected) {
     return (
       <div className="rounded-2xl border border-line bg-card-2 p-7 text-center">
@@ -128,10 +79,10 @@ export function NeedsWallet({ children, why, agent, referral }: { children: Reac
     return (
       <div className="rounded-2xl border border-line bg-down/10 p-7 text-center">
         <p className="font-display text-[22px] font-semibold">Wrong network</p>
-        <p className="mt-1 font-medium text-sub">Towack runs on {meta.name}. Switch in your wallet to continue.</p>
+        <p className="mt-1 font-medium text-sub">Towack runs on BNB Chain. Switch in your wallet to continue.</p>
         <div className="mt-5 flex justify-center">
-          <Button tone="soft" size="sm" onClick={() => selectChain(chainId)}>
-            Switch to {meta.name}
+          <Button tone="soft" size="sm" disabled={isSwitching} onClick={switchToApp}>
+            Switch to BNB Chain
           </Button>
         </div>
       </div>
@@ -182,8 +133,8 @@ export function ChainNote() {
   const { meta } = useTowack();
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-sub">
-      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${meta.testnet ? "bg-card-2 text-fg" : "bg-gold/15 text-fg"}`}>{meta.name.toUpperCase()}</span>
-      {meta.testnet ? "Testnet build. Test BNB has no value." : "Mainnet view. Real BNB — only play with what you can afford to lose."}
+      <span className="rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-fg">{meta.name.toUpperCase()}</span>
+      Real BNB. Only play with what you can afford to lose.
     </div>
   );
 }
@@ -202,8 +153,7 @@ export function AddressLink({ address, label }: { address?: string; label?: stri
 export function LegacyLaunchNote() {
   return (
     <p className="mt-4 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
-      Heads up: the launch contract on this network is the previous single-seed version. The new per-mint prize wheel contract is being
-      redeployed, so minting from this page is paused until the address is updated.
+      Minting is temporarily paused. Please check back soon.
     </p>
   );
 }
@@ -215,8 +165,8 @@ const VRF_SOURCE_ABI = [
 
 /**
  * Where a contract's randomness comes from, read on-chain: `vrfWrapper()` on the wrapper-model contracts (official
- * Chainlink VRF v2.5 direct-funding wrapper), else `vrfCoordinator()` on older deploys (official coordinator, or
- * the owner-answered test coordinator the old testnet launch contract uses).
+ * Chainlink VRF v2.5 direct-funding wrapper), else `vrfCoordinator()` on older deploys. Shows a badge only when
+ * the source is the official Chainlink VRF; anything else gets a short caution.
  */
 export function VrfSource({ consumer }: { consumer?: Address }) {
   const { chainId, addresses, meta } = useTowack();
@@ -252,8 +202,7 @@ export function VrfSource({ consumer }: { consumer?: Address }) {
   }
   return (
     <p className="rounded-2xl border border-line bg-gold/5 px-4 py-2 text-sm font-medium">
-      {meta.testnet ? "Testnet: " : ""}this contract uses a test randomness coordinator, answered by the Towack team, not Chainlink VRF. Spins land
-      once the team answers.
+      Randomness source not verified as Chainlink VRF. Check the contract before playing.
     </p>
   );
 }

@@ -3,7 +3,7 @@
 import type { Address } from "viem";
 import { useGasPrice, useReadContract } from "wagmi";
 import { fmt18 } from "@/lib/format";
-import type { SupportedChainId } from "@/config/addresses";
+import type { AppChainId } from "@/config/chains";
 
 /** `vrfFeeAt(uint256 gasPrice)`: identical on TowackLaunch, TowackGenesis and DrawV2 (VRFConsumerV25). */
 const vrfFeeAbi = [
@@ -27,10 +27,10 @@ const vrfFeeAbi = [
  * it), then send +10%. Together with the contract's 10% they cover a ~1.5x gas-price move; beyond that the tx
  * reverts with VrfFeeTooLow (nothing is taken).
  *
- * `supported === false` means the contract predates user-paid fees (older retired testnet deploys only; the live
- * testnet stack and the mainnet script are all wrapper-based and user-paid): send no fee.
+ * `supported === false` means the contract predates user-paid fees (retired deploys only; the live mainnet
+ * contracts are all wrapper-based and user-paid): send no fee.
  */
-export function useVrfFee(address: Address | undefined, chainId: SupportedChainId) {
+export function useVrfFee(address: Address | undefined, chainId: AppChainId) {
   const { data: gasPrice } = useGasPrice({ chainId, query: { refetchInterval: 15_000 } });
   const quoteGas = gasPrice !== undefined ? (gasPrice * 125n) / 100n : undefined;
   const { data, isError } = useReadContract({

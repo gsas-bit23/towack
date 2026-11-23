@@ -138,7 +138,7 @@ function Positions({ agent, symbol }: { agent: StoredAgent; symbol?: string }) {
           </Table>
         )}
       </State>
-      <p className="px-3 pb-2 text-[11px] text-dim">From GET /fapi/v3/positionRisk, refreshed every 10s. Close a position with a reduce-only order in the ticket.</p>
+      <p className="px-3 pb-2 text-[11px] text-dim">Refreshed every 10s. Close a position with a reduce-only order in the ticket.</p>
     </>
   );
 }

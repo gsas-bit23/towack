@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Button, Pill } from "@/components/ui";
 import { explainAsterError, signedRequest, type StoredAgent } from "@/lib/aster/client";
-import { trimDecimal, type AsterNet, type MarketRow, type SymbolRules } from "@/lib/aster/markets";
+import { trimDecimal, type MarketRow, type SymbolRules } from "@/lib/aster/markets";
 import {
   buildBracket,
   buildOrder,
@@ -79,7 +79,6 @@ export function parseLeverage(v: string, max = 125): number | undefined {
 export type TicketPlan = { leverage?: number; entry: BuiltOrder; legs: { leg: "TP" | "SL"; order: BuiltOrder }[] };
 
 export function OrderTicket({
-  net,
   row,
   rules,
   agent,
@@ -87,7 +86,6 @@ export function OrderTicket({
   setForm,
   onNeedAgent,
 }: {
-  net: AsterNet;
   row: MarketRow | undefined;
   rules: SymbolRules | undefined;
   agent: StoredAgent | undefined;
@@ -206,7 +204,7 @@ export function OrderTicket({
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[16px] font-semibold tracking-tight">Order ticket</h2>
-        <Pill tone={net === "testnet" ? "neutral" : "gold"}>{net === "testnet" ? "Aster testnet" : "Aster mainnet"}</Pill>
+        <Pill tone="gold">Aster</Pill>
       </div>
 
       <MarginLev
@@ -387,20 +385,14 @@ export function OrderTicket({
             <dd className="text-right font-mono tabular-nums">{plan.entry.notional !== undefined ? `${plan.entry.notional.toFixed(2)} USDT` : "—"}</dd>
             <dt>Margin ≈ {effLev ? `at ${effLev}x` : ""}</dt>
             <dd className="text-right font-mono tabular-nums">{margin !== undefined ? `${margin.toFixed(2)} USDT` : agent ? "—" : "set leverage"}</dd>
-            <dt className="col-span-2 mt-2 text-[11px] font-medium uppercase tracking-[.08em] text-muted">Exact requests, signed by your API wallet, sent one by one</dt>
-            <dd className="col-span-2 space-y-1 break-all font-mono text-[11px] leading-snug text-fg">
-              {plan.leverage ? <div className="rounded-md bg-card px-2 py-1">POST /fapi/v3/leverage symbol={symbol}&leverage={plan.leverage}</div> : null}
-              <div className="rounded-md bg-card px-2 py-1">POST /fapi/v3/order {plan.entry.params.map(([k, v]) => `${k}=${v}`).join("&")}</div>
-              {plan.legs.map((l) => (
-                <div key={l.leg} className="rounded-md bg-card px-2 py-1">
-                  {l.leg}: POST /fapi/v3/order {l.order.params.map(([k, v]) => `${k}=${v}`).join("&")}
-                </div>
-              ))}
-            </dd>
+            {plan.legs.map((l) => (
+              <div key={l.leg} className="contents">
+                <dt>{l.leg === "TP" ? "Take profit" : "Stop loss"}</dt>
+                <dd className="text-right font-mono tabular-nums">{l.order.stopPrice ?? "—"}</dd>
+              </div>
+            ))}
             {plan.legs.length ? (
-              <dd className="col-span-2 mt-1 text-[11px] text-dim">
-                Sequential, not batchOrders: TP / SL are sent only after Aster accepts the entry. If a limit entry fills later, they stay as reduce-only triggers.
-              </dd>
+              <dd className="col-span-2 mt-1 text-[11px] text-dim">TP / SL are placed after Aster accepts the entry, as reduce-only orders.</dd>
             ) : null}
           </dl>
         ) : (
@@ -451,7 +443,7 @@ export function OrderTicket({
         ) : null}
       </div>
       <p className="mt-3 text-[11.5px] text-dim">
-        One-way mode (positionSide BOTH). Perps are leveraged: you can lose your whole margin and be liquidated. Orders go to Aster, not Towack. Towack adds no fee.
+        One-way mode. Perps are leveraged: you can lose your whole margin and be liquidated. Orders go to Aster, not Towack. Towack adds no fee.
       </p>
     </div>
   );
@@ -551,7 +543,9 @@ function MarginLev({
       </div>
       {pending ? (
         <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2 text-[12px]">
-          <span className="font-mono">POST /fapi/v3/marginType symbol={symbol}&marginType={pending}</span>
+          <span>
+            Switch {symbol} to {pending === "ISOLATED" ? "isolated" : "cross"} margin?
+          </span>
           <div className="mt-1.5 flex gap-2">
             <Button tone="gold" size="sm" disabled={busy} onClick={() => switchMode(pending)}>
               {busy ? "Sending…" : `Switch to ${pending === "ISOLATED" ? "isolated" : "cross"}`}

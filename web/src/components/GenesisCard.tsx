@@ -221,7 +221,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
     chainId,
     query: { enabled: Boolean(reg && account && registry), retry: false },
   });
-  // Testnet MockAgentIdNFT implements ERC721Enumerable (tokenOfOwnerByIndex).
+  // Agent ID registries that implement ERC721Enumerable expose tokenOfOwnerByIndex.
   const { data: enumAutoId } = useReadContract({
     address: reg,
     abi: agentNftAbi,
@@ -331,7 +331,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
       <p className="mt-2 text-center text-sm font-medium text-muted">
         {vrf.supported === false
           ? "Free: you only pay gas. Your wallet asks you to confirm."
-          : `No mint price. You pay gas plus a Chainlink VRF fee of about ${vrf.label} for your spin (not a mint price; any extra is refunded). Your wallet asks you to confirm.`}
+          : `No mint price. You pay gas plus a Chainlink VRF fee of about ${vrf.label} for your spin. Your wallet asks you to confirm.`}
       </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       {!minted ? <AgentPathToggle flow="genesis" className="mt-4" /> : null}
@@ -439,8 +439,8 @@ export function GenesisCard() {
               <GenesisClaim onMinted={() => setFresh(true)} />
             ) : (
               <div className="rounded-2xl border border-dashed border-line bg-card px-4 py-5 text-center">
-                <div className="font-display text-[20px] font-semibold">Genesis 300 launching soon</div>
-                <p className="mt-1 text-sm font-medium text-sub">Not deployed on this network yet. Nothing to sign or send.</p>
+                <div className="font-display text-[20px] font-semibold">Genesis 300 unavailable</div>
+                <p className="mt-1 text-sm font-medium text-sub">Not available right now. Nothing to sign or send.</p>
                 <AgentPathToggle flow="genesis" className="mt-4" />
               </div>
             )}

@@ -22,13 +22,13 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 
 ## Frontend (web/)
-Next.js App Router + wagmi/viem/RainbowKit + motion, "Atlas" product design (branch `design/atlas`). The prize wheel on /mint and /draw has a `?demo=wheel` preview when no live per-mint launch contract is configured. Default chain BSC testnet (97), mainnet (56) via the network toggle; live mainnet addresses are in `web/src/config/addresses.json` under `"56"`.
+Next.js App Router + wagmi/viem/RainbowKit + motion, "Atlas" product design (branch `design/atlas`). The prize wheel on /mint and /draw has a `?demo=wheel` preview when no live per-mint launch contract is configured. The production app is locked to BSC mainnet (56) with no network switch; live addresses are in `web/src/config/addresses.json` under `"56"` (the `"97"` section is historical and unused at runtime).
 ```sh
 cd web && npm i && npm run dev        # http://localhost:3000
 npm run build                         # production build
 npm run abi                           # forge build + re-export ABIs to web/src/abi/
 ```
-Contract addresses live in `web/src/config/addresses.json` (overridable via `NEXT_PUBLIC_TOWACK_<chain>_<KEY>`, see `web/.env.example`). Until they are filled, interactive pages show a "Contracts deploying soon" state. Every Towack contract write opens in the user's own wallet; there is no server wallet. Exception: on `/perps`, a trade-only Aster API wallet the user sets up (`canWithdraw=false`) is stored in their browser and signs Aster requests without a per-order popup. See [web/README.md](web/README.md).
+Contract addresses live in `web/src/config/addresses.json` (overridable via `NEXT_PUBLIC_TOWACK_<chain>_<KEY>`, see `web/.env.example`). If an address is missing, that page shows a neutral "Temporarily unavailable" state. Every Towack contract write opens in the user's own wallet; there is no server wallet. Exception: on `/perps`, a trade-only Aster API wallet the user sets up (`canWithdraw=false`) is stored in their browser and signs Aster requests without a per-order popup. See [web/README.md](web/README.md).
 
 ## Build & test
 ```sh

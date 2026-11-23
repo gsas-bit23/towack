@@ -8,7 +8,7 @@ import { AgentPathToggle } from "@/components/AgentPath";
 import { ConnectPill } from "@/components/ConnectPill";
 import { Panel, Pill } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
-import { ASTER_APP_URL, ASTER_DOCS_URL, fetchMarkets, trimDecimal, type AsterNet, type MarketRow } from "@/lib/aster/markets";
+import { ASTER_APP_URL, fetchMarkets, trimDecimal, type AsterNet, type MarketRow } from "@/lib/aster/markets";
 import {
   fetchDepth,
   fetchTrades,
@@ -37,9 +37,8 @@ import { useAsterStream } from "./useAsterStream";
 type Live = { key: string; book?: Book; trades: Trade[]; mark?: ReturnType<typeof parseMarkEvent>; ticker?: ReturnType<typeof parseTickerEvent> };
 
 export function PerpsDesk() {
-  const { meta } = useTowack();
-  const [netPick, setNetPick] = useState<AsterNet>();
-  const net: AsterNet = netPick ?? (meta.testnet ? "testnet" : "mainnet");
+  // Aster mainnet only.
+  const net: AsterNet = "mainnet";
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [interval, setIv] = useState<ChartInterval>("15m");
   const [form, setForm] = useState<OrderForm>(EMPTY_FORM);
@@ -172,9 +171,8 @@ export function PerpsDesk() {
 
   return (
     <div className="space-y-3">
-      <TitleBar net={net} setNet={setNetPick} />
+      <TitleBar net={net} />
       <MarketHeader
-        net={net}
         symbol={symbol}
         row={row}
         rows={markets.data?.rows}
@@ -220,7 +218,7 @@ export function PerpsDesk() {
               </button>
             </div>
           ) : null}
-          <OrderTicket net={net} row={row} rules={rules} agent={agent} form={form} setForm={setForm} onNeedAgent={needAgent} />
+          <OrderTicket row={row} rules={rules} agent={agent} form={form} setForm={setForm} onNeedAgent={needAgent} />
         </section>
 
         <div ref={accountRef} className="min-w-0 scroll-mt-24 lg:col-start-2 lg:row-start-4 xl:col-start-3 xl:row-start-3">
@@ -245,48 +243,25 @@ export function PerpsDesk() {
   );
 }
 
-function TitleBar({ net, setNet }: { net: AsterNet; setNet: (n: AsterNet) => void }) {
+function TitleBar({ net }: { net: AsterNet }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
         <h1 className="text-[21px] font-semibold tracking-tight">Perps on Aster</h1>
-        <p className="text-[12.5px] text-muted">
-          Live Aster data, read straight from Aster&apos;s public API. You trade with a trade-only API wallet kept in this browser. Towack holds no key and adds no fee.
-        </p>
+        <p className="text-[12.5px] text-muted">Live Aster markets. Trade with a trade-only API wallet kept in this browser. Towack adds no fee.</p>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-[10px] border border-line bg-card p-1" role="tablist" aria-label="Aster network">
-          {(["mainnet", "testnet"] as const).map((n) => (
-            <button
-              key={n}
-              type="button"
-              role="tab"
-              aria-selected={net === n}
-              onClick={() => setNet(n)}
-              className={`rounded-md px-3 py-1 text-[12.5px] font-semibold ${net === n ? (n === "mainnet" ? "bg-gold/15 text-gold" : "bg-card-2 text-fg") : "text-muted hover:text-fg"}`}
-            >
-              {n === "mainnet" ? "Mainnet" : "Testnet"}
-            </button>
-          ))}
-        </div>
-        <Pill tone="line">Public data · no key</Pill>
-        <span className="text-[12px] text-muted">
-          {net === "testnet" ? "Faucet USDT, no real value. " : "Real money. "}
-          <a className="underline hover:text-fg" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
-            Aster ↗
-          </a>{" "}
-          ·{" "}
-          <a className="underline hover:text-fg" href={ASTER_DOCS_URL} target="_blank" rel="noreferrer">
-            API docs ↗
-          </a>
-        </span>
-      </div>
+      <span className="text-[12px] text-muted">
+        Real money.{" "}
+        <a className="underline hover:text-fg" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
+          Open Aster ↗
+        </a>
+      </span>
     </div>
   );
 }
 
 function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
-  const { chainId, addresses, account, isConnected, meta } = useTowack();
+  const { chainId, addresses, account, isConnected } = useTowack();
   const { data: bal } = useReadContract({
     address: addresses.agentId,
     abi: agentIdAbi,
@@ -308,17 +283,17 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
         <li>
           Agent ID holders unlock <b>Give this to your AI agent</b> for Binance Agentic Wallet. The instruction carries the exact ticket above (type, trigger, TP / SL, leverage).
         </li>
-        <li>Rebates: none on Aster trades today. Towack takes no fee and has no on-chain rebate hook on Aster. Nothing is promised.</li>
+        <li>No Towack fee and no rebates on Aster trades.</li>
       </ul>
 
       <div className="mt-3">
         {!isConnected ? (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-3">
-            <p className="text-[13px] text-sub">Connect to check your Agent ID ({meta.name}).</p>
+            <p className="text-[13px] text-sub">Connect to check your Agent ID.</p>
             <ConnectPill />
           </div>
         ) : !addresses.agentId ? (
-          <p className="rounded-xl border border-line bg-gold/5 px-3 py-2 text-[13px]">The Agent ID registry isn&apos;t configured on {meta.name}.</p>
+          <p className="rounded-xl border border-line bg-gold/5 px-3 py-2 text-[13px]">Agent ID check is unavailable right now.</p>
         ) : hasAgent === undefined ? (
           <p className="text-[13px] text-muted">Checking Agent ID…</p>
         ) : hasAgent ? (
@@ -327,8 +302,8 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
           <div className="rounded-xl border border-dashed border-line bg-surface px-3 py-3 text-[13px]">
             <Pill tone="gold">Agent path locked</Pill>
             <p className="mt-2 text-sub">
-              The AI-agent path is for Agent ID wallets. This wallet holds none on {meta.name}. You can still trade with the order ticket. Agent IDs are issued in the
-              official Binance App (mainnet).
+              The AI-agent path is for Agent ID wallets. This wallet holds none. You can still trade with the order ticket. Agent IDs are issued in the
+              official Binance App.
             </p>
           </div>
         )}

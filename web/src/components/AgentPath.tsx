@@ -4,7 +4,6 @@ import { useState } from "react";
 import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } from "viem";
 import { ADDRESSES } from "@/config/addresses";
 import { buildSwapInstruction, type AgentRoute } from "@/lib/agentSwap";
-import { useTowack } from "@/lib/chain";
 import { buildPerpsInstruction, type PerpsAgentIntent } from "@/lib/aster/instruction";
 import { Button, Pill } from "./ui";
 
@@ -13,8 +12,8 @@ import { Button, Pill } from "./ui";
  *
  * BAW is MAINNET-ONLY (chain 56) and cannot connect to web pages, so this site never signs, never broadcasts and
  * never runs the BAW CLI: it only displays text the user pastes into their own AI agent (which has Binance's
- * official `binance-agentic-wallet` skill). Addresses come from addresses.json chain 56 only; empty ones are shown
- * as visible placeholders ("pending mainnet deploy"), never invented.
+ * official `binance-agentic-wallet` skill). Addresses come from addresses.json chain 56 only; an empty one (should
+ * not happen now that mainnet is live) is shown as a visible "address unavailable" placeholder, never invented.
  */
 
 export type AgentFlow =
@@ -70,7 +69,7 @@ function mainnet(key: Key, placeholder: string) {
   return { addr: a ?? placeholder, missing: !a };
 }
 
-const PENDING = "  (pending mainnet deploy: do NOT send anything until Towack publishes this address)";
+const PENDING = "  (address unavailable: do NOT send anything)";
 
 const BASE_RULES = `Rules (Binance Agentic Wallet, official external-sign flow):
 - BNB Smart Chain MAINNET only: --binanceChainId 56. Towack's website never signs or broadcasts for me; you prepare, I confirm.
@@ -139,7 +138,7 @@ ${footer(`${BASE_RULES}\n${vrfRule("TowackGenesis")}`)}`;
     case "lottery": {
       const pending = d.missing || t.missing;
       const text = `Towack Draw V2 pool wheel entry on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
-Contracts: TWAK ${t.addr} · DrawV2 ${d.addr}${pending ? "  (pending mainnet deploy: do NOT send anything until Towack publishes these addresses)" : ""}
+Contracts: TWAK ${t.addr} · DrawV2 ${d.addr}${pending ? "  (address unavailable: do NOT send anything)" : ""}
 Anyone can enter (no Agent ID needed). Amount: <AMOUNT_TWAK_WEI> (18 decimals, minimum entry applies).
 
 1) TWAK.approve(DrawV2, amount) (selector ${SEL_APPROVE}): --to TWAK, --value 0. Exact amount only, never unlimited.
@@ -178,7 +177,7 @@ ${footer(BASE_RULES)}`;
       const p = mainnet("pancakeRouter", "<PANCAKE_V2_ROUTER>");
       const w = mainnet("wbnb", "<WBNB>");
       const text = `Buy TWAK through the Towack router on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
-Contracts: TowackRouter ${r.addr} · TWAK ${t.addr}${r.missing || t.missing ? "  (pending mainnet deploy: do NOT send anything until Towack publishes these addresses)" : ""}
+Contracts: TowackRouter ${r.addr} · TWAK ${t.addr}${r.missing || t.missing ? "  (address unavailable: do NOT send anything)" : ""}
 Spend: <AMOUNT_BNB_WEI> BNB (wei). The router keeps a 1% fee from the BNB in; anyone can trade.
 
 1) Quote: PancakeSwap v2 router ${p.addr}.getAmountsOut(amount * 99 / 100, [WBNB ${w.addr}, TWAK]) (selector ${SEL_GET_AMOUNTS_OUT}) via eth_call.
@@ -192,7 +191,7 @@ ${footer(BASE_RULES)}`;
       const p = mainnet("pancakeRouter", "<PANCAKE_V2_ROUTER>");
       const w = mainnet("wbnb", "<WBNB>");
       const text = `Sell TWAK through the Towack router on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
-Contracts: TowackRouter ${r.addr} · TWAK ${t.addr}${r.missing || t.missing ? "  (pending mainnet deploy: do NOT send anything until Towack publishes these addresses)" : ""}
+Contracts: TowackRouter ${r.addr} · TWAK ${t.addr}${r.missing || t.missing ? "  (address unavailable: do NOT send anything)" : ""}
 Sell: <AMOUNT_TWAK_WEI> TWAK (18 decimals). The router keeps a 1% fee from the BNB out.
 
 1) TWAK.approve(TowackRouter, amount) (selector ${SEL_APPROVE}): --to TWAK, --value 0. EXACT amount only, never unlimited / max uint.
@@ -246,7 +245,6 @@ export function AgentPathPanel({
   swap?: AgentSwapContext;
   className?: string;
 }) {
-  const { meta } = useTowack();
   const { text, missing } = buildInstruction(flow, referral, perps, swap);
   const isPerps = flow === "perps";
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
@@ -267,16 +265,6 @@ export function AgentPathPanel({
         <Pill tone="neutral">BINANCE AGENTIC WALLET</Pill>
         <Pill tone="gold">MAINNET ONLY · CHAIN 56</Pill>
       </div>
-
-      {meta.testnet ? (
-        <div className="mt-4 rounded-2xl border border-line bg-down/10 px-4 py-3 font-medium">
-          <Pill tone="gold">NOT FOR TESTNET</Pill>
-          <p className="mt-2">
-            BAW does not support testnet, use MetaMask. Binance Agentic Wallet cannot connect to this page; to test here, use MetaMask or another
-            browser wallet on {meta.name}. The steps below are for mainnet later; copy them for reference, not for this testnet.
-          </p>
-        </div>
-      ) : null}
 
       <p className="mt-4 font-medium text-sub">
         Paste this into your AI agent (e.g. Claude Code) that has Binance&apos;s official{" "}
@@ -301,13 +289,12 @@ export function AgentPathPanel({
 
       {missing.length > 0 ? (
         <p className="mt-3 rounded-2xl border border-dashed border-line bg-gold/5 px-4 py-3 font-medium">
-          Mainnet contracts are not deployed yet ({missing.join(", ")}): the instruction uses placeholders. Do not send anything until Towack publishes
-          the mainnet addresses.
+          Some contract addresses are unavailable right now ({missing.join(", ")}). Do not send anything.
         </p>
       ) : null}
 
       <pre
-        className={`mt-4 max-h-[320px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-line bg-card p-4 font-mono text-[12.5px] leading-relaxed text-fg ${meta.testnet ? "opacity-70" : ""}`}
+        className={`mt-4 max-h-[320px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-line bg-card p-4 font-mono text-[12.5px] leading-relaxed text-fg`}
         aria-label="Instruction for your AI agent"
       >
         {text}
@@ -315,7 +302,7 @@ export function AgentPathPanel({
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button tone="soft" size="sm" onClick={copy}>
-          {copied === "ok" ? "Copied ✓" : copied === "fail" ? "Copy failed: select the text" : meta.testnet ? "Copy mainnet steps" : "Copy for my agent"}
+          {copied === "ok" ? "Copied ✓" : copied === "fail" ? "Copy failed: select the text" : "Copy for my agent"}
         </Button>
         <a className="inline-flex min-h-10 items-center text-sm font-semibold underline" href={TOWACK_SKILL_PATH} target="_blank" rel="noreferrer">
           Towack agent skill (SKILL.md)

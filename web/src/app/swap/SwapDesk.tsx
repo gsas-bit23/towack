@@ -78,10 +78,10 @@ export function SwapDesk() {
 }
 
 function SwapCard() {
-  const { chainId, addresses, account, meta } = useTowack();
+  const { chainId, addresses, account } = useTowack();
   const twak = addresses.token ? makeToken(chainId, addresses.token, "TWAK", "Towack") : undefined;
   const originTokens = [...ORIGIN_TOKENS[chainId], ...(twak ? [twak] : [])];
-  const destChains = chainId === 56 ? [{ id: 56, name: CHAIN_NAMES[56] }, ...RELAY_DESTINATIONS.map((c) => ({ id: c.id, name: c.name }))] : [{ id: chainId, name: meta.name }];
+  const destChains = [{ id: 56, name: CHAIN_NAMES[56] }, ...RELAY_DESTINATIONS.map((c) => ({ id: c.id, name: c.name }))];
 
   const [fromAddr, setFromAddr] = useState<string>("");
   const [toChain, setToChain] = useState<number>(0);
@@ -315,13 +315,6 @@ function SwapCard() {
           </div>
         </Field>
 
-        {meta.testnet ? (
-          <p className="rounded-2xl border border-line bg-card-2 px-4 py-3 text-sm font-medium">
-            Testnet: only PancakeSwap (v2 + v3) has BSC-testnet pools. Relay cross-chain and Uniswap are mainnet-only, and test pools are thin, so quotes can
-            look odd. Switch the network toggle to Mainnet to compare real Relay / Uniswap quotes (you can view without signing anything).
-          </p>
-        ) : null}
-
         {crossChain ? (
           <Field label="Recipient on destination (optional)" hint={`Defaults to your connected wallet. Must be an address you control on ${CHAIN_NAMES[destChainId]}.`}>
             <input
@@ -407,7 +400,7 @@ function SwapCard() {
         <AgentPathToggle key={`${crossChain}-${selected?.provider ?? "none"}`} flow={crossChain ? "bridge" : "swap"} swap={agentCtx} className="mt-4" />
       </div>
       <p className="mt-6 text-sm font-semibold text-muted">
-        Quotes are estimates and refresh every 20 seconds. Prices move; bridges take time. Towack is not affiliated with Relay, PancakeSwap, Uniswap, 0x or 1inch.
+        Quotes are estimates and refresh every 20 seconds. Prices move; bridges take time.
       </p>
     </Panel>
   );
@@ -562,19 +555,20 @@ function HowRouting() {
 }
 
 function ProvidersPanel() {
-  const rows: { id: ProviderId; what: string; state: string; on: boolean }[] = [
-    { id: "pancakeV3", what: "On-chain QuoterV2 + SmartRouter", state: "Keyless · mainnet + testnet", on: true },
-    { id: "pancakeV2", what: "On-chain router getAmountsOut", state: "Keyless · mainnet + testnet", on: true },
-    { id: "uniswapV3", what: "On-chain QuoterV2 + SwapRouter02", state: "Keyless · mainnet", on: true },
-    { id: "relay", what: "Cross-chain bridge + swap API", state: "Keyless · mainnet", on: true },
-    { id: "zeroex", what: "Aggregator API v2", state: PROVIDER_KEYS_SET.zeroex ? "Key set" : "Off · needs NEXT_PUBLIC_ZEROX_API_KEY", on: PROVIDER_KEYS_SET.zeroex },
-    { id: "oneinch", what: "Aggregator API v6", state: PROVIDER_KEYS_SET.oneinch ? "Key set" : "Off · needs NEXT_PUBLIC_ONEINCH_API_KEY", on: PROVIDER_KEYS_SET.oneinch },
+  // Providers that are switched off are simply not listed.
+  const rows: { id: ProviderId; what: string; on: boolean }[] = [
+    { id: "pancakeV3", what: "Swap · v3 pools", on: true },
+    { id: "pancakeV2", what: "Swap · v2 pools", on: true },
+    { id: "uniswapV3", what: "Swap · v3 pools", on: true },
+    { id: "relay", what: "Cross-chain bridge + swap", on: true },
+    { id: "zeroex", what: "Aggregator", on: PROVIDER_KEYS_SET.zeroex },
+    { id: "oneinch", what: "Aggregator", on: PROVIDER_KEYS_SET.oneinch },
   ];
   return (
     <Panel>
       <h2 className="text-[20px] font-semibold tracking-tight">Providers</h2>
       <ul className="mt-4 space-y-3">
-        {rows.map((r) => (
+        {rows.filter((r) => r.on).map((r) => (
           <li key={r.id} className="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-3 sm:gap-y-1.5">
             <div className="min-w-0">
               <a className="font-display text-[17px] font-semibold underline decoration-2 underline-offset-2" href={PROVIDER_SITE[r.id]} target="_blank" rel="noreferrer">
@@ -582,11 +576,7 @@ function ProvidersPanel() {
               </a>
               <div className="text-sm font-medium text-muted">{r.what}</div>
             </div>
-            <span
-              className={`max-w-full rounded-2xl px-3 py-1 text-left text-xs font-semibold [overflow-wrap:anywhere] sm:text-right ${r.on ? "bg-card-2 text-fg" : "border border-dashed border-line bg-card text-sub"}`}
-            >
-              {r.state}
-            </span>
+            <span className="max-w-full rounded-2xl bg-card-2 px-3 py-1 text-left text-xs font-semibold text-fg sm:text-right">Live</span>
           </li>
         ))}
       </ul>
