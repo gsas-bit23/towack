@@ -177,13 +177,15 @@ export default function Home() {
                 Open Perps →
               </Link>
             </StaggerItem>
-            <StaggerItem className="min-w-0 rounded-2xl border border-dashed border-line-2 p-6">
+            <StaggerItem className="lift min-w-0 rounded-2xl border border-line bg-card p-6">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[13px] text-muted">03 · Next</span>
-                <Pill tone="line">Pending</Pill>
+                <span className="font-mono text-[13px] text-muted">03 · Phase 3</span>
+                <Pill tone="up">Live</Pill>
               </div>
               <div className="mt-4 text-[16px] font-semibold">BNB Smart Chain mainnet deploy</div>
-              <p className="mt-2 text-[14px] text-muted">Everything above runs on BSC Testnet today. The Towack contracts are not yet deployed on mainnet; that deploy happens only after the final go-ahead.</p>
+              <p className="mt-2 text-[14px] text-muted">
+                Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free mint are open, and the Draw V2 pool is funded. Switch the site to BNB Smart Chain to use the live contracts.
+              </p>
             </StaggerItem>
           </Stagger>
         </section>

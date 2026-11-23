@@ -23,15 +23,19 @@ Requires Binance's official skill: https://github.com/binance/binance-skills-hub
 
 ## Addresses (chain 56)
 
-Mainnet contracts are **not deployed yet**. Until Towack publishes them, these are placeholders: do not send anything.
+Mainnet contracts are live on BNB Smart Chain (chain 56), deployed 23 Nov 2026, 7:17 PM PKT. Explorer: https://bscscan.com
 
 | Contract | Address |
 |---|---|
-| TowackLaunch | `<TOWACK_LAUNCH>` (pending mainnet deploy) |
-| TowackGenesis | `<TOWACK_GENESIS>` (pending mainnet deploy) |
-| DrawV2 | `<TOWACK_DRAWV2>` (pending mainnet deploy) |
-| TWAK token | `<TOWACK_TWAK>` (pending mainnet deploy) |
-| TowackRouter | `<TOWACK_ROUTER>` (pending mainnet deploy) |
+| TowackLaunch | `0xc102c1d5F308722d24850bb5ebF7214831D63E51` |
+| TowackGenesis | `0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038` |
+| DrawV2 | `0xdf4499f5690474F502a774eCF6B93E73f57944C8` |
+| TWAK token | `0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494` |
+| TowackRouter | `0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775` |
+| RebateDistributor | `0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf` |
+| TeamVesting | `0x9d2a285d244689221cB49a60ed8C738A4219cEF3` |
+| TimelockController | `0x6E908eE594B447efe7C70A50b17E9d583e674D60` |
+| TWAK/WBNB Pancake pair | `0x8F64C0fef2f5Ff365C9a1E3D3c925a07078733Cc` |
 | SPACE ID Agent ID (`HandleRegistry`) | `0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F` |
 | Chainlink VRF v2.5 Direct-Funding Wrapper | `0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94` |
 | PancakeSwap v2 Router02 (quotes only) | `0x10ED43C718714eb63d5aA57B78B54704E256024E` |

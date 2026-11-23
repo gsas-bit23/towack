@@ -1,0 +1,243 @@
+{
+  "status": "LIVE",
+  "chainId": 56,
+  "network": "bsc-mainnet",
+  "explorer": "https://bscscan.com",
+  "deployer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+  "deployedAtPkt": "2026-11-23 19:17:44 PKT",
+  "mintStartPkt": "2026-11-23 19:17:44 PKT",
+  "mintEndPkt": "2026-11-30 19:17:44 PKT",
+  "mintStart": 1795443464,
+  "mintEnd": 1796048264,
+  "go": "Mateen answered card t201s895: lower GAS_RESERVE to 0.002, use the deployer wallet for all roles, and broadcast now.",
+  "gas": {
+    "txs": 16,
+    "totalGasUsed": 15521157,
+    "gasPriceGwei": 0.1,
+    "spentBnb": "0.0015521157",
+    "deployerBalanceBeforeBnb": "0.002634759573512827",
+    "deployerBalanceAfterBnb": "0.001082643873512827",
+    "firstBlock": 135285664,
+    "lastBlock": 135285749
+  },
+  "roles": {
+    "note": "Per Mateen's go, all recipient / admin roles defaulted to the deployer EOA (ALLOW_DEPLOYER_RECIPIENTS=true).",
+    "seasonsWallet": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "ecosystemWallet": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "polBufferWallet": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "teamBeneficiary": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "devWallet": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "timelockProposer": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "genesisOwner": "0x38A0f77Dad60B34cF5cD39305687e354696a6776"
+  },
+  "contracts": {
+    "agentId": "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
+    "vrfCoordinator": "0xd691f04bc0C9a24Edb78af9E005Cf85768F694C9",
+    "vrfWrapper": "0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94",
+    "timelock": "0x6E908eE594B447efe7C70A50b17E9d583e674D60",
+    "drawV2": "0xdf4499f5690474F502a774eCF6B93E73f57944C8",
+    "launch": "0xc102c1d5F308722d24850bb5ebF7214831D63E51",
+    "rebateDistributor": "0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf",
+    "teamVesting": "0x9d2a285d244689221cB49a60ed8C738A4219cEF3",
+    "token": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+    "pair": "0x8F64C0fef2f5Ff365C9a1E3D3c925a07078733Cc",
+    "router": "0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775",
+    "genesis": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+    "wbnb": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "pancakeRouter": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+    "pancakeFactory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+  },
+  "allocationsTwak": {
+    "launch": "650000000",
+    "drawV2": "70000000",
+    "rebateDistributor": "100000000",
+    "teamVesting": "50000000",
+    "genesis": "8000000",
+    "deployerRemainder": "122000000",
+    "totalSupply": "1000000000",
+    "note": "Deployer remainder is seasons + ecosystem leftover + POL buffer, because those wallets were set to the deployer EOA."
+  },
+  "statusChecks": {
+    "allBytecodeNonEmpty": true,
+    "tokenName": "Towack",
+    "tokenSymbol": "TWAK",
+    "genesisIsOpen": true,
+    "genesisFundedTwak": "8000000",
+    "genesisMaxMints": 300,
+    "genesisOwner": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "launchMaxMints": 5000,
+    "launchMintStart": 1795443464,
+    "launchMintEnd": 1796048264
+  },
+  "notes": [
+    "Broadcast 2026-11-23 19:17 PKT from deployer 0x38A0\u20266776 after Mateen's explicit go (t201s895).",
+    "GAS_RESERVE lowered from 0.03 to 0.002 ether to match the 0.0026348 BNB fund.",
+    "16 txs, 15,521,157 gas, 0.0015521157 BNB at 0.1 gwei (legacy).",
+    "Genesis was funded with 8M TWAK and opened in the same script (isOpen=true).",
+    "Paid Launch window is 7 days from deploy: 2026-11-23 19:17:44 PKT to 2026-11-30 19:17:44 PKT.",
+    "Source verification on Sourcify / BscScan is a follow-up; production Vercel promote still needs Mateen's sign-off.",
+    "Do not commit .env, private keys, or Foundry cache/broadcast (gitignored)."
+  ],
+  "transactions": [
+    {
+      "hash": "0xd93667240a3471e456ec86b3eefe2895eccac914682b773333c36e025670d11e",
+      "url": "https://bscscan.com/tx/0xd93667240a3471e456ec86b3eefe2895eccac914682b773333c36e025670d11e",
+      "name": "TimelockController",
+      "contractAddress": "0x6E908eE594B447efe7C70A50b17E9d583e674D60",
+      "txType": "CREATE",
+      "blockNumber": 135285664,
+      "status": "0x1",
+      "gasUsed": 1338712
+    },
+    {
+      "hash": "0x4f29dfc588d9eaa9919eb8dc7c193ac25480aeefe3a8a11649f41f1494422dc3",
+      "url": "https://bscscan.com/tx/0x4f29dfc588d9eaa9919eb8dc7c193ac25480aeefe3a8a11649f41f1494422dc3",
+      "name": "DrawV2",
+      "contractAddress": "0xdf4499f5690474F502a774eCF6B93E73f57944C8",
+      "txType": "CREATE",
+      "blockNumber": 135285668,
+      "status": "0x1",
+      "gasUsed": 1819473
+    },
+    {
+      "hash": "0xc629273fb239cc7b7cd9bd5678de90135b16c7537d34ad9ab34d9e3b964eba1c",
+      "url": "https://bscscan.com/tx/0xc629273fb239cc7b7cd9bd5678de90135b16c7537d34ad9ab34d9e3b964eba1c",
+      "name": "TowackLaunch",
+      "contractAddress": "0xc102c1d5F308722d24850bb5ebF7214831D63E51",
+      "txType": "CREATE",
+      "blockNumber": 135285673,
+      "status": "0x1",
+      "gasUsed": 2936988
+    },
+    {
+      "hash": "0xa0c5f35588fe01fdf068d9bf20f23342265d05632dd0c5691cb0897be423cf93",
+      "url": "https://bscscan.com/tx/0xa0c5f35588fe01fdf068d9bf20f23342265d05632dd0c5691cb0897be423cf93",
+      "name": "RebateDistributor",
+      "contractAddress": "0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf",
+      "txType": "CREATE",
+      "blockNumber": 135285678,
+      "status": "0x1",
+      "gasUsed": 861116
+    },
+    {
+      "hash": "0xf12470c338defaaf71e1940e539d0af4bc76fbf11f8fbbb55497b05e619be9b7",
+      "url": "https://bscscan.com/tx/0xf12470c338defaaf71e1940e539d0af4bc76fbf11f8fbbb55497b05e619be9b7",
+      "name": "TeamVesting",
+      "contractAddress": "0x9d2a285d244689221cB49a60ed8C738A4219cEF3",
+      "txType": "CREATE",
+      "blockNumber": 135285685,
+      "status": "0x1",
+      "gasUsed": 405966
+    },
+    {
+      "hash": "0xed4a0de3ea21ac72e803c5c6bd0691360921481d4687afb50172b40d9c0ed9ec",
+      "url": "https://bscscan.com/tx/0xed4a0de3ea21ac72e803c5c6bd0691360921481d4687afb50172b40d9c0ed9ec",
+      "name": "TowackToken",
+      "contractAddress": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+      "txType": "CREATE",
+      "blockNumber": 135285689,
+      "status": "0x1",
+      "gasUsed": 4169377
+    },
+    {
+      "hash": "0x9d59878a2613463defa4ee7ebe7e864b69e626270b83f867a17be7f3d7fc836c",
+      "url": "https://bscscan.com/tx/0x9d59878a2613463defa4ee7ebe7e864b69e626270b83f867a17be7f3d7fc836c",
+      "name": "TowackLaunch.bindToken",
+      "contractAddress": "0xc102c1d5F308722d24850bb5ebF7214831D63E51",
+      "txType": "CALL",
+      "blockNumber": 135285694,
+      "status": "0x1",
+      "gasUsed": 74894
+    },
+    {
+      "hash": "0x92e75ed780c5cdd4d20e9c1bab34c423c5bad6b3d30a247374745ea1a2ed1808",
+      "url": "https://bscscan.com/tx/0x92e75ed780c5cdd4d20e9c1bab34c423c5bad6b3d30a247374745ea1a2ed1808",
+      "name": "TeamVesting.bindToken",
+      "contractAddress": "0x9d2a285d244689221cB49a60ed8C738A4219cEF3",
+      "txType": "CALL",
+      "blockNumber": 135285702,
+      "status": "0x1",
+      "gasUsed": 50532
+    },
+    {
+      "hash": "0xb424af7c0c7a927d5ca155bab1ddb785315cf00da48d26a9af4a8b3c9ad3fb05",
+      "url": "https://bscscan.com/tx/0xb424af7c0c7a927d5ca155bab1ddb785315cf00da48d26a9af4a8b3c9ad3fb05",
+      "name": "DrawV2.bindToken",
+      "contractAddress": "0xdf4499f5690474F502a774eCF6B93E73f57944C8",
+      "txType": "CALL",
+      "blockNumber": 135285709,
+      "status": "0x1",
+      "gasUsed": 50878
+    },
+    {
+      "hash": "0x7b57b07c425280b090d11318c868a2ca9d10bb5211fe909b8c881692f8d41be9",
+      "url": "https://bscscan.com/tx/0x7b57b07c425280b090d11318c868a2ca9d10bb5211fe909b8c881692f8d41be9",
+      "name": "TowackRouter",
+      "contractAddress": "0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775",
+      "txType": "CREATE",
+      "blockNumber": 135285713,
+      "status": "0x1",
+      "gasUsed": 1454055
+    },
+    {
+      "hash": "0xa7d142dcfe6c78a77d4aea18e4964e3a611d4c6a33ca1fe561d041de89aae531",
+      "url": "https://bscscan.com/tx/0xa7d142dcfe6c78a77d4aea18e4964e3a611d4c6a33ca1fe561d041de89aae531",
+      "name": "RebateDistributor.bind",
+      "contractAddress": "0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf",
+      "txType": "CALL",
+      "blockNumber": 135285717,
+      "status": "0x1",
+      "gasUsed": 74753
+    },
+    {
+      "hash": "0x6c62baf53d9fdc80166ecc5c8b32b2c97ec8b9e0982a494f6e06c4f119498abe",
+      "url": "https://bscscan.com/tx/0x6c62baf53d9fdc80166ecc5c8b32b2c97ec8b9e0982a494f6e06c4f119498abe",
+      "name": "RebateDistributor.setRouterAdmin",
+      "contractAddress": "0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf",
+      "txType": "CALL",
+      "blockNumber": 135285722,
+      "status": "0x1",
+      "gasUsed": 27955
+    },
+    {
+      "hash": "0x180066633be8dc7f385c851069a0a68680e902fd1889b4770d24ec707ff077c8",
+      "url": "https://bscscan.com/tx/0x180066633be8dc7f385c851069a0a68680e902fd1889b4770d24ec707ff077c8",
+      "name": "TowackGenesis",
+      "contractAddress": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+      "txType": "CREATE",
+      "blockNumber": 135285730,
+      "status": "0x1",
+      "gasUsed": 2064717
+    },
+    {
+      "hash": "0x885d308d7ecfc18581453a2ff022bdfb1c078b9baf7e0ee6ada5804a8bab2373",
+      "url": "https://bscscan.com/tx/0x885d308d7ecfc18581453a2ff022bdfb1c078b9baf7e0ee6ada5804a8bab2373",
+      "name": "TowackToken.approve",
+      "contractAddress": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+      "txType": "CALL",
+      "blockNumber": 135285734,
+      "status": "0x1",
+      "gasUsed": 46017
+    },
+    {
+      "hash": "0xa8f679ee6782c2258eb849aa11448ef19b83b908a0b55ce7cfaaee4dd1239467",
+      "url": "https://bscscan.com/tx/0xa8f679ee6782c2258eb849aa11448ef19b83b908a0b55ce7cfaaee4dd1239467",
+      "name": "TowackGenesis.fund",
+      "contractAddress": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+      "txType": "CALL",
+      "blockNumber": 135285742,
+      "status": "0x1",
+      "gasUsed": 85230
+    },
+    {
+      "hash": "0xd2491d0be38c22002c0300bf6eb71a58bf60f17097313a645142afe7277f0502",
+      "url": "https://bscscan.com/tx/0xd2491d0be38c22002c0300bf6eb71a58bf60f17097313a645142afe7277f0502",
+      "name": "TowackGenesis.open",
+      "contractAddress": "0xD093745a1BB0Dc11D5Dc2ded64905a9D27f08038",
+      "txType": "CALL",
+      "blockNumber": 135285749,
+      "status": "0x1",
+      "gasUsed": 60494
+    }
+  ]
+}

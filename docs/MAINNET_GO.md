@@ -1,8 +1,8 @@
 # Mainnet go checklist
 
-**MATEEN-ONLY — DO NOT RUN THE BROADCAST COMMAND UNTIL MATEEN SAYS GO.**
+> **LIVE (23 Nov 2026, 7:17 PM PKT).** The stack was broadcast to BSC mainnet after Mateen's go. Record: [`deployments/bsc-mainnet.json`](../deployments/bsc-mainnet.json). Do **not** re-run `run()`; it would deploy a second stack. `GAS_RESERVE` is `0.002 ether`. Production Vercel promote and Sourcify/BscScan source verify are still pending Mateen's sign-off.
 
-Towack protocol contracts have **not** been deployed to BSC mainnet (chain 56). This is the production-go runbook. Full verified-dependency probes: `deployments/bsc-mainnet.expected.json` (not a live deployment record). Script: `script/DeployFullStackMainnet.s.sol`.
+**Already broadcast — do not run `run()` again.** This runbook is kept for the record and for post-deploy steps (source verify, production promote). Dependency probes used before go: `deployments/bsc-mainnet.expected.json`. Script: `script/DeployFullStackMainnet.s.sol`. Live addresses: `deployments/bsc-mainnet.json`.
 
 ## Verified mainnet dependencies
 
@@ -35,7 +35,7 @@ No VRF subscription deposit. Users pay VRF per request (quote + 10% buffer; exce
 
 1. **Prepare multisig / Safe wallets on BSC mainnet (chain 56)** for: `SEASONS_WALLET`, `ECOSYSTEM_WALLET`, `POL_BUFFER_WALLET`, `TEAM_BENEFICIARY`, `DEV_WALLET` (must accept plain BNB transfers), `TIMELOCK_PROPOSER`, and `GENESIS_OWNER` (or leave `GENESIS_OWNER` as a multisig / hand off via 2-step transfer to the Timelock after opening).
 
-2. **Fund the mainnet deployer** with at least **0.03 BNB** (`GAS_RESERVE` is enforced by the script). Expected spend is ~0.00155 BNB @ 0.1 gwei or ~0.0155 BNB @ 1 gwei. The deployer currently has **0 mainnet BNB**, so this fund step is required before go.
+2. **Fund the mainnet deployer** with at least **0.002 BNB** (lowered from 0.03 per Mateen's go, 23 Nov 2026) (`GAS_RESERVE` is enforced by the script). Expected spend is ~0.00155 BNB @ 0.1 gwei or ~0.0155 BNB @ 1 gwei. The 23 Nov 2026 broadcast spent **0.0015521157 BNB** at 0.1 gwei (16 txs, 15,521,157 gas). The deployer had 0.00263475957 BNB before and **0.00108264387 BNB** after.
 
 3. **Keyless pre-flight (safe, no broadcast, anyone can run):**
 

@@ -2,7 +2,7 @@
 
 Agent ID-gated mint, lucky draw, and an open trading router with Agent ID rebates on BNB Chain.
 
-This repository is a work in progress for the Binance Wallet × BNB Chain Agent ID Hackathon. Contracts are deployed and tested on **BSC testnet only**. Mainnet contracts are **not deployed**; the mainnet deploy runs only on the explicit go in [docs/MAINNET_GO.md](docs/MAINNET_GO.md).
+This repository is a work in progress for the Binance Wallet × BNB Chain Agent ID Hackathon. Contracts are live on **BSC mainnet** (chain 56; see [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json)) and also deployed on **BSC testnet**. The mainnet broadcast followed the explicit go in [docs/MAINNET_GO.md](docs/MAINNET_GO.md).
 
 Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music event used a similar name; this project is unrelated).
 
@@ -16,13 +16,13 @@ Ticker: **TWAK**. The name Towack is not an existing crypto token (a 2020 music 
 - `src/DrawV2.sol`: instant pool wheel (TWAK into the pool, VRF multiplier 0×–10×, 95% expected return)
 - `src/mocks/`: test/testnet mocks (Agent ID, VRF, Pancake)
 - `script/DeployFullStackTestnet.s.sol`: BSC testnet full-stack deploy (chainid 97 only, Chainlink VRF v2.5 wrapper)
-- `script/DeployFullStackMainnet.s.sol`: BSC mainnet full-stack deploy. **Not broadcast**; used only when Mateen says go (see [docs/MAINNET_GO.md](docs/MAINNET_GO.md))
+- `script/DeployFullStackMainnet.s.sol`: BSC mainnet full-stack deploy. Broadcast 23 Nov 2026, 7:17 PM PKT; record in [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) (see [docs/MAINNET_GO.md](docs/MAINNET_GO.md)).
 - `script/EstimateFullRedeploy.s.sol`: keyless deploy-cost estimate for 97 / 56 (refuses `--broadcast`)
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 
 ## Frontend (web/)
-Next.js App Router + wagmi/viem/RainbowKit + motion, "Atlas" product design (branch `design/atlas`). The prize wheel on /mint and /draw has a `?demo=wheel` preview when no live per-mint launch contract is configured. Default chain BSC testnet (97), mainnet (56) via the network toggle; Towack contracts are not deployed on 56 yet.
+Next.js App Router + wagmi/viem/RainbowKit + motion, "Atlas" product design (branch `design/atlas`). The prize wheel on /mint and /draw has a `?demo=wheel` preview when no live per-mint launch contract is configured. Default chain BSC testnet (97), mainnet (56) via the network toggle; live mainnet addresses are in `web/src/config/addresses.json` under `"56"`.
 ```sh
 cd web && npm i && npm run dev        # http://localhost:3000
 npm run build                         # production build
@@ -39,7 +39,7 @@ BSC_FORK=1 forge test --match-contract ForkPancake -vv   # real Pancake v2 on a 
 ```
 
 ## Deploy (testnet only)
-Testnet only. Do not run the mainnet script; see [docs/MAINNET_GO.md](docs/MAINNET_GO.md).
+Mainnet is already live. Do not re-run the mainnet script; see [docs/MAINNET_GO.md](docs/MAINNET_GO.md) and [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json).
 ```sh
 set -a; source /workspace/secrets/towack-deployer.env; set +a   # PRIVATE_KEY, never committed
 forge script script/DeployFullStackTestnet.s.sol --rpc-url bsc_testnet --broadcast --legacy --with-gas-price 1gwei --slow

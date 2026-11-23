@@ -73,8 +73,8 @@ contract DeployFullStackMainnet is Script {
     uint16 public constant REQUEST_CONFIRMATIONS = 3;
     uint256 public constant GENESIS_BUDGET = 8_000_000e18;
     uint256 public constant MIN_TIMELOCK_DELAY = 24 hours;
-    /// ~16.5M deploy gas: 0.0165 BNB at 1 gwei. 0.03 BNB leaves room for gas-price moves (BSC runs ~0.05-0.1 gwei).
-    uint256 public constant GAS_RESERVE = 0.03 ether;
+    /// ~15.5M deploy gas: ~0.00155 BNB at 0.1 gwei. Lowered to 0.002 BNB per Mateen (deployer funded 0.0026348 BNB).
+    uint256 public constant GAS_RESERVE = 0.002 ether;
     /// Placeholder simulation sender for dryRun() when MAINNET_DEPLOYER is unset (no key, no funds needed).
     address internal constant SIM_DEPLOYER = 0x38A0f77Dad60B34cF5cD39305687e354696a6776;
     /// Real testnet deployer EOA — refused in forkRun() so fork rehearsals never touch the real key.
