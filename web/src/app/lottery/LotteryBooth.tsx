@@ -246,8 +246,11 @@ function TreasuryNote() {
       <Panel tone="raised" shadow={false}>
         <Pill tone="gold">POOL &amp; VRF</Pill>
         <p className="mt-3 font-medium text-sub">
-          The Draw V2 pool wheel is funded with the full {POOL_INTENDED_SEED} allocation and draws with the official Chainlink VRF v2.5
-          direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess refunded), with no subscription.
+          {addresses.drawV2
+            ? <>The Draw V2 pool wheel is funded with the {POOL_INTENDED_SEED} allocation</>
+            : <>Draw V2 is not yet deployed on BNB Smart Chain mainnet. The {POOL_INTENDED_SEED} pool will be funded at the mainnet deploy</>}{" "}
+          and draws with the official Chainlink VRF v2.5 direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess
+          refunded), with no subscription.
         </p>
       </Panel>
     );
@@ -256,7 +259,7 @@ function TreasuryNote() {
     <Panel tone="raised" shadow={false}>
       <Pill tone="gold">TESTNET NOTE</Pill>
       <p className="mt-3 font-medium text-sub">
-        The live testnet pool wheel holds the full {POOL_INTENDED_SEED} Draw V2 allocation and draws with the official Chainlink VRF v2.5
+        The live testnet pool wheel was seeded with the full {POOL_INTENDED_SEED} Draw V2 allocation and draws with the official Chainlink VRF v2.5
         direct-funding wrapper: each spin pays its own small VRF fee in native BNB (excess refunded), with no subscription. Earlier
         testnet pools are retired history, including the skeleton treasury and the mock-VRF pool.
       </p>

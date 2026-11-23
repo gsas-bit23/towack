@@ -167,18 +167,23 @@ export default function Home() {
             <StaggerItem className="lift min-w-0 rounded-2xl border border-line bg-card p-6">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-[13px] text-muted">02 · Phase 2</span>
-                <Pill tone="line">Planned</Pill>
+                <Pill tone="up">Live</Pill>
               </div>
-              <div className="mt-4 text-[16px] font-semibold">Aster for Agent ID holders</div>
-              <p className="mt-2 text-[14px] text-muted">Planned: trading via a user-custodied signer. The project never holds your keys. Not live.</p>
+              <div className="mt-4 text-[16px] font-semibold">Aster perps</div>
+              <p className="mt-2 text-[14px] text-muted">
+                Live Aster perpetual markets, open to any wallet through a trade-only Aster API wallet you set up and keep in your browser. It cannot withdraw funds. An Agent ID unlocks the &ldquo;Give this to your AI agent&rdquo; box.
+              </p>
+              <Link href="/perps" className="mt-3 inline-block text-[14px] font-semibold text-sub transition-colors hover:text-gold">
+                Open Perps →
+              </Link>
             </StaggerItem>
             <StaggerItem className="min-w-0 rounded-2xl border border-dashed border-line-2 p-6">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[13px] text-muted">03 · Later</span>
-                <Pill tone="line">Coming up</Pill>
+                <span className="font-mono text-[13px] text-muted">03 · Next</span>
+                <Pill tone="line">Pending</Pill>
               </div>
-              <div className="mt-4 text-[16px] font-semibold">Draw V2 pool wheel</div>
-              <p className="mt-2 text-[14px] text-muted">Instant spins paid from a 70M TWAK prize pool, 95% expected return, open to any wallet.</p>
+              <div className="mt-4 text-[16px] font-semibold">BNB Smart Chain mainnet deploy</div>
+              <p className="mt-2 text-[14px] text-muted">Everything above runs on BSC Testnet today. The Towack contracts are not yet deployed on mainnet; that deploy happens only after the final go-ahead.</p>
             </StaggerItem>
           </Stagger>
         </section>

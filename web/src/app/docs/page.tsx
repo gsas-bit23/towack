@@ -57,11 +57,11 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Does this site ever sign for me?",
-    a: "Never. Every transaction opens in your own wallet and waits for you to confirm it. There is no server wallet, no auto-sign, and no gasless relayer. Binance's official Auto Sign feature stays inside the official Binance App; this site will never bypass your wallet's confirmation.",
+    a: "Not for Towack contracts. Every Towack transaction (mint, spin, buy and sell through the router, rebate, referral and prize claims) opens in your own wallet and waits for you to confirm it. There is no server wallet and no gasless relayer, and we never ask for your seed phrase. The one exception is Aster perps, and only after you set it up: you create a trade-only Aster API wallet (generated in this browser and approved once by your wallet, or pasted from Aster). Its key is stored in this browser (localStorage if you tick Remember, otherwise sessionStorage for this tab) and signs your Aster orders, cancels, leverage and margin changes without a wallet popup per order. Keys set up here are approved with canWithdraw=false, so they cannot withdraw funds. You can forget the key on Perps at any time, and revoke it on Aster. Swap quotes come from public, keyless APIs (PancakeSwap, Uniswap, Relay; 0x and 1inch stay off unless the operator sets an API key), and every swap still executes from your own wallet.",
   },
   {
     q: "Is Aster live?",
-    a: "No. Aster trading for Agent ID holders is Phase 2: planned, using a user-custodied signer. The project will never hold your keys.",
+    a: "Yes, at /perps. Any wallet can trade after setting up a trade-only Aster API wallet, which is kept in your browser, never on a Towack server, and cannot withdraw. An Agent ID is only needed for the \"Give this to your AI agent\" instruction box. Towack adds no fee to Aster trades.",
   },
   {
     q: "Who is behind this? Is it official?",
@@ -120,10 +120,11 @@ export default function DocsPage() {
         <Panel tone="raised" shadow={false}>
           <h2 className="font-display text-[24px] font-semibold">Safety promises</h2>
           <ul className="mt-3 grid gap-2 font-medium text-sub md:grid-cols-2">
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />We never ask for private keys, seed phrases, or pairing codes.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />We never sign for you or skip your wallet&apos;s confirmation.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />We never ask for your wallet&apos;s private key, seed phrase, or pairing codes.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Every Towack contract transaction opens in your wallet and waits for your confirmation.</li>
             <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Token approvals are exact amounts, never unlimited.</li>
-            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />No server holds keys or funds. The site only reads public chain data.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />Perps only: a trade-only Aster API wallet you set up is stored in this browser and signs Aster orders without a popup. It cannot withdraw, and you can forget it any time.</li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />No Towack server holds keys or funds. The site reads public chain data and calls public APIs (Aster, swap quotes) from your browser.</li>
           </ul>
           <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-sub">
             <span>Ready?</span>

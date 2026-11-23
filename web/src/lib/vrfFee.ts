@@ -27,7 +27,8 @@ const vrfFeeAbi = [
  * it), then send +10%. Together with the contract's 10% they cover a ~1.5x gas-price move; beyond that the tx
  * reverts with VrfFeeTooLow (nothing is taken).
  *
- * `supported === false` means the contract predates user-paid fees (the current testnet deploy): send no fee.
+ * `supported === false` means the contract predates user-paid fees (older retired testnet deploys only; the live
+ * testnet stack and the mainnet script are all wrapper-based and user-paid): send no fee.
  */
 export function useVrfFee(address: Address | undefined, chainId: SupportedChainId) {
   const { data: gasPrice } = useGasPrice({ chainId, query: { refetchInterval: 15_000 } });

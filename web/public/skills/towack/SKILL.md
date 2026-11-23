@@ -123,21 +123,22 @@ When not bridging, BAW's native routing can also be used directly:
 ### Retries
 If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch / Genesis) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(gasPrice)` again. Same preview / confirm / execute rules.
 
-## Aster perps (`/perps`, Agent ID holders' agent path)
+## Aster perps (`/perps`; agent path for Agent ID holders)
 
-The `/perps` page shows Aster perpetual markets from Aster's public API and lets users trade with their own keys. Its "Give this to your AI agent" box is shown to Agent ID holders only and produces a ready-made instruction for one specific order or cancel.
+The `/perps` page shows live Aster perpetual markets from Aster's public API. Any wallet can trade there after setting up a trade-only Aster API wallet in the browser (`canWithdraw=false`); that key is kept in the user's browser and signs their Aster requests. The "Give this to your AI agent" box is shown to Agent ID holders only and produces a ready-made instruction for one specific order or cancel; this section describes that agent path.
 
 **Aster orders are NOT a BNB Smart Chain contract call.** Never try `baw contract-call` for them. Aster runs its own order book. The supported agent path:
 
 - BAW signs exactly **one** EIP-712 message (`baw sign-message`, `--binanceChainId 56`, `--signType EIP712`) that approves a **trade-only Aster API wallet** (agent key) the user's own AI agent generates and keeps locally.
 - That API wallet signs each order (EIP-712, domain chainId 1666) after the user's explicit "yes" to that exact order.
-- Towack never signs, never sends, never sees any key. BAW is mainnet-only; testnet testers use a browser wallet on `/perps` (Aster testnet).
+- In the agent path, Towack never signs, never sends, never sees any key. BAW is mainnet-only; testnet testers use a browser wallet on `/perps` (Aster testnet).
 
 ### Hard rules (perps)
 - The user's BAW address must already have **deposited USDT margin on Aster** (asterdex.com, same wallet). Until then every trading call returns `{"code":-5050,"msg":"This function can only be used after deposit"}`: stop and tell the user.
 - Agent approval scope is fixed: `canSpotTrade=false`, `canPerpTrade=true`, `canWithdraw=false`, empty `ipWhitelist`, `expired` = now + 7 days (ms). Aster rejects very short expiries ("Agent expired time too short"). **Never** approve withdrawals.
 - The API-wallet private key stays on the user's machine: never print it, never paste it in chat, never send it to Towack or anyone else.
-- Every order, leverage change and cancel: preview (market data + exact param string) → show the user → explicit "yes" for that exact request → send. A changed size/price/side needs a new preview and a new yes. Report Aster's response as returned; never auto-retry.
+- **One-way position mode only.** Orders are sent without `positionSide` (one-way / `BOTH`). Hedge mode is not supported in this build: if the account is in Hedge mode, stop and tell the user to switch to One-way mode on Aster.
+- Every order, leverage change, margin-mode change and cancel: preview (market data + exact param string) → show the user → explicit "yes" for that exact request → send. A changed size/price/side needs a new preview and a new yes. Report Aster's response as returned; never auto-retry.
 - Perps are leveraged: the user can lose their whole margin and be liquidated. Towack adds no fee and has **no** Aster rebate today; Agent ID only unlocks this agent path (any future rebate alignment is not promised).
 
 ### Endpoints
@@ -147,7 +148,7 @@ The `/perps` page shows Aster perpetual markets from Aster's public API and lets
 | Testnet REST (browser wallets only, not BAW) | `https://fapi.asterdex-testnet.com` |
 | Public, no key | `GET /fapi/v3/exchangeInfo`, `/fapi/v3/ticker/24hr`, `/fapi/v3/premiumIndex` (mark, index, `lastFundingRate`, `nextFundingTime`) |
 | Agent approval (public, main-wallet signature) | `POST /fapi/v3/registerAndApproveAgent` |
-| Agent-signed | `POST /fapi/v3/order`, `DELETE /fapi/v3/order`, `POST /fapi/v3/leverage`, `GET /fapi/v3/openOrders`, `GET /fapi/v3/balance` |
+| Agent-signed | `POST /fapi/v3/order`, `DELETE /fapi/v3/order`, `POST /fapi/v3/leverage`, `POST /fapi/v3/marginType`, `GET /fapi/v3/openOrders`, `GET /fapi/v3/balance` |
 | Docs | https://github.com/asterdex/api-docs (V3 futures) |
 
 ### Signing
@@ -159,11 +160,28 @@ EIP-712 typed data for every Aster signature: domain `{"name":"AsterSignTransact
 2. **Each request (API wallet key, local):** `msg = <params>&nonce=<µs>&user=<BAW>&signer=<API wallet>` (urlencoded, in that order), domain chainId **1666** (testnet: 714). Send `msg&signature=0x…` as the `application/x-www-form-urlencoded` body (GET: query string). Nonce: microseconds, within 60 s, never reused.
 
 ### Order params (`POST /fapi/v3/order`)
-- LIMIT: `symbol, side (BUY|SELL), type=LIMIT, timeInForce (GTC|IOC|GTX), quantity, price` [+ `reduceOnly=true`].
-- MARKET: `symbol, side, type=MARKET, quantity` [+ `reduceOnly=true`]. Do **not** send `price`/`timeInForce` (Aster rejects extra params).
-- Floor `quantity` to `LOT_SIZE.stepSize` (MARKET: `MARKET_LOT_SIZE`), `price` to `PRICE_FILTER.tickSize`; `quantity × price` (MARKET: × mark price) must be ≥ `MIN_NOTIONAL.notional`.
-- Leverage (optional, first): `POST /fapi/v3/leverage` `symbol, leverage` (integer 1–125).
+Send params in exactly this field order (it is the order the in-app box emits): `symbol, side, type, [timeInForce], quantity, [price], [stopPrice], [activationPrice], [callbackRate], [workingType], [reduceOnly]`. Never send a param the type does not use (Aster rejects extra params).
+
+| `type` | Extra params |
+|---|---|
+| `LIMIT` | `timeInForce` (`GTC` \| `IOC` \| `GTX` post-only), `price` |
+| `MARKET` | none (no `price` / `timeInForce`) |
+| `STOP` (stop-limit) | `timeInForce` (`GTC` \| `IOC`), `price`, `stopPrice` [+ `workingType`] |
+| `TAKE_PROFIT` (take-profit limit) | `timeInForce` (`GTC` \| `IOC`), `price`, `stopPrice` [+ `workingType`] |
+| `STOP_MARKET` | `stopPrice` [+ `workingType`] |
+| `TAKE_PROFIT_MARKET` | `stopPrice` [+ `workingType`] |
+| `TRAILING_STOP_MARKET` | `callbackRate` (percent, 0.1–5, step 0.1) [+ `activationPrice`] [+ `workingType`] |
+
+- `side` is `BUY` | `SELL`; `reduceOnly=true` is optional on any type. `workingType` is `CONTRACT_PRICE` (last price, default) or `MARK_PRICE`.
+- Trigger direction: a stop `BUY` needs `stopPrice` above the reference price and a stop `SELL` below; a take-profit `BUY` needs it below and a take-profit `SELL` above.
+- Floor `quantity` to `LOT_SIZE.stepSize` (market-executed types: `MARKET_LOT_SIZE`), `price` to `PRICE_FILTER.tickSize`; notional (`quantity × price`, or × mark price for market-executed types) must be ≥ `MIN_NOTIONAL.notional`.
+- **Attached TP / SL** (optional): only **after the entry is accepted**, send each leg as its own `POST /fapi/v3/order`, **one at a time (not `batchOrders`)**, on the opposite side, same `quantity`, `reduceOnly=true`:
+  - TP: `symbol, side=<opposite>, type=TAKE_PROFIT_MARKET, quantity, stopPrice=<TP> [, workingType], reduceOnly=true`
+  - SL: `symbol, side=<opposite>, type=STOP_MARKET, quantity, stopPrice=<SL> [, workingType], reduceOnly=true`
+- Margin mode (optional, first): `POST /fapi/v3/marginType` `symbol, marginType` (`ISOLATED` | `CROSSED`). If Aster rejects it (e.g. an open position or orders in the other mode), stop and tell the user.
+- Leverage (optional, after margin mode, before the order): `POST /fapi/v3/leverage` `symbol, leverage` (integer 1–125, within the symbol's bracket).
 - Cancel: `DELETE /fapi/v3/order` `symbol, orderId`.
+- Each of these requests (margin mode, leverage, entry, each TP/SL leg, cancel) is signed separately as in Signing → 2, after the user's yes to the full preview.
 
 ## Risk
 

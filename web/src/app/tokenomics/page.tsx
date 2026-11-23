@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Tokenomics" };
 export default function TokenomicsPage() {
   return (
     <>
-      <PageHeader kicker="TWAK · 1,000,000,000 fixed supply" title="1B TWAK in the coin pusher.">
+      <PageHeader kicker="TWAK · 1,000,000,000 fixed supply" title="1B TWAK, minted once.">
         Minted once at deploy to fixed contracts and wallets. No owner, no mint function, no transfer tax. Holders can burn their own tokens.
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">
