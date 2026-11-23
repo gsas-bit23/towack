@@ -1285,6 +1285,76 @@
         "amountBnb": "0.005",
         "deployerBeforeTBnb": "0.098475053977449244",
         "deployerAfterTBnb": "0.103437968977449244"
+      },
+      "phase2IntegratedQa": {
+        "ranAtPkt": "2026-11-23 04:54:33\u201304:59:20 PKT (Asia/Karachi)",
+        "genesis300": {
+          "result": "PASS",
+          "agentTokenId": 1,
+          "prizeId": 4,
+          "label": "1.25x",
+          "baseTwak": "20000",
+          "extraTwak": "5000",
+          "claimed": true,
+          "mintCountAfter": 1,
+          "txs": {
+            "mint": "0x07e52be14566263d03bc2654e5fc241e1e4df4eb90d6a77419c4e484701aff21",
+            "vrfFulfill": "0x586a9a5c521d9b9151353fdfdde9c980226eb395379e288cbda7c4b72dd50640",
+            "claim": "0x7a0873d4f66f897d67be056f1f6682ee327a9bb4b6701e46b07b7b2fcf941da8"
+          }
+        },
+        "drawV2": {
+          "result": "PASS",
+          "spins": [
+            {
+              "spinId": 1,
+              "entryTwak": "100",
+              "prizeId": 0,
+              "label": "0x",
+              "approveTx": "0x992622be7c3186073d52873d4b25e7d09aae81d705690647fd2366132c3a6f34",
+              "enterTx": "0x1d2e643ae6c8d0849d331072a7ee7e8550caf7a4862c17fa3fbc0eda4b05b145",
+              "fulfillTx": "0xaa869d2c383920fade4ac72de8e6c0d82b09f3d23f1977ee06151192e502af4e",
+              "claimNote": "NothingToClaim (0x969bf728) verified via eth_call"
+            },
+            {
+              "spinId": 2,
+              "entryTwak": "100",
+              "prizeId": 0,
+              "label": "0x",
+              "approveTx": "0x4fc3f5f2097f2a1fdaa0b35e3046139c3b50649e61db7242e4b49f3b1f27bd9e",
+              "enterTx": "0x562e0b26b7ea589932b60fe846539103c25afb4f85adf4122280d46af0b16816",
+              "fulfillTx": "0xd4c6f24d0fa58aebc5826a9b2f27a991f3d1f40c121a63dffb60f61dc316ba06"
+            },
+            {
+              "spinId": 3,
+              "entryTwak": "100",
+              "prizeId": 6,
+              "label": "10x jackpot",
+              "payoutTwak": "1000",
+              "payoutBnb": "0",
+              "approveTx": "0xe9455c4a12192154cbd81440e1bdca43b0cc1c37fe05d4b22b72bfa55995124a",
+              "enterTx": "0x910806c910aa7750d93f21ab37a948c1bdc990dd493fee4c416acee11f2048a3",
+              "fulfillTx": "0xc34bca8ceed565be3e54b59d3c6dd50c7893450ae0459c03e964da62199546c0",
+              "claimTx": "0x1959544e2ec973162a055b3d06b8179fa01ba2d8bd90b5508cfe9f3728b33e2e"
+            }
+          ],
+          "availableTwakAfter": "69999300000000000000000000",
+          "spinCountAfter": 3
+        },
+        "deployerAfterTBnb": "0.099947424977449244",
+        "deployerAfterTwak": "122025700000000000000000000",
+        "preview": {
+          "url": "https://towack-nupb76rjo-abcd-532d.vercel.app",
+          "inspector": "https://vercel.com/abcd-532d/towack/E3eBbNbEz1HkeM3sMLqqfimtmMwE",
+          "id": "dpl_E3eBbNbEz1HkeM3sMLqqfimtmMwE",
+          "createdPkt": "2026-11-23 05:41:32 PKT (Asia/Karachi)",
+          "target": null,
+          "protection": "vercel_authentication",
+          "shareLink": "https://towack-nupb76rjo-abcd-532d.vercel.app?_vercel_share=Nko8jVtXrfLm2BCn9uGnAqBz7DVlNTmX",
+          "shareExpiresPkt": "2026-12-23 05:41:32 PKT (Asia/Karachi)",
+          "shareTtlSeconds": 2592000,
+          "shareLinkStatus": 307
+        }
       }
     },
     "preview": {
