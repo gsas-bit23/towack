@@ -24,7 +24,7 @@ export function Nav() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    const mq = window.matchMedia("(min-width: 1024px)");
+    const mq = window.matchMedia("(min-width: 1280px)");
     const onMq = () => mq.matches && setOpen(false);
     window.addEventListener("keydown", onKey);
     mq.addEventListener("change", onMq);
@@ -37,32 +37,32 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 bg-ice/90 backdrop-blur-md">
       <nav
-        className="mx-auto flex h-[68px] max-w-[1220px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:h-[80px]"
+        className="mx-auto flex h-[68px] max-w-[1360px] items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6 xl:h-[80px]"
         aria-label="Main"
       >
-        <Link href="/" className="flex min-h-10 shrink-0 items-center gap-2 sm:gap-3" aria-label="Towack home">
-          <CoinMark size={46} className="h-10 w-10 shrink-0 lg:h-[46px] lg:w-[46px]" />
-          {/* Wordmark: hidden on the narrowest phones and in the tight 1024–1279 desktop row. */}
-          <span className="hidden font-display text-[22px] font-extrabold min-[375px]:inline sm:text-[27px] lg:hidden xl:inline">TOWACK</span>
+        <Link href="/" className="flex min-h-10 shrink-0 items-center gap-2 sm:gap-2.5" aria-label="Towack home">
+          <CoinMark size={46} className="h-10 w-10 shrink-0 xl:h-[44px] xl:w-[44px]" />
+          {/* Wordmark: hidden on the narrowest phones; compact on xl desktops so all 10 nav links fit with 0 overflow. */}
+          <span className="hidden font-display text-[22px] font-extrabold min-[375px]:inline sm:text-[26px] xl:text-[22px] 2xl:text-[26px]">TOWACK</span>
         </Link>
-        <div className="hidden items-center gap-1 text-[15px] font-extrabold lg:flex xl:gap-3">
+        <div className="hidden min-w-0 items-center gap-0.5 text-[14px] font-extrabold xl:flex 2xl:gap-1.5 2xl:text-[15px]">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               aria-current={isActive(l.href) ? "page" : undefined}
-              className={`nav-pill flex min-h-10 items-center px-2 hover:text-candy ${isActive(l.href) ? "text-candy underline decoration-[3px] underline-offset-[6px]" : ""}`}
+              className={`nav-pill flex min-h-10 items-center whitespace-nowrap px-1.5 hover:text-candy 2xl:px-2 ${isActive(l.href) ? "text-candy underline decoration-[3px] underline-offset-[6px]" : ""}`}
             >
               {l.label}
             </Link>
           ))}
         </div>
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
           <NetworkToggle className="hidden md:flex" />
           <ConnectPill compact />
           <button
             type="button"
-            className="press grid h-11 w-11 shrink-0 place-items-center rounded-full border-[3px] border-navy bg-white shadow-[0_4px_0_#13204A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sun lg:hidden"
+            className="press grid h-11 w-11 shrink-0 place-items-center rounded-full border-[3px] border-navy bg-white shadow-[0_4px_0_#13204A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sun xl:hidden"
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -80,7 +80,7 @@ export function Nav() {
       </nav>
 
       {open ? (
-        <div id="mobile-menu" className="absolute inset-x-0 top-full border-y-4 border-navy bg-ice shadow-[0_10px_0_rgba(19,32,74,0.15)] lg:hidden">
+        <div id="mobile-menu" className="absolute inset-x-0 top-full border-y-4 border-navy bg-ice shadow-[0_10px_0_rgba(19,32,74,0.15)] xl:hidden">
           <div className="mx-auto max-h-[calc(100dvh-68px)] max-w-[1220px] overflow-y-auto px-4 py-4 sm:px-6">
             <ul className="grid gap-2 sm:grid-cols-2">
               {NAV_LINKS.map((l) => {
