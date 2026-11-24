@@ -247,7 +247,8 @@ export function MintPanel() {
         </details>
       </div>
 
-      <div className="col-span-12 space-y-8 lg:col-span-5">
+      {/* Paid mint action: first on phones (before the wheel), right column on desktop. */}
+      <div id="paid-mint" className="order-first col-span-12 scroll-mt-24 space-y-8 lg:order-none lg:col-span-5">
         <Panel>
           <h2 className="font-display text-[28px] font-semibold">{t("mint.ticket")}</h2>
           <div className="mt-5">
