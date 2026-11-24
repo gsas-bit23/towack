@@ -11,6 +11,7 @@ export const EXECUTE_RESULT_RULE = `- After execute: status BROADCASTED gives a 
 
 /**
  * BAW's preview reports any contract revert as `351805 "Transaction simulation failed: execution reverted"` with no
- * reason. Found in a live mainnet test (Genesis `AlreadyMinted`): the agent must look the reason up itself.
+ * reason for custom errors (a text `Error(string)` reason is appended). Found in live mainnet tests (Genesis
+ * `AlreadyMinted`, TWAK `ERC20InsufficientAllowance`): the agent must look the reason up itself.
  */
-export const REVERT_REASON_RULE = `- If preview fails with 351805 "execution reverted", find out WHY before telling me: run an eth_call with the SAME to, data and value, from = my wallet (e.g. \`cast call <to> <data> --value <wei> --from <my wallet> --rpc-url https://bsc-dataseed.bnbchain.org\`), and match the first 4 bytes of the revert data against the "Revert reasons" table in the Towack skill (0x08c379a0 is a plain text error). Tell me the reason in plain words. Do not retry or change the transaction to get around it.`;
+export const REVERT_REASON_RULE = `- If preview fails with 351805 "execution reverted" and no text reason after it, find out WHY before telling me: run an eth_call with the SAME to, data and value, from = my wallet (e.g. \`cast call <to> <data> --value <wei> --from <my wallet> --rpc-url https://bsc-dataseed.bnbchain.org\`), and match the first 4 bytes of the revert data against the "Revert reasons" table in the Towack skill (0x08c379a0 is a plain text error). Tell me the reason in plain words. Do not retry or change the transaction to get around it.`;
