@@ -209,8 +209,8 @@ export const common = defineMessages({
   "pool.label.back": ["{m} back", "返还 {m}"],
   "pool.label.6": ["10× jackpot", "10× 大奖"],
   "pool.share": [
-    "I spun the Towack pool wheel on BNB Chain and landed {m} 🎡 Expected return is 95% — a game of chance, not an investment.",
-    "我在 BNB Chain 上转动了 Towack 奖池转盘，结果是 {m} 🎡 期望回报 95% — 概率游戏，不构成投资建议。",
+    "I spun the Towack pool wheel on BNB Chain and landed {m} 🎡 On average the wheel pays back 95% of what goes in, so players lose 5% over time. A game of chance, not an investment.",
+    "我在 BNB Chain 上转动了 Towack 奖池转盘，结果是 {m} 🎡 平均而言转盘返还投入的 95%，长期参与会损失约 5%。概率游戏，不构成投资建议。",
   ],
 
   // ---- Genesis share

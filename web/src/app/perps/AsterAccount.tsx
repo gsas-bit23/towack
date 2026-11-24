@@ -1,17 +1,14 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { isAddress, getAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useAccount, useSignTypedData, useSwitchChain } from "wagmi";
 import { ConnectPill } from "@/components/ConnectPill";
-import { Button, Field, Panel, Pill, Stat, inputClass } from "@/components/ui";
+import { Button, Panel, Pill, Stat } from "@/components/ui";
 import {
-  agentAddressFromKey,
   agentSnapshot,
   explainAsterError,
   forgetAgent,
-  normaliseKey,
   parseStoredAgent,
   registerAgent,
   saveAgent,
@@ -107,32 +104,14 @@ function AgentStatus({ agent }: { agent: StoredAgent }) {
   );
 }
 
+// Towack never asks for a private key. The only setup path makes a fresh trade-only API key in this browser and has
+// the user approve its ADDRESS with their own wallet (Agent ID Hackathon rule: no collection of keys or secrets).
 function AgentSetup({ net }: { net: AsterNet }) {
-  const [mode, setMode] = useState<"wallet" | "paste">("wallet");
   const [remember, setRemember] = useState(false);
   const { t } = useLocale();
   return (
     <div>
-      <div className="inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label={t("perps.a.setupAria")}>
-        {(
-          [
-            ["wallet", t("perps.a.approve")],
-            ["paste", t("perps.a.paste")],
-          ] as const
-        ).map(([m, label]) => (
-          <button
-            key={m}
-            type="button"
-            role="tab"
-            aria-selected={mode === m}
-            onClick={() => setMode(m)}
-            className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${mode === m ? "bg-card-2" : "text-muted"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className="mt-5">{mode === "wallet" ? <WalletApprove net={net} remember={remember} /> : <PasteKey net={net} remember={remember} />}</div>
+      <WalletApprove net={net} remember={remember} />
       <label className="mt-5 flex items-start gap-3 font-medium">
         <input type="checkbox" className="mt-1 h-5 w-5 accent-gold" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
         <span>
@@ -208,51 +187,3 @@ function WalletApprove({ net, remember }: { net: AsterNet; remember: boolean }) 
   );
 }
 
-function PasteKey({ net, remember }: { net: AsterNet; remember: boolean }) {
-  const { address } = useAccount();
-  const [user, setUser] = useState("");
-  const [key, setKey] = useState("");
-  const userValue = user || address || "";
-  const signer = agentAddressFromKey(key);
-  const userOk = isAddress(userValue.trim());
-  const { t, rich } = useLocale();
-  return (
-    <div className="space-y-4">
-      <p className="font-medium text-sub">
-        {rich("perps.a.pasteIntro", {
-          a: (c) => (
-            <a className="underline" href={ASTER_API_WALLET_URL[net]} target="_blank" rel="noreferrer">
-              {c}
-            </a>
-          ),
-        })}
-      </p>
-      <Field label={t("perps.a.accountField")}>
-        <input className={`${inputClass} font-mono !text-[15px]`} placeholder="0x…" value={userValue} onChange={(e) => setUser(e.target.value.trim())} spellCheck={false} />
-      </Field>
-      <Field label={t("perps.a.keyField")} hint={key && !signer ? t("perps.a.keyBad") : signer ? t("perps.a.keyAddr", { a: signer }) : t("perps.a.keyHint")}>
-        <input
-          className={`${inputClass} font-mono !text-[15px]`}
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder={t("perps.a.keyPh")}
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-        />
-      </Field>
-      <Button
-        tone="soft"
-        size="md"
-        disabled={!signer || !userOk}
-        onClick={() => {
-          if (!signer || !userOk) return;
-          saveAgent({ v: 1, net, user: getAddress(userValue.trim()), signer, key: normaliseKey(key), expired: 0, source: "pasted", remember });
-          setKey("");
-        }}
-      >
-        {t("perps.a.use")}
-      </Button>
-    </div>
-  );
-}

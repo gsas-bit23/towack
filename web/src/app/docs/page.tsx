@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Docs & FAQ" };
 
 const k = (s: string) => s as MessageKey;
 const HOWTO = [1, 2, 3, 4, 5, 6];
-const FAQ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const FAQ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const SAFETY = [1, 2, 3, 4, 5];
 const LINK = "underline decoration-2 underline-offset-2 hover:text-gold";
 const RICH_LINK = "inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-gold";

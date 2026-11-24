@@ -247,9 +247,6 @@ export const perps = defineMessages({
   "perps.a.forget": ["Forget key on this browser", "从本浏览器删除密钥"],
   "perps.a.manage": ["Manage / revoke on Aster ↗", "在 Aster 上管理 / 撤销 ↗"],
   "perps.a.forgetNote": ["Forgetting only deletes it here. Revoke it on Aster to switch it off everywhere.", "删除仅清除本地副本，如需彻底停用，请在 Aster 上撤销。"],
-  "perps.a.setupAria": ["How to set up the API wallet", "API 钱包设置方式"],
-  "perps.a.approve": ["Approve with my wallet", "用我的钱包授权"],
-  "perps.a.paste": ["Paste an Aster key", "粘贴 Aster 密钥"],
   "perps.a.remember": [
     "Remember on this device. Off: kept for this tab only and gone when you close it. Don't tick this on a shared computer.",
     "在本设备记住。不勾选则仅在当前标签页有效，关闭即清除。请勿在公用电脑上勾选。",
@@ -266,15 +263,4 @@ export const perps = defineMessages({
   "perps.a.switchBsc": ["Switch wallet to BNB Smart Chain to sign", "将钱包切换到 BNB Smart Chain 以签名"],
   "perps.a.signing": ["Sign in your wallet…", "请在钱包中签名…"],
   "perps.a.approveBtn": ["Approve a trade-only API wallet", "授权一个仅交易的 API 钱包"],
-  "perps.a.pasteIntro": [
-    "Already made an API wallet on <a>Aster's API wallet page</a> (Pro API)? Paste its private key. Give it perps permission only, never withdrawals.",
-    "已在 <a>Aster 的 API 钱包页面</a>（Pro API）创建过 API 钱包？请粘贴其私钥。只授予永续合约权限，切勿开启提币。",
-  ],
-  "perps.a.accountField": ["Aster account (main wallet address)", "Aster 账户（主钱包地址）"],
-  "perps.a.keyField": ["API wallet private key", "API 钱包私钥"],
-  "perps.a.keyBad": ["That doesn't look like a 32-byte hex private key.", "这看起来不是 32 字节的十六进制私钥。"],
-  "perps.a.keyAddr": ["API wallet address: {a}", "API 钱包地址：{a}"],
-  "perps.a.keyHint": ["Stays in this browser. Never your main wallet's key.", "仅保存在本浏览器。切勿填写主钱包私钥。"],
-  "perps.a.keyPh": ["0x… (64 hex characters)", "0x…（64 位十六进制字符）"],
-  "perps.a.use": ["Use this API wallet", "使用该 API 钱包"],
 });

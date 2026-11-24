@@ -139,7 +139,10 @@ export const home = defineMessages({
   "home.path.swapBody": ["Best-route quotes across PancakeSwap, Uniswap and Relay, plus bridging out of BNB Chain.", "聚合 PancakeSwap、Uniswap 与 Relay 的最优路由报价，并支持从 BNB Chain 跨链转出。"],
   "home.path.swapGo": ["Open Swap", "前往闪兑"],
   "home.path.draw": ["Draw V2", "Draw V2"],
-  "home.path.drawBody": ["Instant pool wheel. Enter TWAK, VRF multiplier 0×–10×, 95% expected return.", "即开奖池转盘。投入 TWAK，VRF 随机倍数 0×–10×，期望回报 95%。"],
+  "home.path.drawBody": [
+    "Instant pool wheel. Enter TWAK, VRF multiplier 0×–10×. Pays back 95% on average, so players lose 5% over time.",
+    "即开奖池转盘。投入 TWAK，VRF 随机倍数 0×–10×。平均返还 95%，长期参与会损失约 5%。",
+  ],
   "home.path.drawGo": ["Open Draw V2", "前往 Draw V2"],
   "home.path.perps": ["Perps", "永续合约"],
   "home.path.perpsBody": ["Live Aster perpetual markets. Trade with an API wallet your own wallet approves.", "实时 Aster 永续合约市场。使用经你自己钱包授权的 API 钱包交易。"],
