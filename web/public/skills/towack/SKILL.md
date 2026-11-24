@@ -12,11 +12,14 @@ Requires Binance's official skill: https://github.com/binance/binance-skills-hub
 
 - **Mainnet only.** BAW supports BNB Smart Chain mainnet only: always `--binanceChainId 56`. BAW cannot connect to the Towack website; website users connect a browser wallet instead.
 - **The website never signs or broadcasts.** Towack's site only displays/copies instructions ("Give this to your AI agent" boxes). No keys, no server-side signing, no BAW CLI from the browser. All signing happens in the user's own BAW after their explicit confirmation.
-- **Developer Mode first.** As soon as a request needs `contract-call`, run `baw wallet settings --json` and check `devMode.enabled=true`. If it is off, tell the user to enable Developer Mode in the Binance App and wait.
+- **Developer Mode first.** As soon as a request needs `contract-call` or `sign-message`, run `baw wallet settings --json` and check `devMode.enabled=true` and that `devMode.expiresAt` is in the future. If it is off or expired, tell the user to turn it on in the Binance App (Agentic Wallet management page → Settings → Developer Mode) and wait. It stays on for 7 days (each use extends it). If enabling is refused with `351804`, the wallet's balance is over the Developer Mode cap.
+- **Agent ID check before gated mints.** Before a paid mint or a Genesis claim, run `baw wallet agent-id --json` (Binance's only supported Agent ID pre-check). If `claimed=false`, stop and tell the user to claim one in the Binance App (Wallet → Agent ID). Error `20003008` means the Agent ID service is temporarily down, **not** that the user has no Agent ID: retry later.
+- **Your wallet address** for `--from` comes from `baw wallet address --json`.
 - **Preview, then wait, then execute.** For every tx:
   1. `baw contract-call preview --binanceChainId 56 --from <wallet> --to <contract> --value <wei> --inputData <hex> --json`
   2. Show the user the parsed tx, the risks and `authorityChanges`. Wait for an explicit "yes".
   3. Only then `baw contract-call execute --requestId <requestId> --json`. Never execute without a fresh preview and the user's "yes"; a two-step flow (approve, then sell/enter) needs a preview + "yes" for **each** step.
+- **Read the execute result.** `BROADCASTED` returns a `txHash`: check it on BscScan before reporting success. `PENDING_CONFIRMATION` means the user must approve the transaction in the Binance App first. Tell them, wait, then check the result. It is **not** a failure: never re-send it. If preview or execute returns an error, relay it exactly as returned. If execute says the preview expired, run preview again.
 - `--value` is raw wei (integer). Never pass a gas price.
 - **VRF fee.** Every randomness request (paid mint, Draw V2 entry, retries; Genesis 300 has none) is paid by the user in native BNB to the Chainlink VRF v2.5 direct-funding wrapper. Quote it with `vrfFeeAt(uint256 gasPrice)` (selector `0xa3eaf9d8`) via an `eth_call` at `gasPrice = max(liveGasPrice * 3, 0.25 gwei)` (`0.25 gwei` = `250000000` wei), on the contract you are about to call. BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the Towack contract in the same tx.
 - Exact TWAK approvals only, never unlimited (never `type(uint256).max`).
@@ -72,7 +75,17 @@ If the preview reverts (`NotOpen`, `SoldOut`, `AlreadyMinted`, `TokenIdUsed`, `N
 3. `DrawV2.enter(uint256 amount)` payable (selector `0xa59f3e0c`): `--to DrawV2`, `--value = fee`.
 4. Later: `DrawV2.claim()` (`--inputData 0x4e71d92d`, `--value 0`).
 
+### Claim trader rebates (Agent ID wallets that traded through TowackRouter)
+Rebates are paid per 7-day epoch (TWAK + BNB), pro-rata to the router fees each Agent ID wallet paid that week. Finished epochs never expire. Contract: RebateDistributor (see Addresses).
+1. Find the epochs to claim (all `eth_call`, nothing sent):
+   - `cur = currentEpoch()` (selector `0x76671808`). Only epochs `e < cur` are finished.
+   - For each `e` in `0 … cur - 1`, include `e` if `feesOf(e, wallet)` (selector `0x6ccd6cfa`) `> 0` **and** `claimed(e, wallet)` (selector `0x120aa877`) is `false`.
+   - Optional estimate: `claimable(wallet, e)` (selector `0x60efe334`) returns `(tokens, bnb)`. It returns 0 for a finished epoch nobody has checkpointed yet; `claim` checkpoints first, so still include it.
+   - If the list is empty, stop and tell the user there is nothing to claim.
+2. `RebateDistributor.claim(uint256[] epochs)` (selector `0x6ba4c138`): `--to RebateDistributor`, `--value 0`, `--inputData = selector ++ abi.encode(uint256[] epochs)`. Show the user the epoch list and the estimate before the preview. It reverts `EpochNotFinished(e)` for an epoch that is not over yet.
+
 ### Buy TWAK (anyone; Agent ID wallets also earn rebates)
+Trading opens only after the paid-mint window closes and `TowackLaunch.finalizeListing()` runs (`TWAK.tradingOpen()` turns `true`). Before that, the buy/sell preview reverts: tell the user trading has not opened yet.
 1. Quote: PancakeSwap v2 `getAmountsOut(amountBnb * 99 / 100, [WBNB, TWAK])` (selector `0xd06ca61f`) via `eth_call` (the router keeps a 1% fee from the BNB in).
 2. `minTokensOut = quote * (100 - slippage%) / 100` (default 1%); `deadline = now + 600`.
 3. `TowackRouter.buy(uint256 minTokensOut, uint256 deadline)` payable (selector `0xd6febde8`): `--to TowackRouter`, `--value = amountBnb` (wei).
@@ -122,8 +135,12 @@ The Towack `/swap` desk compares live quotes across PancakeSwap (v2/v3), Uniswap
   5. Status tracking: poll `GET https://api.relay.link/intents/status/v2?requestId=<requestId>` every 3-5 seconds until terminal status (`success`, `refund`, or `failure`).
 
 #### 4. BAW-Native Alternative (same-chain)
-When not bridging, BAW's native routing can also be used directly:
-`baw market-order quote --fromTokenQty <qty> --fromToken <in> --toToken <out> --binanceChainId 56 --slippage <slip> --json` -> preview -> explicit yes -> `baw market-order swap` -> poll order status.
+When not bridging, BAW's own routing can be used directly. It is not a `contract-call` (no Developer Mode, no preview command), and `market-order` has **no preview step**:
+1. Run the BAW swap security pre-check (token audit) for any token that is not well known.
+2. `baw market-order quote --fromTokenQty <qty> --fromToken <in> --toToken <out> --binanceChainId 56 [--slippage <slip>] --json`: show the user the quote (amounts are human-readable units; native BNB is `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`). Wait for an explicit "yes".
+3. `baw market-order swap` with the same flags.
+4. An `orderId` is **not** a completed swap: poll `baw market-order list --orderId <orderId> --json` until `status` is `FINISHED` or `FAILED`, then report.
+Third-party routes (including this one) earn no Towack rebate.
 
 ### Retries
 If a VRF answer is late, the contracts expose `retryPrize(address)` (Launch) and `retrySpin(uint256)` (DrawV2); each sends `vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei))` again. Same preview / confirm / execute rules.

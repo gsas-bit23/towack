@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useReadContracts, useWriteContract } from "wagmi";
 import { rebateDistributorAbi } from "@/abi";
+import { AgentPathToggle } from "@/components/AgentPath";
 import { ChainNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
 import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
@@ -153,7 +154,7 @@ function EpochTable() {
       ) : null}
 
       <div className="mt-6">
-        <NeedsWallet why={t("reb.connectWhy")}>
+        <NeedsWallet why={t("reb.connectWhy")} agent="rebateClaim">
           {visible.length === 0 ? (
             <p className="rounded-2xl bg-card-2 px-4 py-6 text-center font-medium">{t("reb.noActivity")}</p>
           ) : (
@@ -223,6 +224,7 @@ function EpochTable() {
             </div>
           </div>
           <TxNotice state={tx.state} onClose={tx.reset} />
+          <AgentPathToggle flow="rebateClaim" className="mt-4" />
         </NeedsWallet>
       </div>
     </Panel>

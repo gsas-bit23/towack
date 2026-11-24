@@ -1,4 +1,5 @@
 import { formatUnits, toFunctionSelector, zeroAddress } from "viem";
+import { DEV_MODE_RULE, EXECUTE_RESULT_RULE } from "./agentRules";
 import { CHAIN_NAMES, isNative, VENUES, type ProviderId, type Token } from "./quotes";
 import { RELAY_API } from "./quotes/relay";
 import { EEEE, ORIGIN_TOKENS } from "./quotes/tokens";
@@ -52,11 +53,12 @@ const tokenLine = (t: Token, placeholder = false) =>
 
 const RULES = `Rules (Binance Agentic Wallet, official external-sign flow):
 - Origin chain is BNB Smart Chain MAINNET: --binanceChainId 56. Towack's website never signs or broadcasts for me; you prepare, I confirm.
-- Before any contract-call, run \`baw wallet settings --json\` and confirm devMode.enabled=true. If it is off, tell me to enable Developer Mode in the Binance App and WAIT.
+${DEV_MODE_RULE}
 - If the token I receive is not a well-known asset, run the BAW swap security pre-check (token audit) first and show me the result.
 - For every transaction: \`baw contract-call preview --binanceChainId 56 --from <my wallet> --to <contract> --value <wei> --inputData <hex> --json\`.
   Show me the parsed tx, the risks and the authorityChanges, then WAIT for my explicit "yes".
   Only then: \`baw contract-call execute --requestId <requestId> --json\`. Never execute without a fresh preview + my yes (a separate yes for the approval and for the swap).
+${EXECUTE_RESULT_RULE}
 - --value is raw wei (an integer). Do not pass a gas price. Approvals are for the EXACT amount only, never unlimited / max uint.
 - Quotes go stale in seconds: always re-quote right before you build the calldata. If the fresh quote is more than my slippage worse than the page's estimate, stop and ask me.`;
 

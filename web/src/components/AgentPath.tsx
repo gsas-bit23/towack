@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } from "viem";
 import { ADDRESSES } from "@/config/addresses";
+import { DEV_MODE_RULE, EXECUTE_RESULT_RULE } from "@/lib/agentRules";
 import { buildSwapInstruction, type AgentRoute } from "@/lib/agentSwap";
 import { buildPerpsInstruction, type PerpsAgentIntent } from "@/lib/aster/instruction";
 import { useLocale } from "@/lib/i18n";
@@ -24,6 +25,7 @@ export type AgentFlow =
   | "launchClaim"
   | "lotteryClaim"
   | "referralClaim" // TowackLaunch.claimReferral()
+  | "rebateClaim" // RebateDistributor.claim(uint256[] epochs): weekly trader rebates (Agent ID wallets)
   | "buy" // TowackRouter.buy
   | "sell" // TWAK.approve(exact) + TowackRouter.sell
   | "swap" // /swap: same-chain route (PancakeSwap / Uniswap / Relay / 0x / 1inch), see lib/agentSwap.ts
@@ -56,13 +58,18 @@ const SEL_VRF_FEE_AT = toFunctionSelector("vrfFeeAt(uint256)");
 const SEL_BUY = toFunctionSelector("buy(uint256,uint256)");
 const SEL_SELL = toFunctionSelector("sell(uint256,uint256,uint256)");
 const SEL_GET_AMOUNTS_OUT = toFunctionSelector("getAmountsOut(uint256,address[])");
+const SEL_REBATE_CLAIM = toFunctionSelector("claim(uint256[])");
+const SEL_CURRENT_EPOCH = toFunctionSelector("currentEpoch()");
+const SEL_FEES_OF = toFunctionSelector("feesOf(uint256,address)");
+const SEL_CLAIMED = toFunctionSelector("claimed(uint256,address)");
+const SEL_CLAIMABLE = toFunctionSelector("claimable(address,uint256)");
 
 /** Calldata for TowackLaunch.mint(address referrer); address(0) = no referral. */
 export function mintCalldata(referrer?: Address): `0x${string}` {
   return encodeFunctionData({ abi: ABI, functionName: "mint", args: [referrer ?? zeroAddress] });
 }
 
-type Key = "launch" | "genesis" | "drawV2" | "token" | "router" | "pancakeRouter" | "wbnb" | "agentId";
+type Key = "launch" | "genesis" | "drawV2" | "token" | "router" | "pancakeRouter" | "wbnb" | "agentId" | "rebateDistributor";
 
 function mainnet(key: Key, placeholder: string) {
   const a = ADDRESSES[56][key];
@@ -73,11 +80,15 @@ const PENDING = "  (address unavailable: do NOT send anything)";
 
 const BASE_RULES = `Rules (Binance Agentic Wallet, official external-sign flow):
 - BNB Smart Chain MAINNET only: --binanceChainId 56. Towack's website never signs or broadcasts for me; you prepare, I confirm.
-- Before any contract-call, run \`baw wallet settings --json\` and confirm devMode.enabled=true. If it is off, tell me to enable Developer Mode in the Binance App and WAIT.
-- For every transaction: \`baw contract-call preview --binanceChainId 56 --from <my wallet> --to <contract> --value <wei> --inputData <hex> --json\`.
+${DEV_MODE_RULE}
+- For every transaction: \`baw contract-call preview --binanceChainId 56 --from <my wallet> --to <contract> --value <wei> --inputData <hex> --json\` (<my wallet> from \`baw wallet address --json\`).
   Show me the parsed tx, the risks and the authorityChanges, then WAIT for my explicit "yes".
   Only then: \`baw contract-call execute --requestId <requestId> --json\`. Never execute without a fresh preview + my yes.
+${EXECUTE_RESULT_RULE}
 - --value is raw wei (an integer). Do not pass a gas price.`;
+
+/** Official BAW Agent ID pre-check (`wallet agent-id`), run before any Agent-ID-gated mint. */
+const AGENT_ID_CHECK = `0) Agent ID check first: \`baw wallet agent-id --json\`. If claimed=false, stop: tell me to claim one in the Binance App (Wallet > Agent ID). If it returns error 20003008, the Agent ID service is down; that does NOT mean I have no Agent ID, so retry later.`;
 
 const vrfRule = (contract: string) =>
   `- VRF fee: read ${contract}.vrfFeeAt(gasPrice) (selector ${SEL_VRF_FEE_AT}) with an eth_call at gasPrice = max(liveGasPrice * 3, 0.25 gwei). BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the contract in the same tx.`;
@@ -110,6 +121,7 @@ Contract: TowackLaunch ${l.addr}${l.missing ? PENDING : ""}
 Requirement: my wallet must hold an Agent ID (one mint per Agent ID wallet).
 Referrer: ${who ? `${who}. They earn 0.005 BNB (5% of the mint price) from the contract; my price stays 0.1 BNB.` : "none (address(0))."}
 
+${AGENT_ID_CHECK}
 1) Quote fee = TowackLaunch.vrfFeeAt(max(liveGasPrice * 3, 0.25 gwei)).
 2) mint(address referrer) (selector ${SEL_MINT_REF}), referrer = ${ref ?? zeroAddress}:
    --inputData ${mintCalldata(ref)}
@@ -129,6 +141,7 @@ Requirement: my wallet must hold an Agent ID handle (one Genesis per Agent ID an
 Completely free: --value 0 (the functions are non-payable; any BNB attached reverts). I only pay network gas.
 It sends a flat 20,000 TWAK to my wallet in the same transaction. No VRF, no spin, no second claim step.
 
+${AGENT_ID_CHECK}
 1) Easiest on mainnet: mintByHandle() (selector ${SEL_GENESIS_MINT_BY_HANDLE}): --inputData ${SEL_GENESIS_MINT_BY_HANDLE}  --value 0 (resolves handleOf(my wallet) automatically).
    Or mint(uint256 agentTokenId) (selector ${SEL_GENESIS_MINT}): where agentTokenId = uint256(keccak256(bytes(handle))), --value 0.
    Preview first: if it would revert (window closed, sold out, Agent ID or wallet already used), stop and tell me.
@@ -172,6 +185,23 @@ I earn 0.005 BNB for every paid mint that named my wallet as referrer. Referral 
 
 ${footer(BASE_RULES)}`;
       return { text, missing: missingList([["TowackLaunch", l.missing]]) };
+    }
+    case "rebateClaim": {
+      const rd = mainnet("rebateDistributor", "<TOWACK_REBATES>");
+      const text = `Claim my Towack weekly trader rebates (TWAK + BNB) on BNB Smart Chain mainnet (chain 56) with my Binance Agentic Wallet.
+Contract: RebateDistributor ${rd.addr}${rd.missing ? PENDING : ""}
+Rebates are earned only by Agent ID wallets that traded through TowackRouter, per 7-day epoch, pro-rata to the router fees they paid. Finished epochs never expire.
+
+1) Find my epochs (eth_call only, nothing is sent):
+   - cur = currentEpoch() (selector ${SEL_CURRENT_EPOCH}). Only epochs e < cur are finished.
+   - For each e from 0 to cur - 1: include e if feesOf(e, my wallet) (selector ${SEL_FEES_OF}) > 0 AND claimed(e, my wallet) (selector ${SEL_CLAIMED}) is false.
+   - Optional estimate: claimable(my wallet, e) (selector ${SEL_CLAIMABLE}). It shows 0 for an epoch nobody has checkpointed yet; claim() checkpoints first, so still include it.
+   - If the list is empty, stop and tell me there is nothing to claim.
+2) claim(uint256[] epochs) (selector ${SEL_REBATE_CLAIM}): --to RebateDistributor, --value 0,
+   --inputData = selector ++ abi.encode(uint256[] epochs). Show me the epoch list and the estimate before preview.
+
+${footer(BASE_RULES)}`;
+      return { text, missing: missingList([["RebateDistributor", rd.missing]]) };
     }
     case "buy": {
       const p = mainnet("pancakeRouter", "<PANCAKE_V2_ROUTER>");
