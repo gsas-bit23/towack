@@ -8,14 +8,11 @@ export const metadata: Metadata = { title: "Trade" };
 export default function TradePage() {
   return (
     <>
-      <PageHeader kicker={<T k="trade.kicker" />} title={<T k="trade.title" />}>
-        <T k="trade.lead" />
+      <PageHeader title={<T k="trade.title" />}>
+        <T k="trade.lead" tags={{ a: { href: "/swap", className: "underline decoration-1 underline-offset-2 hover:text-gold" } }} />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">
         <TradeDesk />
-        <p className="mt-8 rounded-2xl border border-line bg-card px-5 py-4 font-medium text-sub">
-          <T k="trade.otherTokens" tags={{ a: { href: "/swap", className: "underline decoration-[3px] underline-offset-4 hover:text-gold" } }} />
-        </p>
       </section>
     </>
   );

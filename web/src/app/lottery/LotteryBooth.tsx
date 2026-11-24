@@ -9,7 +9,8 @@ import { AnimatedNumber, Confetti, Skeleton, SuccessCheck } from "@/components/m
 import { ShareButton, useWheelMachine, type WheelStatus } from "@/components/PrizeBooth";
 import { SpinWheel } from "@/components/SpinWheel";
 import { AgentPathToggle } from "@/components/AgentPath";
-import { AddressLink, ChainNote, NeedsWallet, RpcErrorNotice, TxNotice, VrfSource } from "@/components/status";
+import { RiskLine } from "@/components/RiskNote";
+import { AddressLink, NeedsWallet, RpcErrorNotice, TxNotice, VrfSource } from "@/components/status";
 import { Button, Panel, Pill, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDuration } from "@/lib/format";
@@ -506,11 +507,11 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
               <Button tone="gold" size="lg" className="mt-4 min-h-14 w-full" disabled={!canEnter || tx.busy} onClick={enter}>
                 {tx.busy ? t("wallet.checkWallet") : needsApproval && amountIn ? t("lot.btnApprove") : t("lot.btnEnter")}
               </Button>
-              <p className="mt-2 text-center text-sm font-medium text-muted">
+              <p className="mt-2 text-center text-[12.5px] text-muted">
                 {t("lot.entryNote")}
                 {vrf.supported === false ? null : t("lot.vrfNote", { fee: vrf.label })}
               </p>
-              <AgentPathToggle flow="lottery" className="mt-4" />
+              <AgentPathToggle flow="lottery" className="mt-3" />
             </>
           )}
           {hasOwed && status !== "assigned" ? (
@@ -520,6 +521,7 @@ function LiveBooth({ amount, setAmount }: { amount: string; setAmount: (v: strin
           ) : null}
           {hasOwed ? <AgentPathToggle flow="lotteryClaim" className="mt-4" /> : null}
         </NeedsWallet>
+        <RiskLine className="mt-3" />
       </div>
       <TxNotice state={tx.state} onClose={tx.reset} />
     </>
@@ -541,7 +543,6 @@ export function LotteryBooth() {
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-[26px] font-semibold sm:text-[28px]">{t("lot.wheel")}</h2>
-            <ChainNote />
           </div>
           <div className="mt-3">
             <VrfSource consumer={addresses.drawV2} />

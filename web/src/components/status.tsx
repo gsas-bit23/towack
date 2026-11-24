@@ -66,33 +66,27 @@ export function NeedsContracts({ keys, children, soon }: { keys: ContractKey[]; 
   return <>{children}</>;
 }
 
-/** `agent`: also offer the "Give this to your AI agent" (Binance Agentic Wallet) copy-paste path. */
-export function NeedsWallet({ children, why, agent, referral }: { children: ReactNode; why?: string; agent?: AgentFlow; referral?: AgentReferral }) {
+/**
+ * Wallet gate: without a wallet the card shows one full-width "Connect wallet" button in place of its action.
+ * `agent`: also offer the "Give this to your AI agent" (Binance Agentic Wallet) path, which needs no browser wallet.
+ * `why` is kept for call sites but no longer rendered (one button, no extra copy).
+ */
+export function NeedsWallet({ children, agent, referral }: { children: ReactNode; why?: string; agent?: AgentFlow; referral?: AgentReferral }) {
   const { isConnected, wrongNetwork, switchToApp, isSwitching } = useTowack();
   const { t } = useLocale();
   if (!isConnected) {
     return (
-      <div className="rounded-2xl border border-line bg-card-2 p-7 text-center">
-        <p className="font-display text-[22px] font-semibold">{t("status.connectToPlay")}</p>
-        <p className="mt-1 font-medium text-sub">{why ?? t("status.connectWhyDefault")}</p>
-        <div className="mt-5 flex justify-center">
-          <ConnectPill />
-        </div>
-        {agent ? <AgentPathToggle flow={agent} referral={referral} className="mt-4" /> : null}
+      <div>
+        <ConnectPill block />
+        {agent ? <AgentPathToggle flow={agent} referral={referral} className="mt-3" /> : null}
       </div>
     );
   }
   if (wrongNetwork) {
     return (
-      <div className="rounded-2xl border border-line bg-down/10 p-7 text-center">
-        <p className="font-display text-[22px] font-semibold">{t("wallet.wrongNetwork")}</p>
-        <p className="mt-1 font-medium text-sub">{t("status.wrongNetBody")}</p>
-        <div className="mt-5 flex justify-center">
-          <Button tone="soft" size="sm" disabled={isSwitching} onClick={switchToApp}>
-            {t("status.switchToBnb")}
-          </Button>
-        </div>
-      </div>
+      <Button tone="danger" size="lg" className="w-full !rounded-2xl" disabled={isSwitching} onClick={switchToApp}>
+        {t("status.switchToBnb")}
+      </Button>
     );
   }
   return <>{children}</>;
@@ -133,17 +127,6 @@ export function TxNotice({ state, onClose }: { state: TxState; onClose?: () => v
           </button>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-export function ChainNote() {
-  const { meta } = useTowack();
-  const { t } = useLocale();
-  return (
-    <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-sub">
-      <span className="rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-fg">{meta.name.toUpperCase()}</span>
-      {t("status.chainNote")}
     </div>
   );
 }

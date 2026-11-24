@@ -33,7 +33,7 @@ export function RefLanding() {
             {t("r.mint")}
           </ButtonLink>
           <ul className="mt-6 space-y-2 font-medium text-sub">
-            {[1, 2, 3].map((n) => (
+            {[1, 2].map((n) => (
               <li key={n} className="flex gap-2.5">
                 <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />
                 <span>{t(`r.b${n}` as MessageKey)}</span>

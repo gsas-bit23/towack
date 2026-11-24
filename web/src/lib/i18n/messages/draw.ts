@@ -2,11 +2,10 @@ import { defineMessages } from "../define";
 
 export const draw = defineMessages({
   // draw page
-  "draw.kicker": ["Draw V1 · Chainlink VRF v2.5 · one spin per mint", "Draw V1 · Chainlink VRF v2.5 · 每次铸造一次转盘"],
-  "draw.title": ["The prize booth.", "奖品台。"],
+  "draw.title": ["The prize booth", "奖品台"],
   "draw.lead": [
-    "Every mint gets its own Chainlink VRF random word, and the contract pops one slot from a fixed 5,000-slot deck. One outcome per spin: a BNB refund, a TWAK bonus, or better luck next time. Nobody can pick winners, and the contract has no owner. Prizes are not guaranteed.",
-    "每次铸造都会获得一个独立的 Chainlink VRF 随机数，合约据此从固定的 5,000 名额卡组中抽出一张。每次只有一个结果：BNB 返还、TWAK 奖励，或下次好运。没有人能指定中奖者，合约也没有所有者。奖励不作保证。",
+    "Every mint spins once. Chainlink VRF draws one prize from a fixed 5,000-slot deck, so nobody can pick the winners.",
+    "每次铸造转一次。Chainlink VRF 从固定的 5,000 名额卡组中抽出结果，没有人能指定中奖者。",
   ],
   "draw.deckHow": ["How the deck works", "卡组规则"],
   "draw.deck1": [
@@ -19,7 +18,6 @@ export const draw = defineMessages({
     "5,000 名额全部售出时，奖池为 166.25 BNB 返还与 3,520 万 TWAK 奖励。已开出的返还在领取前由合约托管。",
   ],
   "draw.deck4": ["If the mint ends early, undrawn slots are unsold: their BNB goes to liquidity / Draw V2 and their bonus TWAK is burned.", "若铸造提前结束，未抽出的名额视为未售出：其 BNB 注入流动性 / Draw V2，奖励 TWAK 将被销毁。"],
-  "draw.deck5": ["This is a game of chance, not an investment. Most spins get back less than the 0.1 BNB paid.", "此为概率游戏，不构成投资建议。大多数转盘的返还都低于所付的 0.1 BNB。"],
 
   // draw machine
   "draw.step1": ["Mint + spin", "铸造 + 转盘"],
@@ -69,12 +67,8 @@ export const draw = defineMessages({
   "draw.trueOdds": ["true odds per mint at the start · live remaining counts", "初始每次铸造的真实概率 · 实时剩余数量"],
 
   // lottery page
-  "lot.kicker": ["Draw V2 · instant pool wheel", "Draw V2 · 即开奖池转盘"],
-  "lot.title": ["Spin the pool.", "转动奖池。"],
-  "lot.lead": [
-    "Put TWAK into the prize pool and spin right away. Chainlink VRF picks a multiplier of your entry, from 0× to a 10× jackpot, paid from the pool. Expected return is 95%: most spins pay back less than you put in. A game of chance, not an investment.",
-    "将 TWAK 投入奖池即可立即转盘。Chainlink VRF 为你的投入随机选出一个倍数，从 0× 到 10× 大奖不等，由奖池支付。期望回报为 95%：大多数转盘的回报低于投入。此为概率游戏，不构成投资建议。",
-  ],
+  "lot.title": ["Pool wheel", "奖池转盘"],
+  "lot.lead": ["Put TWAK in and spin. Chainlink VRF pays 0× to a 10× jackpot from the pool.", "投入 TWAK 即可转盘。Chainlink VRF 从奖池中赔付 0× 至 10× 大奖。"],
   "lot.demoPill": ["DEMO SPIN · not a real entry or prize", "演示转盘 · 非真实参与或奖励"],
   "lot.waitingVrf": ["Spinning… waiting for VRF", "转动中… 等待 VRF"],
   "lot.zeroPaid": ["0 TWAK — the entry stays in the pool", "0 TWAK — 投入留在奖池中"],
@@ -93,8 +87,8 @@ export const draw = defineMessages({
   "lot.upToPot": [" · up to +{p}% BNB pot", " · 最高 +{p}% BNB 奖金池"],
   "lot.ev": ["Expected return: {p}%", "期望回报：{p}%"],
   "lot.evBody": [
-    "On average a spin pays back 95 of every 100 TWAK entered; the 5% edge stays in the pool. {less}% of spins pay less than the entry, {even}% pay it back, {more}% pay more. This is a game of chance, not an investment.",
-    "平均而言，每投入 100 TWAK 回报 95 TWAK，5% 的差额留在奖池中。{less}% 的转盘回报低于投入，{even}% 返还本金，{more}% 高于投入。此为概率游戏，不构成投资建议。",
+    "On average a spin pays back 95 of every 100 TWAK; the 5% edge stays in the pool. {less}% of spins pay less than the entry, {even}% pay it back, {more}% pay more.",
+    "平均而言，每投入 100 TWAK 回报 95 TWAK，5% 的差额留在奖池中。{less}% 的转盘回报低于投入，{even}% 返还本金，{more}% 高于投入。",
   ],
   "lot.how": ["How the pool wheel works", "奖池转盘规则"],
   "lot.how1": [
@@ -145,7 +139,7 @@ export const draw = defineMessages({
   "lot.stillLanding": ["Your last spin is still landing.", "你的上一次转盘仍在开奖中。"],
   "lot.btnApprove": ["Approve exact amount, then spin", "先授权精确数量，再转盘"],
   "lot.btnEnter": ["Enter + spin", "参与 + 转盘"],
-  "lot.entryNote": ["Your entry joins the pool. Most spins pay back less than you put in.", "你的投入将进入奖池，大多数转盘的回报低于投入。"],
+  "lot.entryNote": ["Your entry joins the pool.", "你的投入将进入奖池。"],
   "lot.vrfNote": [" Each spin also pays a Chainlink VRF fee of about {fee} in BNB.", " 每次转盘还需支付约 {fee} 的 Chainlink VRF 费用（BNB）。"],
   "lot.claimOwed": ["Claim {twak} TWAK{bnb}", "领取 {twak} TWAK{bnb}"],
   "lot.wheel": ["Pool wheel", "奖池转盘"],

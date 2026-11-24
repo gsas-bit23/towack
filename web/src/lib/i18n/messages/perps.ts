@@ -3,8 +3,7 @@ import { defineMessages } from "../define";
 export const perps = defineMessages({
   // desk
   "perps.title": ["Perps on Aster", "Aster 永续合约"],
-  "perps.sub": ["Live Aster markets. Trade with a trade-only API wallet kept in this browser. Towack adds no fee.", "实时 Aster 市场。使用保存在本浏览器中的仅交易 API 钱包下单，Towack 不收取任何费用。"],
-  "perps.realMoney": ["Real money.", "真实资金。"],
+  "perps.sub": ["Live Aster markets. Towack adds no fee.", "实时 Aster 市场，Towack 不收取任何费用。"],
   "perps.openAster": ["Open Aster ↗", "打开 Aster ↗"],
   "perps.chartAria": ["Price chart", "价格图表"],
   "perps.bookAria": ["Order book and trades", "订单簿与成交"],
@@ -14,23 +13,18 @@ export const perps = defineMessages({
   "perps.close": ["Close ✕", "关闭 ✕"],
   "perps.buyLong": ["Buy / Long", "买入 / 做多"],
   "perps.sellShort": ["Sell / Short", "卖出 / 做空"],
-  "perps.perksTitle": ["Agent ID perks · AI-agent path", "Agent ID 权益 · AI 智能体通道"],
+  "perps.perksTitle": ["Trade with your AI agent", "用 AI 智能体交易"],
   "perps.agentOk": ["Agent ID ✓", "Agent ID ✓"],
   "perps.noAgent": ["No Agent ID", "无 Agent ID"],
-  "perps.perk1": ["Anyone can view markets and trade here with their own wallet.", "任何人都可以用自己的钱包在此查看行情并交易。"],
   "perps.perk2": [
-    "Agent ID holders unlock <b>Give this to your AI agent</b> for Binance Agentic Wallet. The instruction carries the exact ticket above (type, trigger, TP / SL, leverage).",
-    "Agent ID 持有者可为 Binance Agentic Wallet 解锁<b>「交给你的 AI 智能体执行」</b>。指令会完整带上上方的下单参数（类型、触发价、止盈 / 止损、杠杆）。",
+    "Agent ID holders can hand the order above to their <b>Binance Agentic Wallet</b> agent.",
+    "Agent ID 持有者可将上方订单交给 <b>Binance Agentic Wallet</b> 智能体执行。",
   ],
-  "perps.perk3": ["No Towack fee and no rebates on Aster trades.", "Aster 交易不收取 Towack 费用，也没有返佣。"],
   "perps.connectCheck": ["Connect to check your Agent ID.", "连接钱包以检查 Agent ID。"],
   "perps.checkUnavailable": ["Agent ID check is unavailable right now.", "暂时无法检查 Agent ID。"],
   "perps.checking": ["Checking Agent ID…", "正在检查 Agent ID…"],
   "perps.locked": ["Agent path locked", "智能体通道未解锁"],
-  "perps.lockedBody": [
-    "The AI-agent path is for Agent ID wallets. This wallet holds none. You can still trade with the order ticket. Agent IDs are issued in the official Binance App.",
-    "AI 智能体通道仅面向持有 Agent ID 的钱包，该钱包未持有。你仍可使用下单面板交易。Agent ID 由币安官方 App 发放。",
-  ],
+  "perps.lockedBody": ["Needs an Agent ID. You can still trade with the order ticket.", "需要 Agent ID。你仍可使用下单面板交易。"],
 
   // market header
   "perps.h.change": ["24h change", "24h 涨跌"],
@@ -140,10 +134,7 @@ export const perps = defineMessages({
   "perps.t.entryOk": ["Entry {id} accepted by Aster{status}.", "开仓单 {id} 已被 Aster 接受{status}。"],
   "perps.t.legOk": ["{leg} {id} placed (reduce-only trigger {p}).", "{leg} {id} 已挂出（只减仓触发价 {p}）。"],
   "perps.t.legFail": ["{leg} was rejected: {e} The entry is live without this {leg}.", "{leg} 被拒绝：{e} 开仓单已生效，但未附带该 {leg}。"],
-  "perps.t.footer": [
-    "One-way mode. Perps are leveraged: you can lose your whole margin and be liquidated. Orders go to Aster, not Towack. Towack adds no fee.",
-    "单向持仓模式。永续合约带杠杆：你可能损失全部保证金并被强平。订单直接发送至 Aster，而非 Towack。Towack 不收取任何费用。",
-  ],
+  "perps.t.footer": ["Leveraged: you can lose your whole margin. Orders go straight to Aster.", "带杠杆交易：你可能损失全部保证金。订单直接发送至 Aster。"],
   "perps.t.last": ["Last", "最新价"],
   "perps.t.mark": ["Mark", "标记价"],
   "perps.t.triggerAria": ["Trigger price type", "触发价格类型"],
@@ -227,8 +218,8 @@ export const perps = defineMessages({
   "perps.a.title": ["Your Aster API wallet", "你的 Aster API 钱包"],
   "perps.a.stays": ["Stays in this browser", "仅保存在本浏览器"],
   "perps.a.body": [
-    "Aster trades are signed by an <b>API wallet</b>: a key that can place and cancel perp orders for your account but can never withdraw. It lives only in this browser's storage. Towack has no server that sees it; only signatures go, straight to Aster.",
-    "Aster 交易由 <b>API 钱包</b>签名：该密钥可为你的账户下单和撤单，但永远无法提币。它只保存在本浏览器的存储中，Towack 没有任何服务器能看到它，只有签名会直接发送到 Aster。",
+    "Orders are signed by an <b>API wallet</b> kept in this browser. It can trade perps but can never withdraw.",
+    "订单由保存在本浏览器中的 <b>API 钱包</b>签名。它可以交易永续合约，但永远无法提币。",
   ],
   "perps.a.account": ["Account", "账户"],
   "perps.a.mainWallet": ["main wallet", "主钱包"],

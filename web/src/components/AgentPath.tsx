@@ -255,9 +255,14 @@ export function AgentPathToggle({
   return (
     <div className={className}>
       <div className="flex justify-center">
-        <Button tone="line" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[13px] font-semibold text-muted transition-colors hover:text-fg"
+        >
           <span aria-hidden="true">🤖</span> {open ? t("agent.hide") : t("agent.show")}
-        </Button>
+        </button>
       </div>
       {open ? <AgentPathPanel flow={flow} referral={referral} perps={perps} swap={swap} className="mt-4 text-left" /> : null}
     </div>
@@ -281,7 +286,6 @@ export function AgentPathPanel({
   const isPerps = flow === "perps";
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
   const { t, rich, locale } = useLocale();
-  const code = (c: string) => <code className="rounded bg-card px-1">{c}</code>;
 
   async function copy() {
     try {
@@ -300,15 +304,15 @@ export function AgentPathPanel({
         <Pill tone="gold">{t("agent.mainnetPill")}</Pill>
       </div>
 
-      <p className="mt-4 font-medium text-sub">
+      <p className="mt-4 text-[14px] font-medium text-sub">
         {rich("agent.intro", {
           a: (c) => (
             <a className="underline" href={BAW_SKILL_URL} target="_blank" rel="noreferrer">
               {c}
             </a>
           ),
-        })}{" "}
-        {isPerps ? rich("agent.perpsNote", { b: (c) => <b>{c}</b>, code }) : rich("agent.contractNote", { code })} {t("agent.siteNote")}
+        })}
+        {isPerps ? ` ${t("agent.perpsNote")}` : null}
         {locale === "zh" ? ` ${t("agent.instructionLang")}` : null}
       </p>
 

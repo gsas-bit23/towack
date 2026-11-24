@@ -5,12 +5,12 @@ import { T } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Prize booth" };
 
-const DECK_ROWS = ["draw.deck1", "draw.deck2", "draw.deck3", "draw.deck4", "draw.deck5"] as const;
+const DECK_ROWS = ["draw.deck1", "draw.deck2", "draw.deck3", "draw.deck4"] as const;
 
 export default function DrawPage() {
   return (
     <>
-      <PageHeader kicker={<T k="draw.kicker" />} title={<T k="draw.title" />}>
+      <PageHeader title={<T k="draw.title" />}>
         <T k="draw.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">

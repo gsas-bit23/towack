@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useReadContracts, useWriteContract } from "wagmi";
 import { rebateDistributorAbi } from "@/abi";
 import { AgentPathToggle } from "@/components/AgentPath";
-import { ChainNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
+import { NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
 import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
@@ -34,7 +34,6 @@ export function RebateBooth() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-sm font-semibold text-sub">{t("reb.note")}</p>
         </Panel>
       </div>
     </div>
@@ -129,7 +128,6 @@ function EpochTable() {
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[21px] font-semibold tracking-tight">{t("reb.epochs")}</h2>
-        <ChainNote />
       </div>
       {metaErr ? <RpcErrorNotice onRetry={() => void refetchMeta()} label={t("reb.loadErr")} /> : null}
       <div className="mt-5 grid gap-4 sm:grid-cols-3">

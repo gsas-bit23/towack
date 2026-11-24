@@ -6,6 +6,7 @@ import { useReadContract } from "wagmi";
 import { agentIdAbi } from "@/abi";
 import { AgentPathToggle } from "@/components/AgentPath";
 import { ConnectPill } from "@/components/ConnectPill";
+import { RiskLine } from "@/components/RiskNote";
 import { Panel, Pill } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { useLocale } from "@/lib/i18n";
@@ -253,12 +254,12 @@ function TitleBar({ net }: { net: AsterNet }) {
         <h1 className="text-[21px] font-semibold tracking-tight">{t("perps.title")}</h1>
         <p className="text-[12.5px] text-muted">{t("perps.sub")}</p>
       </div>
-      <span className="text-[12px] text-muted">
-        {t("perps.realMoney")}{" "}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
+        <RiskLine className="!text-left" />
         <a className="underline hover:text-fg" href={ASTER_APP_URL[net]} target="_blank" rel="noreferrer">
           {t("perps.openAster")}
         </a>
-      </span>
+      </div>
     </div>
   );
 }
@@ -282,11 +283,7 @@ function AgentPerks({ intent }: { intent: PerpsAgentIntent }) {
         <h2 className="text-[16px] font-semibold tracking-tight">{t("perps.perksTitle")}</h2>
         {hasAgent ? <Pill tone="neutral">{t("perps.agentOk")}</Pill> : hasAgent === false ? <Pill tone="gold">{t("perps.noAgent")}</Pill> : null}
       </div>
-      <ul className="mt-2 space-y-1 text-[12.5px] leading-relaxed text-sub">
-        <li>{t("perps.perk1")}</li>
-        <li>{rich("perps.perk2", { b: (c) => <b>{c}</b> })}</li>
-        <li>{t("perps.perk3")}</li>
-      </ul>
+      <p className="mt-2 text-[12.5px] leading-relaxed text-sub">{rich("perps.perk2", { b: (c) => <b>{c}</b> })}</p>
 
       <div className="mt-3">
         {!isConnected ? (

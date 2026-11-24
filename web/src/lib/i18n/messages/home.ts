@@ -6,8 +6,8 @@ export const home = defineMessages({
   "home.title": ["Towack — Agent ID markets", "Towack — Agent ID 专属市场"],
   "home.titleTail": ["on BNB Chain.", "运行于 BNB Chain。"],
   "home.lead": [
-    "Mint a Towack slot with your Agent ID, trade TWAK through the official router with your own on-chain spend limit, and earn rebates as an active trader.",
-    "用你的 Agent ID 铸造 Towack 名额，通过官方路由交易 TWAK 并自设链上消费限额，活跃交易还能赚取返佣。",
+    "Mint with your Agent ID, spin for prizes, and trade TWAK with weekly rebates.",
+    "用 Agent ID 铸造、转盘赢奖，交易 TWAK 还能获得每周返佣。",
   ],
   "home.ctaMint": ["Mint a slot · 0.1 BNB", "铸造名额 · 0.1 BNB"],
   "home.ctaSwap": ["Open Swap", "前往闪兑"],
@@ -57,27 +57,20 @@ export const home = defineMessages({
   "home.deck.title": ["Every mint spins the wheel", "每次铸造都会转动转盘"],
   "home.deck.link": ["Prize booth", "奖品台"],
   "home.deck.body": [
-    "Each mint gets its own <b>Chainlink VRF</b> random draw: one slot from a fixed 5,000-slot deck and the wheel stops on it — a BNB refund, a TWAK bonus, or better luck next time. <b>One outcome per spin</b>, and the odds shift as the deck empties.",
-    "每次铸造都有一次独立的 <b>Chainlink VRF</b> 随机抽取：从固定的 5,000 名额卡组中抽出一张，转盘停在对应位置 — BNB 返还、TWAK 奖励，或是下次好运。<b>每次只有一个结果</b>，且随着卡组减少，概率会随之变化。",
+    "<b>Chainlink VRF</b> draws one slot from a fixed 5,000-slot deck: a BNB refund, a TWAK bonus, or nothing. <b>One outcome per spin.</b>",
+    "<b>Chainlink VRF</b> 从固定的 5,000 名额卡组中抽出一个结果：BNB 返还、TWAK 奖励，或未中奖。<b>每次只有一个结果。</b>",
   ],
   "home.deck.bonusTitle": ["Bonus slots: extra TWAK", "奖励名额：额外 TWAK"],
-  "home.deck.bonusBody": [
-    "Paid from the 50M Draw V1 bonus reserve. A bonus slot replaces a refund — the wheel has one needle, so each mint wins exactly one outcome. A 5× slot means 80,000 + 320,000 TWAK.",
-    "由 5,000 万 Draw V1 奖励储备支付。奖励名额与返还互斥 — 转盘只有一根指针，每次铸造只会开出一个结果。抽中 5× 即获得 80,000 + 320,000 TWAK。",
-  ],
+  "home.deck.bonusBody": ["Instead of a refund. A 5× slot means 80,000 + 320,000 TWAK.", "替代返还发放。抽中 5× 即获得 80,000 + 320,000 TWAK。"],
   "home.deck.whole": ["Whole prize deck", "奖池卡组总额"],
-  "home.deck.wholeSub": ["+ 35.2M TWAK in bonuses: the whole prize pool at a 5,000 sellout", "+ 3,520 万 TWAK 奖励：5,000 名额全部售出时的奖池总额"],
-  "home.deck.wholeNote": [
-    "That's a refund-style prize deck, not a profit promise. The draw is a game of chance, and most spins get back less than they paid.",
-    "这是返还式奖池卡组，并非收益承诺。抽奖属于概率游戏，大多数转盘的返还都低于支付金额。",
-  ],
+  "home.deck.wholeSub": ["+ 35.2M TWAK in bonuses at a full sellout", "全部售出时另有 3,520 万 TWAK 奖励"],
 
   // router
   "home.router.title": ["Open router · Agent ID rebates", "开放路由 · Agent ID 返佣"],
   "home.router.link": ["Open the router", "打开路由"],
   "home.router.body": [
-    "Any wallet can trade through the official Towack router. It charges <b>1% on the BNB leg</b> of a trade — not a transfer tax on the token. Rebates accrue only to Agent ID wallets. You set your own on-chain daily spend limit.",
-    "任何钱包都可以通过 Towack 官方路由交易。路由仅对交易的 <b>BNB 一侧收取 1%</b> — 并非代币转账税。返佣只累计给持有 Agent ID 的钱包。每日链上消费限额由你自己设定。",
+    "Any wallet can trade TWAK through the Towack router for a <b>1% fee</b>. Agent ID wallets get part of it back as weekly rebates.",
+    "任何钱包都可以通过 Towack 路由交易 TWAK，手续费 <b>1%</b>。Agent ID 钱包可按周返还其中一部分。",
   ],
   "home.router.step1": ["You + Agent ID", "你 + Agent ID"],
   "home.router.step1Sub": ["daily limit set", "已设每日限额"],
@@ -87,11 +80,11 @@ export const home = defineMessages({
   "home.router.step3Sub": ["swap executes", "执行兑换"],
   "home.router.where": ["Where the 1% router fee goes", "1% 路由手续费的去向"],
   "home.fee.rebate": ["Active-trader rebate boosts", "活跃交易者返佣加成"],
-  "home.fee.rebateBody": ["Earned from your trading activity and claimed on-chain. Not sit-and-earn staking.", "根据你的交易活跃度获得并在链上领取。并非躺赚式质押。"],
+  "home.fee.rebateBody": ["Paid back to Agent ID traders each week.", "每周返还给 Agent ID 交易者。"],
   "home.fee.treasury": ["Lottery / Draw V2 treasury", "奖池转盘 / Draw V2 金库"],
-  "home.fee.treasuryBody": ["Stocks the BNB pot. 5× and 10× pool-wheel wins take a capped 1–2% bonus from it.", "注入 BNB 奖金池。奖池转盘抽中 5× 和 10× 时可从中获得 1–2% 的封顶奖励。"],
+  "home.fee.treasuryBody": ["Funds the pool wheel's BNB bonus.", "用于奖池转盘的 BNB 奖励。"],
   "home.fee.dev": ["Dev", "开发"],
-  "home.fee.devBody": ["Keeps the contracts, router, and site moving.", "用于维护合约、路由和网站的持续运转。"],
+  "home.fee.devBody": ["Keeps Towack running.", "用于 Towack 的持续运营。"],
   "home.router.rebates": ["Rebates", "返佣"],
 
   // tokenomics teaser
@@ -118,17 +111,11 @@ export const home = defineMessages({
   "home.road.p2": ["02 · Phase 2", "02 · 第二阶段"],
   "home.road.live": ["Live", "已上线"],
   "home.road.p2Title": ["Aster perps", "Aster 永续合约"],
-  "home.road.p2Body": [
-    "Live Aster perpetual markets, open to any wallet through a trade-only Aster API wallet you set up and keep in your browser. It cannot withdraw funds. An Agent ID unlocks the “Give this to your AI agent” box.",
-    "实时 Aster 永续合约市场，任何钱包都可以通过自行创建、保存在浏览器中的仅交易 Aster API 钱包参与，该钱包无法提取资金。持有 Agent ID 可解锁「交给你的 AI 智能体执行」功能。",
-  ],
+  "home.road.p2Body": ["Live Aster perpetual markets for any wallet, plus an AI-agent path for Agent ID holders.", "面向任意钱包的实时 Aster 永续合约市场，Agent ID 持有者还可使用 AI 智能体通道。"],
   "home.road.p2Link": ["Open Perps →", "前往永续合约 →"],
   "home.road.p3": ["03 · Phase 3", "03 · 第三阶段"],
   "home.road.p3Title": ["Live on BNB Smart Chain", "已上线 BNB Smart Chain"],
-  "home.road.p3Body": [
-    "Towack is live on BNB Smart Chain mainnet. Paid Launch and the Genesis 300 free claim are open, and the Draw V2 pool is funded.",
-    "Towack 已在 BNB Smart Chain 主网上线。付费发行与 Genesis 300 免费领取均已开放，Draw V2 奖池已完成注资。",
-  ],
+  "home.road.p3Body": ["Mainnet live: paid mint, Genesis 300 and the Draw V2 pool are open.", "主网已上线：付费铸造、Genesis 300 与 Draw V2 奖池均已开放。"],
 
   // paths
   "home.next": ["Where to go next", "下一步去哪儿"],
@@ -136,15 +123,12 @@ export const home = defineMessages({
   "home.path.launchBody": ["0.1 BNB per Agent ID. 80,000 TWAK instantly, plus one Chainlink VRF prize draw.", "每个 Agent ID 支付 0.1 BNB，立即获得 80,000 TWAK，并获一次 Chainlink VRF 奖池抽奖。"],
   "home.path.launchGo": ["Mint a slot", "铸造名额"],
   "home.path.swap": ["Swap", "闪兑"],
-  "home.path.swapBody": ["Best-route quotes across PancakeSwap, Uniswap and Relay, plus bridging out of BNB Chain.", "聚合 PancakeSwap、Uniswap 与 Relay 的最优路由报价，并支持从 BNB Chain 跨链转出。"],
+  "home.path.swapBody": ["Best price across PancakeSwap, Uniswap and Relay, plus bridging.", "聚合 PancakeSwap、Uniswap 与 Relay 的最优价格，并支持跨链。"],
   "home.path.swapGo": ["Open Swap", "前往闪兑"],
   "home.path.draw": ["Draw V2", "Draw V2"],
-  "home.path.drawBody": [
-    "Instant pool wheel. Enter TWAK, VRF multiplier 0×–10×. Pays back 95% on average, so players lose 5% over time.",
-    "即开奖池转盘。投入 TWAK，VRF 随机倍数 0×–10×。平均返还 95%，长期参与会损失约 5%。",
-  ],
+  "home.path.drawBody": ["Put TWAK in and spin for 0× to 10×.", "投入 TWAK，转出 0× 至 10×。"],
   "home.path.drawGo": ["Open Draw V2", "前往 Draw V2"],
   "home.path.perps": ["Perps", "永续合约"],
-  "home.path.perpsBody": ["Live Aster perpetual markets. Trade with an API wallet your own wallet approves.", "实时 Aster 永续合约市场。使用经你自己钱包授权的 API 钱包交易。"],
+  "home.path.perpsBody": ["Live Aster perpetual markets.", "实时 Aster 永续合约市场。"],
   "home.path.perpsGo": ["Open Perps", "前往永续合约"],
 });

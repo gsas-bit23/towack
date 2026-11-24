@@ -181,7 +181,7 @@ function GenesisClaim({ onMinted }: { onMinted: () => void }) {
         {tx.busy ? t("wallet.checkWallet") : minted ? t("genesis.btn.already") : t("genesis.btn.claim", { base: BASE_TEXT })}
       </Button>
       <p className="mt-2 text-center text-sm font-medium text-muted">
-        {t("genesis.gasNote", { cost: t("genesis.cost") })}
+        {t("genesis.gasNote")}
       </p>
       <TxNotice state={tx.state} onClose={tx.reset} />
       {!minted ? <AgentPathToggle flow="genesis" className="mt-4" /> : null}
@@ -200,7 +200,6 @@ function GenesisOffer() {
       <ul className="mx-auto mt-5 max-w-sm space-y-2.5 text-left">
         <Check ok>{t("genesis.offer1")}</Check>
         <Check ok>{t("genesis.offer2")}</Check>
-        <Check ok>{t("genesis.offer3")}</Check>
         <Check ok>{t("genesis.offer4")}</Check>
       </ul>
     </div>

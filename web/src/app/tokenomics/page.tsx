@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Tokenomics" };
 export default function TokenomicsPage() {
   return (
     <>
-      <PageHeader kicker={<T k="tok.kicker" />} title={<T k="tok.title" />}>
+      <PageHeader title={<T k="tok.title" />}>
         <T k="tok.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">

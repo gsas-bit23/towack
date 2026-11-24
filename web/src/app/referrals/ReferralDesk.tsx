@@ -5,7 +5,7 @@ import type { Address } from "viem";
 import { useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { agentIdAbi, towackLaunchAbi } from "@/abi";
 import { AgentPathPanel, AgentPathToggle } from "@/components/AgentPath";
-import { AddressLink, ChainNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
+import { AddressLink, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice } from "@/components/status";
 import { Button, Field, Panel, Pill, Stat, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18 } from "@/lib/format";
@@ -54,7 +54,6 @@ export function ReferralDesk() {
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[21px] font-semibold tracking-tight">{t("ref.linkTitle")}</h2>
-            <ChainNote />
           </div>
           <div className="mt-5">
             <Field
@@ -87,7 +86,6 @@ export function ReferralDesk() {
             <li>{t("ref.how4")}</li>
             <li>{t("ref.how5")}</li>
           </ol>
-          <p className="mt-4 font-semibold text-sub">{t("ref.note")}</p>
         </Panel>
       </div>
 
@@ -206,9 +204,8 @@ function Dashboard({ account }: { account: Address }) {
       <Button tone="gold" size="lg" className="mt-6 w-full" disabled={!unclaimed || tx.busy} onClick={claim}>
         {tx.busy ? t("wallet.checkWallet") : unclaimed ? t("ref.claimAmt", { n: fmt18(unclaimed, 4) }) : t("ref.nothing")}
       </Button>
-      <p className="mt-3 text-center text-sm font-medium text-muted">{t("wallet.confirmNote")}</p>
       <TxNotice state={tx.state} onClose={tx.reset} />
-      <AgentPathToggle flow="referralClaim" className="mt-4" />
+      <AgentPathToggle flow="referralClaim" className="mt-3" />
 
       <h3 className="mt-8 text-[17px] font-semibold tracking-tight">{t("ref.friendsTitle")}</h3>
       {referees && referees.length > 0 ? (

@@ -1,20 +1,41 @@
 "use client";
 
+import Link from "next/link";
 import { useLocale } from "@/lib/i18n";
 
+const DOCS_RISKS = "/docs#risks";
+
+/** Site-wide footer line. The full risk text lives once, on /docs#risks. */
 export function RiskNote({ className = "" }: { className?: string }) {
-  const { t } = useLocale();
+  const { rich } = useLocale();
   return (
-    <div className={`rounded-2xl border border-line bg-card p-6 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] text-gold">
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-          <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-        </svg>
-        {t("risk.title")}
-      </div>
-      <p className="text-[13.5px] leading-relaxed text-muted">
-        {t("risk.base")} {t("risk.verify")}
-      </p>
-    </div>
+    <p className={`text-[13px] leading-relaxed text-muted ${className}`}>
+      {rich("risk.footer", {
+        a: (c) => (
+          <Link href={DOCS_RISKS} className="underline decoration-1 underline-offset-2 hover:text-fg">
+            {c}
+          </Link>
+        ),
+      })}
+    </p>
+  );
+}
+
+/**
+ * The one risk line a trading page shows (Agent ID Hackathon rule: products involving trading display a risk
+ * warning on the page). Put it once, under the page's main action.
+ */
+export function RiskLine({ className = "" }: { className?: string }) {
+  const { rich } = useLocale();
+  return (
+    <p className={`text-center text-[12.5px] text-dim ${className}`}>
+      {rich("risk.line", {
+        a: (c) => (
+          <Link href={DOCS_RISKS} className="underline decoration-1 underline-offset-2 hover:text-fg">
+            {c}
+          </Link>
+        ),
+      })}
+    </p>
   );
 }
