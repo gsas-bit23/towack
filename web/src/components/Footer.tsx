@@ -21,22 +21,20 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t border-line bg-bg">
       <div className="mx-auto max-w-[1200px] px-4 pb-10 pt-12 sm:px-8 sm:pt-14">
-        <div className="grid grid-cols-12 items-start gap-x-0 gap-y-8 md:gap-x-10 [&>*]:min-w-0">
-          <div className="col-span-12 md:col-span-4">
-            <div className="flex items-center gap-2.5 text-[18px] font-bold tracking-[-0.02em]">
-              <CoinMark size={28} />
-              Towack
-            </div>
-            <nav aria-label={t("footer.nav")} className="mt-5 grid grid-cols-2 gap-x-2 text-[14px]">
-              {NAV_LINKS.map((l) => (
-                <Link key={l.href} href={l.href} className="flex min-h-10 items-center text-muted transition-colors hover:text-fg">
-                  {t(l.labelKey)}
-                </Link>
-              ))}
-            </nav>
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-center gap-2.5 text-[18px] font-bold tracking-[-0.02em]">
+            <CoinMark size={28} />
+            Towack
           </div>
-          <RiskNote className="col-span-12 md:col-span-8" />
+          <nav aria-label={t("footer.nav")} className="flex flex-wrap gap-x-5 text-[14px]">
+            {NAV_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} className="flex min-h-10 items-center text-muted transition-colors hover:text-fg">
+                {t(l.labelKey)}
+              </Link>
+            ))}
+          </nav>
         </div>
+        <RiskNote className="mt-6 max-w-[760px]" />
         <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-6 text-[13px] text-dim">
           <span>{t("footer.copyright")}</span>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

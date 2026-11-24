@@ -75,9 +75,6 @@ export default function Home() {
               <div className="mt-2 text-[14px] text-sub">
                 <T k="home.deck.wholeSub" />
               </div>
-              <p className="mt-auto pt-5 text-[13.5px] text-muted">
-                <T k="home.deck.wholeNote" />
-              </p>
             </Reveal>
           </div>
         </section>

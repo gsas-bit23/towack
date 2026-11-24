@@ -8,21 +8,28 @@ const k = (s: string) => s as MessageKey;
 const HOWTO = [1, 2, 3, 4, 5, 6];
 const FAQ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const SAFETY = [1, 2, 3, 4, 5];
+const PROVIDERS: [string, MessageKey][] = [
+  ["PancakeSwap v3", "swap.pv.v3"],
+  ["PancakeSwap v2", "swap.pv.v2"],
+  ["Uniswap v3", "swap.pv.v3"],
+  ["Relay", "swap.pv.relay"],
+  ["0x / 1inch", "swap.pv.agg"],
+];
 const LINK = "underline decoration-2 underline-offset-2 hover:text-gold";
 const RICH_LINK = "inline-flex min-h-10 items-center underline decoration-2 underline-offset-2 hover:text-gold";
 
 export default function DocsPage() {
   return (
     <>
-      <PageHeader kicker={<T k="docs.kicker" />} title={<T k="docs.title" />}>
+      <PageHeader title={<T k="docs.title" />}>
         <T k="docs.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">
-        <div className="rounded-2xl border border-line bg-gold/10 p-8 text-fg">
+        <div id="risks" className="scroll-mt-24 rounded-2xl border border-line bg-gold/10 p-6 text-fg sm:p-8">
           <span className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-fg">
             <T k="docs.riskPill" />
           </span>
-          <p className="mt-4 text-[19px] font-medium leading-relaxed">
+          <p className="mt-4 text-[17px] font-medium leading-relaxed sm:text-[19px]">
             <T k="risk.base" />
           </p>
         </div>
@@ -47,6 +54,29 @@ export default function DocsPage() {
             ))}
           </div>
         </div>
+
+        <Panel id="swap" shadow={false} className="scroll-mt-24">
+          <h2 className="font-display text-[24px] font-semibold">
+            <T k="docs.swapTitle" />
+          </h2>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 font-medium text-sub">
+            {[1, 2, 3, 4].map((n) => (
+              <li key={n}>
+                <T k={k(`swap.how${n}`)} tags={{ b: "font-semibold text-fg" }} />
+              </li>
+            ))}
+          </ol>
+          <h3 className="mt-6 font-semibold">
+            <T k="docs.swapProviders" />
+          </h3>
+          <ul className="mt-2 grid gap-x-6 gap-y-1 font-medium text-sub sm:grid-cols-2">
+            {PROVIDERS.map(([name, what]) => (
+              <li key={name}>
+                <span className="text-fg">{name}</span> · <T k={what} />
+              </li>
+            ))}
+          </ul>
+        </Panel>
 
         <div>
           <h2 className="font-display text-[40px] font-semibold">

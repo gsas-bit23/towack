@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "You're invited" };
 export default function RefPage() {
   return (
     <>
-      <PageHeader kicker={<T k="r.kicker" />} title={<T k="r.title" />}>
+      <PageHeader title={<T k="r.title" />}>
         <T k="r.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">

@@ -5,7 +5,8 @@ import { formatEther, maxUint256, parseEther } from "viem";
 import { useBalance, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { agentIdAbi, pancakeRouterAbi, towackRouterAbi, towackTokenAbi } from "@/abi";
 import { AgentPathToggle } from "@/components/AgentPath";
-import { ChainNote, NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
+import { RiskLine } from "@/components/RiskNote";
+import { NeedsContracts, NeedsWallet, TxNotice } from "@/components/status";
 import { Button, Field, Panel, Pill, Stat, inputClass } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { fmt18, fmtDate } from "@/lib/format";
@@ -165,7 +166,6 @@ function SwapCard() {
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[21px] font-semibold tracking-tight">{t("trade.booth")}</h2>
-        <ChainNote />
       </div>
 
       <div className="mt-5 inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label={t("trade.dirAria")}>
@@ -234,21 +234,15 @@ function SwapCard() {
               </dd>
               <dt>{t("trade.routerFee")}</dt>
               <dd className="text-right">{fmt18(q.fee, 6)} BNB</dd>
-              <dt className="pl-3">{t("trade.toRebate")}</dt>
-              <dd className="text-right">{fmt18((q.fee * 5000n) / BPS, 6)} BNB</dd>
-              <dt className="pl-3">{t("trade.toTreasury")}</dt>
-              <dd className="text-right">{fmt18((q.fee * 3000n) / BPS, 6)} BNB</dd>
-              <dt className="pl-3">{t("trade.toDev")}</dt>
-              <dd className="text-right">{fmt18(q.fee - (q.fee * 5000n) / BPS - (q.fee * 3000n) / BPS, 6)} BNB</dd>
             </dl>
           ) : null}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label={t("trade.slippage")} hint={t("trade.slipHint")}>
+          <Field label={t("trade.slippage")}>
             <input className={inputClass} inputMode="decimal" value={slippage} onChange={(e) => setSlippage(e.target.value.replace(/[^0-9.]/g, ""))} />
           </Field>
-          <Field label={t("trade.deadline")} hint={t("trade.deadlineHint")}>
+          <Field label={t("trade.deadline")}>
             <input className={inputClass} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} />
           </Field>
         </div>
@@ -258,12 +252,9 @@ function SwapCard() {
       <div className="mt-6">
         <NeedsWallet why={t("trade.connectWhy")} agent={side}>
           {hasAgent === false ? (
-            <div className="mb-4 rounded-2xl border border-line bg-down/10 px-4 py-4 font-medium">
-              <Pill tone="gold">{t("trade.noRebatePill")}</Pill>
-              <p className="mt-2">{t("trade.noRebate")}</p>
-            </div>
+            <p className="mb-3 text-sm font-medium text-muted">{t("trade.noRebate")}</p>
           ) : hasAgent ? (
-            <p className="mb-4 text-sm font-medium text-sub">
+            <p className="mb-3 text-sm font-medium text-sub">
               <Pill tone="neutral">{t("trade.agentPill")}</Pill> <span className="ml-1">{t("trade.agentNote")}</span>
             </p>
           ) : null}
@@ -279,19 +270,15 @@ function SwapCard() {
                     ? t("trade.approveSell")
                     : t("trade.sell")}
             </Button>
-            {side === "sell" ? (
-              <p className="mt-3 text-center text-sm font-medium text-muted">
-                {t("trade.sellNote", { n: amountIn ? fmt18(amountIn, 2) : t("trade.the") })}
-              </p>
-            ) : (
-              <p className="mt-3 text-center text-sm font-medium text-muted">{t("trade.buyNote")}</p>
-            )}
+            {side === "sell" && needsApproval ? (
+              <p className="mt-2 text-center text-[12.5px] text-muted">{t("trade.sellNote", { n: amountIn ? fmt18(amountIn, 2) : t("trade.the") })}</p>
+            ) : null}
           </>
           <TxNotice state={tx.state} onClose={tx.reset} />
-          <AgentPathToggle key={side} flow={side} className="mt-4" />
+          <AgentPathToggle key={side} flow={side} className="mt-3" />
         </NeedsWallet>
       </div>
-      <p className="mt-6 text-sm font-semibold text-muted">{t("trade.risk")}</p>
+      <RiskLine className="mt-4" />
     </Panel>
   );
 }
@@ -356,7 +343,7 @@ function LimitCard() {
   return (
     <Panel>
       <h2 className="text-[20px] font-semibold tracking-tight">{t("trade.limitTitle")}</h2>
-      <p className="mt-1 font-semibold text-sub">
+      <p className="mt-1 text-[14px] font-medium text-sub">
         {rich("trade.limitBody", { b: (c) => <b>{c}</b> })}
       </p>
       <div className="mt-5">

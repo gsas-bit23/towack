@@ -56,12 +56,14 @@ export function Panel({
   className = "",
   tone = "card",
   shadow = false,
+  id,
 }: {
   children: ReactNode;
   className?: string;
   tone?: PanelTone;
   /** featured: adds the gold hairline across the top edge */
   shadow?: boolean;
+  id?: string;
 }) {
   const bg = {
     card: "bg-card border-line",
@@ -70,7 +72,11 @@ export function Panel({
     down: "bg-down/5 border-down/25",
     flat: "bg-surface border-line",
   }[tone];
-  return <div className={`min-w-0 rounded-2xl border p-5 sm:p-6 ${bg} ${shadow ? "gold-hairline" : ""} ${className}`}>{children}</div>;
+  return (
+    <div id={id} className={`min-w-0 rounded-2xl border p-5 sm:p-6 ${bg} ${shadow ? "gold-hairline" : ""} ${className}`}>
+      {children}
+    </div>
+  );
 }
 
 export function Kicker({ children, className = "text-muted" }: { children: ReactNode; className?: string }) {
@@ -131,17 +137,38 @@ export function Check({ ok, children }: { ok: boolean | undefined; children: Rea
 }
 
 /** Atlas page header: eyebrow, large title, lead. `art` renders behind on the right (decorative). */
-export function PageHeader({ kicker, title, children, art }: { kicker: ReactNode; title: ReactNode; children?: ReactNode; art?: ReactNode }) {
+export function PageHeader({
+  kicker,
+  title,
+  children,
+  art,
+  center = false,
+}: {
+  kicker?: ReactNode;
+  title: ReactNode;
+  children?: ReactNode;
+  art?: ReactNode;
+  /** Centered, borderless header for single-card tool pages (swap). */
+  center?: boolean;
+}) {
   return (
-    <section className="relative overflow-hidden border-b border-line">
+    <section className={`relative overflow-hidden ${center ? "" : "border-b border-line"}`}>
       {art}
-      <div className="relative mx-auto max-w-[1200px] px-4 pb-8 pt-10 sm:px-8 sm:pb-10 sm:pt-12">
-        <Kicker>
-          <span className="live-dot" aria-hidden="true" />
-          {kicker}
-        </Kicker>
-        <h1 className="mt-3 max-w-[860px] break-words text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[40px] md:text-[44px]">{title}</h1>
-        {children ? <div className="mt-3 max-w-[680px] text-[15.5px] leading-relaxed text-sub sm:text-[16.5px]">{children}</div> : null}
+      <div className={`relative mx-auto max-w-[1200px] px-4 sm:px-8 ${center ? "pb-2 pt-10 text-center sm:pt-14" : "pb-8 pt-10 sm:pb-10 sm:pt-12"}`}>
+        {kicker ? (
+          <Kicker>
+            <span className="live-dot" aria-hidden="true" />
+            {kicker}
+          </Kicker>
+        ) : null}
+        <h1
+          className={`break-words font-bold leading-[1.08] tracking-[-0.03em] ${kicker ? "mt-3" : ""} ${center ? "mx-auto max-w-[640px] text-[30px] sm:text-[36px]" : "max-w-[860px] text-[32px] sm:text-[40px] md:text-[44px]"}`}
+        >
+          {title}
+        </h1>
+        {children ? (
+          <div className={`mt-3 text-[15.5px] leading-relaxed text-sub sm:text-[16.5px] ${center ? "mx-auto max-w-[520px]" : "max-w-[680px]"}`}>{children}</div>
+        ) : null}
       </div>
     </section>
   );

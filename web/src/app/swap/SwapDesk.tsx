@@ -2,14 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { erc20Abi, formatUnits, getAddress, isAddress, parseUnits } from "viem";
 import { useBalance, useReadContract, useSendTransaction, useWriteContract } from "wagmi";
-import { agentIdAbi } from "@/abi";
 import { AgentPathToggle, type AgentSwapContext } from "@/components/AgentPath";
+import { RiskLine } from "@/components/RiskNote";
 import { ADDRESSES } from "@/config/addresses";
-import { ChainNote, NeedsWallet, TxNotice } from "@/components/status";
-import { Button, Field, Panel, Pill, inputClass } from "@/components/ui";
+import { NeedsWallet, TxNotice } from "@/components/status";
+import { Button, Pill } from "@/components/ui";
 import { toMainnetToken } from "@/lib/agentSwap";
 import { useTowack } from "@/lib/chain";
 import {
@@ -19,7 +19,6 @@ import {
   isRelayTerminal,
   makeToken,
   ORIGIN_TOKENS,
-  PROVIDER_LABEL,
   PROVIDER_SITE,
   RELAY_DESTINATIONS,
   relayStatus,
@@ -32,14 +31,18 @@ import {
 } from "@/lib/quotes";
 import { useTx } from "@/lib/tx";
 import { useLocale } from "@/lib/i18n";
-import { PREVIEW_USER, PROVIDER_KEYS_SET, useDebounced, useRoutes } from "./useRoutes";
+import { PREVIEW_USER, useDebounced, useRoutes } from "./useRoutes";
 
-const selectClass =
-  "w-full min-w-0 appearance-none rounded-2xl border border-line bg-card bg-[length:14px] bg-[right_14px_center] bg-no-repeat px-4 py-3 pr-10 font-display text-[18px] font-semibold text-fg focus:outline-none focus:ring-4 focus:ring-gold/40";
 const CHEVRON = {
   backgroundImage:
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%2313204A' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23A1A8B3' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
 };
+/** Token / chain picker: a compact pill, like the rest of the card. */
+const pillSelect =
+  "min-w-0 max-w-full shrink-0 cursor-pointer appearance-none rounded-full border border-line-2 bg-card bg-[length:11px] bg-[right_12px_center] bg-no-repeat py-2 pl-3.5 pr-8 font-semibold text-fg transition-colors hover:border-gold/50 focus:outline-none focus:ring-2 focus:ring-gold/40";
+const bigInput = "w-full min-w-0 bg-transparent font-mono text-[30px] font-medium leading-tight text-fg placeholder:text-dim focus:outline-none";
+const smallInput =
+  "w-full rounded-xl border border-line-2 bg-card px-3 py-2 font-mono text-[15px] text-fg placeholder:text-dim focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25";
 const GAS_RESERVE = 2n * 10n ** 15n; // keep 0.002 BNB for gas when "Max" is used on native BNB
 
 function fmtAmt(v: bigint | undefined, decimals: number, sig = 6): string {
@@ -61,19 +64,27 @@ function safeUnits(v: string, decimals: number): bigint | undefined {
   }
 }
 
+const eta = (s?: number) => (s === undefined ? "" : s < 60 ? `~${Math.max(1, s)}s` : `~${Math.round(s / 60)}m`);
+
 const browserFetch: FetchLike = (url, init) => fetch(url, init);
 
 export function SwapDesk() {
   return (
-    <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
-      <div className="col-span-12 lg:col-span-7">
-        <SwapCard />
+    <div className="mx-auto w-full max-w-[480px]">
+      <SwapCard />
+    </div>
+  );
+}
+
+/** One rounded "You pay" / "You get" box. */
+function AmountBox({ label, side, children }: { label: string; side?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-card-2 p-4">
+      <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-muted">
+        <span>{label}</span>
+        {side}
       </div>
-      <div className="col-span-12 space-y-8 lg:col-span-5">
-        <HowRouting />
-        <ProvidersPanel />
-        <TwakDeskCard />
-      </div>
+      <div className="mt-2 flex items-center gap-3">{children}</div>
     </div>
   );
 }
@@ -91,6 +102,7 @@ function SwapCard() {
   const [amount, setAmount] = useState("");
   const [slippage, setSlippage] = useState("0.5");
   const [deadlineMin, setDeadlineMin] = useState("10");
+  const [showSettings, setShowSettings] = useState(false);
   const [recipientInput, setRecipientInput] = useState("");
   const [pick, setPick] = useState<ProviderId | null>(null);
   const [relayReq, setRelayReq] = useState<{ id: string; dest: string } | null>(null);
@@ -152,16 +164,6 @@ function SwapCard() {
   });
   const needsApproval = Boolean(approval && (allowance === undefined || allowance < approval.amount));
 
-  const { data: agentBal } = useReadContract({
-    address: addresses.agentId,
-    abi: agentIdAbi,
-    functionName: "balanceOf",
-    args: account ? [account] : undefined,
-    chainId,
-    query: { enabled: Boolean(addresses.agentId && account) },
-  });
-  const hasAgent = agentBal === undefined ? undefined : agentBal > 0n;
-
   const relayStatusQ = useQuery({
     queryKey: ["relay-status", relayReq?.id],
     enabled: Boolean(relayReq),
@@ -174,6 +176,7 @@ function SwapCard() {
   const builtForMe = selected ? Boolean(selected.amm) || (account !== undefined && result?.quotedFor === account) : false;
   const ready = Boolean(account && selected && slipBps && deadlineSec && slipLevel !== "extreme" && !insufficient && !recipientBad && builtForMe && !tx.busy);
   const twakPair = tokenIn.symbol === "TWAK" || tokenOut?.symbol === "TWAK";
+  const settingsProblem = slipBps === undefined || deadlineSec === undefined || slipLevel !== "ok";
 
   const { writeContractAsync } = useWriteContract();
   const { sendTransactionAsync } = useSendTransaction();
@@ -230,122 +233,174 @@ function SwapCard() {
 
   if (!tokenOut) return null;
 
+  // Flip is a same-chain convenience: the received token becomes the paid one.
+  const canFlip = !crossChain && originTokens.some((x) => sameToken(x, tokenOut));
+  const flip = () => {
+    if (!canFlip) return;
+    setFromAddr(tokenOut.address);
+    setToAddr(tokenIn.address);
+    setAmount("");
+    resetFlow();
+  };
+
+  const outAmount = selected ? fmtAmt(selected.amountOut, selected.tokenOut.decimals) : "";
+
   return (
-    <Panel>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[21px] font-semibold tracking-tight">{t("swap.cardTitle")}</h2>
-        <ChainNote />
+    <div className="rounded-3xl border border-line bg-card p-3 sm:p-4">
+      <div className="flex items-center justify-between px-1 pb-3">
+        <h2 className="text-[17px] font-semibold tracking-tight">{t("swap.cardTitle")}</h2>
+        <button
+          type="button"
+          onClick={() => setShowSettings((s) => !s)}
+          aria-expanded={showSettings}
+          aria-label={t("swap.settings")}
+          className={`relative grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-card-2 hover:text-fg ${showSettings ? "bg-card-2 text-fg" : ""}`}
+        >
+          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+          </svg>
+          {settingsProblem && !showSettings ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-down" aria-hidden="true" /> : null}
+        </button>
       </div>
 
-      <div className="mt-6 space-y-5">
-        <Field label={t("swap.youPay")} hint={account ? t("swap.balance", { n: fmtAmt(balance, tokenIn.decimals), sym: tokenIn.symbol }) : undefined}>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">
-            <select
-              aria-label={t("swap.tokenPay")}
-              className={`${selectClass} col-span-2 sm:col-span-1`}
-              style={CHEVRON}
-              value={tokenIn.address}
-              onChange={(e) => {
-                setFromAddr(e.target.value);
-                setAmount("");
-                resetFlow();
-              }}
-            >
-              {originTokens.map((t) => (
-                <option key={t.address} value={t.address}>
-                  {t.symbol}
-                </option>
-              ))}
-            </select>
-            <input
-              className={inputClass}
-              inputMode="decimal"
-              placeholder="0.0"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value.replace(/[^0-9.]/g, ""));
-                setPick(null);
-              }}
-              aria-label={t("swap.amountIn", { sym: tokenIn.symbol })}
-            />
-            <Button
-              tone="line"
-              size="sm"
-              disabled={!balance}
-              onClick={() => balance && setAmount(formatUnits(isNative(tokenIn) ? (balance > GAS_RESERVE ? balance - GAS_RESERVE : 0n) : balance, tokenIn.decimals))}
-            >
-              {t("common.max")}
-            </Button>
-          </div>
-        </Field>
-
-        <Field label={t("swap.youGet")}>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select
-              aria-label={t("swap.destChain")}
-              className={selectClass}
-              style={CHEVRON}
-              value={destChainId}
-              onChange={(e) => {
-                setToChain(Number(e.target.value));
-                setToAddr("");
-                resetFlow();
-              }}
-            >
-              {destChains.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.id === chainId ? t("swap.sameChain", { name: c.name }) : t("swap.viaRelay", { name: c.name })}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label={t("swap.tokenGet")}
-              className={selectClass}
-              style={CHEVRON}
-              value={tokenOut.address}
-              onChange={(e) => {
-                setToAddr(e.target.value);
-                resetFlow();
-              }}
-            >
-              {destTokens.map((t) => (
-                <option key={`${t.chainId}-${t.address}`} value={t.address}>
-                  {t.symbol}
-                </option>
-              ))}
-            </select>
-          </div>
-        </Field>
-
-        {crossChain ? (
-          <Field label={t("swap.recipient")} hint={t("swap.recipientHint", { chain: CHAIN_NAMES[destChainId] ?? "" })}>
-            <input
-              className={`${inputClass} font-mono !text-[15px]`}
-              placeholder={account ?? t("swap.recipientPh")}
-              value={recipientInput}
-              onChange={(e) => setRecipientInput(e.target.value.trim())}
-              aria-label={t("swap.recipientAria")}
-              aria-invalid={recipientBad}
-            />
-          </Field>
-        ) : null}
-        {recipientBad ? <p className="font-medium text-down">{t("swap.badAddr")}</p> : null}
-
-        <div className="grid grid-cols-2 gap-4">
-          <Field label={t("trade.slippage")} hint={t("swap.slipHint")}>
-            <input className={inputClass} inputMode="decimal" value={slippage} onChange={(e) => setSlippage(e.target.value.replace(/[^0-9.]/g, ""))} aria-label={t("swap.slipAria")} />
-          </Field>
-          <Field label={t("trade.deadline")} hint={t("swap.deadlineHint")}>
-            <input className={inputClass} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} aria-label={t("swap.deadlineAria")} />
-          </Field>
+      {showSettings ? (
+        <div className="mb-3 grid grid-cols-2 gap-3 rounded-2xl bg-card-2 p-4">
+          <label className="block text-[13px] font-medium text-muted">
+            {t("trade.slippage")}
+            <input className={`${smallInput} mt-1.5`} inputMode="decimal" value={slippage} onChange={(e) => setSlippage(e.target.value.replace(/[^0-9.]/g, ""))} aria-label={t("swap.slipAria")} />
+          </label>
+          <label className="block text-[13px] font-medium text-muted">
+            {t("trade.deadline")}
+            <input className={`${smallInput} mt-1.5`} inputMode="numeric" value={deadlineMin} onChange={(e) => setDeadlineMin(e.target.value.replace(/[^0-9]/g, ""))} aria-label={t("swap.deadlineAria")} />
+          </label>
         </div>
-        {slipBps === undefined ? <p className="font-medium text-down">{t("swap.slipRange")}</p> : null}
-        {slipLevel === "high" ? <p className="font-medium text-down">{t("swap.slipHigh")}</p> : null}
-        {slipLevel === "extreme" ? <p className="font-medium text-down">{t("swap.slipExtreme")}</p> : null}
-        {deadlineSec === undefined ? <p className="font-medium text-down">{t("swap.deadlineRange")}</p> : null}
+      ) : null}
+      {slipBps === undefined ? <Note>{t("swap.slipRange")}</Note> : null}
+      {slipLevel === "high" ? <Note>{t("swap.slipHigh")}</Note> : null}
+      {slipLevel === "extreme" ? <Note>{t("swap.slipExtreme")}</Note> : null}
+      {deadlineSec === undefined ? <Note>{t("swap.deadlineRange")}</Note> : null}
+
+      <AmountBox
+        label={t("swap.youPay")}
+        side={
+          account ? (
+            <span className="flex items-center gap-2">
+              {t("swap.balance", { n: fmtAmt(balance, tokenIn.decimals), sym: tokenIn.symbol })}
+              <button
+                type="button"
+                disabled={!balance}
+                onClick={() => balance && setAmount(formatUnits(isNative(tokenIn) ? (balance > GAS_RESERVE ? balance - GAS_RESERVE : 0n) : balance, tokenIn.decimals))}
+                className="rounded-md px-1.5 py-0.5 text-[12px] font-semibold uppercase text-gold hover:bg-gold/10 disabled:opacity-40"
+              >
+                {t("common.max")}
+              </button>
+            </span>
+          ) : undefined
+        }
+      >
+        <input
+          className={bigInput}
+          inputMode="decimal"
+          placeholder="0"
+          value={amount}
+          onChange={(e) => {
+            setAmount(e.target.value.replace(/[^0-9.]/g, ""));
+            setPick(null);
+          }}
+          aria-label={t("swap.amountIn", { sym: tokenIn.symbol })}
+        />
+        <select
+          aria-label={t("swap.tokenPay")}
+          className={`${pillSelect} text-[16px]`}
+          style={CHEVRON}
+          value={tokenIn.address}
+          onChange={(e) => {
+            setFromAddr(e.target.value);
+            setAmount("");
+            resetFlow();
+          }}
+        >
+          {originTokens.map((t) => (
+            <option key={t.address} value={t.address}>
+              {t.symbol}
+            </option>
+          ))}
+        </select>
+      </AmountBox>
+
+      <div className="relative z-10 -my-3 flex justify-center">
+        <button
+          type="button"
+          onClick={flip}
+          disabled={!canFlip}
+          aria-label={t("swap.flip")}
+          className="grid h-10 w-10 place-items-center rounded-xl border-4 border-card bg-card-2 text-sub transition-colors hover:text-fg disabled:cursor-default disabled:hover:text-sub"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M6 13l6 6 6-6" />
+          </svg>
+        </button>
       </div>
 
-      <RouteList
+      <AmountBox
+        label={t("swap.youGet")}
+        side={
+          <select
+            aria-label={t("swap.destChain")}
+            className={`${pillSelect} !py-1 text-[12.5px]`}
+            style={CHEVRON}
+            value={destChainId}
+            onChange={(e) => {
+              setToChain(Number(e.target.value));
+              setToAddr("");
+              resetFlow();
+            }}
+          >
+            {destChains.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.id === chainId ? c.name : t("swap.viaRelay", { name: c.name })}
+              </option>
+            ))}
+          </select>
+        }
+      >
+        <div className={`${bigInput.replace("text-fg", outAmount ? "text-fg" : "text-dim")} truncate`} aria-live="polite">
+          {routes.isFetching && !result && amountIn ? <span className="animate-pulse text-dim">…</span> : outAmount || "0"}
+        </div>
+        <select
+          aria-label={t("swap.tokenGet")}
+          className={`${pillSelect} text-[16px]`}
+          style={CHEVRON}
+          value={tokenOut.address}
+          onChange={(e) => {
+            setToAddr(e.target.value);
+            resetFlow();
+          }}
+        >
+          {destTokens.map((t) => (
+            <option key={`${t.chainId}-${t.address}`} value={t.address}>
+              {t.symbol}
+            </option>
+          ))}
+        </select>
+      </AmountBox>
+
+      {crossChain ? (
+        <div className="mt-2">
+          <input
+            className={`${smallInput} !text-[13.5px]`}
+            placeholder={t("swap.recipientPh", { chain: CHAIN_NAMES[destChainId] ?? "" })}
+            value={recipientInput}
+            onChange={(e) => setRecipientInput(e.target.value.trim())}
+            aria-label={t("swap.recipientAria")}
+            aria-invalid={recipientBad}
+          />
+          {recipientBad ? <Note>{t("swap.badAddr")}</Note> : null}
+        </div>
+      ) : null}
+
+      <RouteSummary
         loading={routes.isFetching && !result}
         refreshing={routes.isFetching && Boolean(result)}
         result={result}
@@ -356,68 +411,61 @@ function SwapCard() {
         previewOnly={!account || result?.quotedFor === PREVIEW_USER}
       />
 
+      <div className="mt-3">
+        <NeedsWallet why={t("swap.connectWhy")}>
+          {insufficient ? <Note>{t("swap.notEnough", { sym: tokenIn.symbol })}</Note> : null}
+          {lowGasHeadroom ? <Note>{t("swap.lowGas", { sym: tokenIn.symbol })}</Note> : null}
+          {selected && selected.provider === "relay" && selected.priceImpactPct !== undefined && selected.priceImpactPct < -3 ? (
+            <Note>{t("swap.relayImpact", { p: Math.abs(selected.priceImpactPct).toFixed(2) })}</Note>
+          ) : null}
+          {selected && selected.vsBestBps < -100 ? <Note>{t("swap.vsBest", { p: (Math.abs(selected.vsBestBps) / 100).toFixed(2) })}</Note> : null}
+          {selected && !builtForMe && account ? <p className="mb-2 text-sm font-medium text-sub">{t("swap.refreshing")}</p> : null}
+          <Button tone="gold" size="lg" className="w-full !rounded-2xl" disabled={!ready} onClick={execute}>
+            {tx.busy
+              ? t("wallet.checkWallet")
+              : !amountIn
+                ? t("swap.enterAmountBtn")
+                : !selected
+                  ? t("swap.pickAmount")
+                  : needsApproval
+                    ? t("swap.approveThen", { sym: tokenIn.symbol, action: crossChain ? t("swap.actBridge") : t("swap.actSwap") })
+                    : crossChain
+                      ? t("swap.Bridge")
+                      : t("swap.Swap")}
+          </Button>
+          {needsApproval && selected ? (
+            <p className="mt-2 text-center text-[12.5px] text-muted">
+              {t("swap.twoConfirm", { amt: amountIn ? fmtAmt(amountIn, tokenIn.decimals) : t("trade.the"), sym: tokenIn.symbol })}
+            </p>
+          ) : null}
+          <TxNotice state={tx.state} onClose={tx.reset} />
+          {relayReq ? <RelayTracker status={relayStatusQ.data?.status} error={relayStatusQ.error ? String(relayStatusQ.error) : undefined} dest={relayReq.dest} id={relayReq.id} /> : null}
+        </NeedsWallet>
+      </div>
+
       {twakPair ? (
-        <p className="mt-5 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
+        <p className="mt-3 text-center text-[13px] text-muted">
           {rich("swap.twakPair", {
             a: (c) => (
-              <Link className="underline" href="/trade">
+              <Link className="font-semibold text-fg underline decoration-1 underline-offset-2 hover:text-gold" href="/trade">
                 {c}
               </Link>
             ),
           })}
         </p>
       ) : null}
-
-      <div className="mt-6">
-        <NeedsWallet why={t("swap.connectWhy")}>
-          {hasAgent ? (
-            <p className="mb-4 text-sm font-medium text-sub">
-              <Pill tone="neutral">{t("trade.agentPill")}</Pill> <span className="ml-1">{t("swap.agentNote")}</span>
-            </p>
-          ) : null}
-          <>
-            {insufficient ? <p className="mb-3 font-medium text-down">{t("swap.notEnough", { sym: tokenIn.symbol })}</p> : null}
-            {lowGasHeadroom ? <p className="mb-3 font-medium text-down">{t("swap.lowGas", { sym: tokenIn.symbol })}</p> : null}
-            {selected && selected.provider === "relay" && selected.priceImpactPct !== undefined && selected.priceImpactPct < -3 ? (
-              <p className="mb-3 font-medium text-down">{t("swap.relayImpact", { p: Math.abs(selected.priceImpactPct).toFixed(2) })}</p>
-            ) : null}
-            {selected && selected.vsBestBps < -100 ? (
-              <p className="mb-3 font-medium text-down">{t("swap.vsBest", { p: (Math.abs(selected.vsBestBps) / 100).toFixed(2) })}</p>
-            ) : null}
-            {selected && !builtForMe && account ? <p className="mb-3 font-medium text-sub">{t("swap.refreshing")}</p> : null}
-            <Button tone={crossChain ? "gold" : "soft"} size="lg" className="w-full" disabled={!ready} onClick={execute}>
-              {tx.busy
-                ? t("wallet.checkWallet")
-                : !selected
-                  ? t("swap.pickAmount")
-                  : needsApproval
-                    ? t("swap.approveThen", { sym: tokenIn.symbol, action: crossChain ? t("swap.actBridge") : t("swap.actSwap") })
-                    : t("swap.via", { action: crossChain ? t("swap.Bridge") : t("swap.Swap"), label: selected.label })}
-            </Button>
-            <p className="mt-3 text-center text-sm font-medium text-muted">
-              {needsApproval
-                ? t("swap.twoConfirm", {
-                    amt: amountIn ? fmtAmt(amountIn, tokenIn.decimals) : t("trade.the"),
-                    sym: tokenIn.symbol,
-                    label: selected?.label ?? "",
-                    action: crossChain ? t("swap.actBridge") : t("swap.actSwap"),
-                  })
-                : t("swap.confirmAll")}
-            </p>
-          </>
-          <TxNotice state={tx.state} onClose={tx.reset} />
-          {relayReq ? <RelayTracker status={relayStatusQ.data?.status} error={relayStatusQ.error ? String(relayStatusQ.error) : undefined} dest={relayReq.dest} id={relayReq.id} /> : null}
-        </NeedsWallet>
-        <AgentPathToggle key={`${crossChain}-${selected?.provider ?? "none"}`} flow={crossChain ? "bridge" : "swap"} swap={agentCtx} className="mt-4" />
-      </div>
-      <p className="mt-6 text-sm font-semibold text-muted">
-        {t("swap.estimates")}
-      </p>
-    </Panel>
+      <AgentPathToggle key={`${crossChain}-${selected?.provider ?? "none"}`} flow={crossChain ? "bridge" : "swap"} swap={agentCtx} className="mt-3" />
+      <RiskLine className="mt-3" />
+    </div>
   );
 }
 
-function RouteList({
+function Note({ children }: { children: ReactNode }) {
+  return <p className="mb-2 mt-1 px-1 text-[13px] font-medium text-down">{children}</p>;
+}
+
+/** Best route as one line; the others fold away (Jumper-style). */
+function RouteSummary({
   loading,
   refreshing,
   result,
@@ -437,93 +485,69 @@ function RouteList({
   previewOnly: boolean;
 }) {
   const { t } = useLocale();
-  if (!amountIn) {
-    return <p className="mt-6 rounded-2xl border border-dashed border-line bg-card-2 px-5 py-4 font-medium text-sub">{t("swap.enterAmount")}</p>;
-  }
+  const [open, setOpen] = useState(false);
+  if (!amountIn) return null;
   if (loading) {
     return (
-      <p className="mt-6 rounded-2xl border border-line bg-card-2 px-5 py-4 font-medium" role="status">
+      <p className="mt-3 px-1 text-[13px] font-medium text-muted" role="status">
         {t("swap.asking")}
       </p>
     );
   }
-  if (queryError) return <p className="mt-6 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">{t("swap.quoteFailed", { e: queryError })}</p>;
+  if (queryError) return <p className="mt-3 rounded-2xl bg-down/10 px-4 py-3 text-[13.5px] font-medium">{t("swap.quoteFailed", { e: queryError })}</p>;
   if (!result) return null;
-  const { quotes, errors } = result;
+  const { quotes } = result;
+  if (quotes.length === 0) return <p className="mt-3 rounded-2xl bg-down/10 px-4 py-3 text-[13.5px] font-medium">{t("swap.noRoute")}</p>;
+  if (!selected) return null;
+  const others = quotes.length - 1;
   return (
-    <div className="mt-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted">{t("swap.routes", { n: quotes.length })}</h3>
-        <span className="text-xs font-medium text-muted">{refreshing ? t("swap.refreshingShort") : previewOnly ? t("swap.previewQuotes") : t("swap.liveQuotes")}</span>
-      </div>
-      {quotes.length === 0 ? (
-        <p className="mt-2 rounded-2xl border border-line bg-down/10 px-5 py-4 font-medium">{t("swap.noRoute")}</p>
-      ) : (
-        <ul className="mt-2 space-y-3" role="radiogroup" aria-label={t("swap.routesAria")}>
-          {quotes.map((q) => {
-            const on = selected?.provider === q.provider;
-            return (
-              <li key={q.provider}>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => onPick(q.provider)}
-                  className={`w-full rounded-2xl border border-line p-4 text-left transition ${on ? "bg-card-2" : "bg-card hover:bg-card-2"}`}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line ${on ? "bg-card-2" : "bg-card"}`} aria-hidden="true">
-                      {on ? <span className="h-2 w-2 rounded-full bg-card" /> : null}
-                    </span>
-                    <span className="font-display text-[18px] font-semibold">{q.label}</span>
-                    {q.best ? <Pill tone="gold">{t("swap.best")}</Pill> : null}
-                    {q.crossChain ? <Pill tone="gold">{t("swap.crossChain")}</Pill> : null}
-                    <span className="ml-auto font-mono text-[18px] font-medium tabular-nums">
-                      {fmtAmt(q.amountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
-                    </span>
-                  </div>
-                  <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm font-medium text-sub sm:grid-cols-2">
-                    <span className="break-words">{q.route}</span>
-                    <span className="sm:text-right">
-                      {t("swap.min", { n: fmtAmt(q.minAmountOut, q.tokenOut.decimals), sym: q.tokenOut.symbol })}
-                    </span>
-                    <span>
-                      {t("swap.gas", { n: fmtAmt(q.gasCostWei, 18, 3), unit: q.tokenIn.chainId === 97 ? "tBNB" : "BNB" })}
-                      {q.gasScored && q.gasInOut > 0n ? ` (${fmtAmt(q.gasInOut, q.tokenOut.decimals, 3)} ${q.tokenOut.symbol})` : ""}
-                    </span>
-                    <span className="sm:text-right">
-                      {q.best ? t("swap.bestNet") : t("swap.vsBestShort", { p: (q.vsBestBps / 100).toFixed(2) })}
-                      {q.etaSeconds !== undefined ? ` · ~${q.etaSeconds < 60 ? `${Math.max(1, q.etaSeconds)}s` : `${Math.round(q.etaSeconds / 60)}m`}` : ""}
-                    </span>
-                    {q.feeNote ? <span className="sm:col-span-2">{q.feeNote}</span> : null}
-                  </div>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {errors.length > 0 ? (
-        <details className="mt-3 text-sm font-medium text-muted">
-          <summary className="cursor-pointer">
-            {t("swap.noQuoteCount", { n: errors.length })}
-          </summary>
-          <ul className="mt-2 space-y-1">
-            {errors.map((e) => (
-              <li key={e.provider} className="break-words">
-                {e.label}: {e.error}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-      {selected ? (
-        <p className="mt-3 text-xs font-medium text-muted">
-          {t("swap.selected", { label: selected.label })}{" "}
-          <a className="underline" href={PROVIDER_SITE[selected.provider]} target="_blank" rel="noreferrer">
-            {PROVIDER_SITE[selected.provider].replace("https://", "")}
+    <div className="mt-3 rounded-2xl border border-line px-4 py-3 text-[13px]">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="flex items-center gap-2 font-medium text-fg">
+          <a className="font-semibold underline decoration-1 underline-offset-2 hover:text-gold" href={PROVIDER_SITE[selected.provider]} target="_blank" rel="noreferrer">
+            {selected.label}
           </a>
-        </p>
+          {selected.best ? <Pill tone="gold">{t("swap.best")}</Pill> : null}
+        </span>
+        <span className="text-muted">
+          {t("swap.gas", { n: fmtAmt(selected.gasCostWei, 18, 3), unit: selected.tokenIn.chainId === 97 ? "tBNB" : "BNB" })}
+          {selected.etaSeconds !== undefined ? ` · ${eta(selected.etaSeconds)}` : ""}
+        </span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-muted">
+        <span>{t("swap.min", { n: fmtAmt(selected.minAmountOut, selected.tokenOut.decimals), sym: selected.tokenOut.symbol })}</span>
+        <span>{refreshing ? t("swap.refreshingShort") : previewOnly ? t("swap.previewQuotes") : ""}</span>
+      </div>
+      {others > 0 ? (
+        <>
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-2 font-semibold text-sub hover:text-fg">
+            {open ? t("swap.hideRoutes") : t("swap.moreRoutes", { n: others })}
+          </button>
+          {open ? (
+            <ul className="mt-2 space-y-1.5" role="radiogroup" aria-label={t("swap.routesAria")}>
+              {quotes.map((q) => {
+                const on = selected.provider === q.provider;
+                return (
+                  <li key={q.provider}>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => onPick(q.provider)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors ${on ? "bg-card-2 text-fg" : "text-sub hover:bg-card-2"}`}
+                    >
+                      <span className="font-semibold">{q.label}</span>
+                      <span className="font-mono tabular-nums">
+                        {fmtAmt(q.amountOut, q.tokenOut.decimals)} {q.tokenOut.symbol}
+                        {!q.best ? <span className="ml-2 text-dim">{(q.vsBestBps / 100).toFixed(2)}%</span> : null}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
@@ -534,7 +558,7 @@ function RelayTracker({ status, error, dest, id }: { status?: string; error?: st
   const bad = status === "failure" || status === "refund" || status === "refunded";
   const { t } = useLocale();
   return (
-    <div role="status" aria-live="polite" className={`mt-4 rounded-2xl border border-line px-4 py-3 font-medium ${done ? "bg-card" : bad ? "bg-down/10" : "bg-card-2"}`}>
+    <div role="status" aria-live="polite" className={`mt-3 rounded-2xl border border-line px-4 py-3 text-[13.5px] font-medium ${done ? "bg-card" : bad ? "bg-down/10" : "bg-card-2"}`}>
       <span className="font-semibold">{t("swap.relay")}</span>
       {error
         ? t("swap.relayErr", { e: error })
@@ -547,66 +571,5 @@ function RelayTracker({ status, error, dest, id }: { status?: string; error?: st
         {t("swap.track")}
       </a>
     </div>
-  );
-}
-
-function HowRouting() {
-  const { t, rich } = useLocale();
-  return (
-    <Panel tone="raised" shadow={false}>
-      <h2 className="text-[20px] font-semibold tracking-tight">{t("swap.howTitle")}</h2>
-      <ol className="mt-3 list-decimal space-y-2 pl-5 font-medium text-sub">
-        <li>{t("swap.how1")}</li>
-        <li>{rich("swap.how2", { b: (c) => <b>{c}</b> })}</li>
-        <li>{t("swap.how3")}</li>
-        <li>{t("swap.how4")}</li>
-      </ol>
-    </Panel>
-  );
-}
-
-function ProvidersPanel() {
-  // Providers that are switched off are simply not listed.
-  const { t } = useLocale();
-  const rows: { id: ProviderId; what: string; on: boolean }[] = [
-    { id: "pancakeV3", what: t("swap.pv.v3"), on: true },
-    { id: "pancakeV2", what: t("swap.pv.v2"), on: true },
-    { id: "uniswapV3", what: t("swap.pv.v3"), on: true },
-    { id: "relay", what: t("swap.pv.relay"), on: true },
-    { id: "zeroex", what: t("swap.pv.agg"), on: PROVIDER_KEYS_SET.zeroex },
-    { id: "oneinch", what: t("swap.pv.agg"), on: PROVIDER_KEYS_SET.oneinch },
-  ];
-  return (
-    <Panel>
-      <h2 className="text-[20px] font-semibold tracking-tight">{t("swap.providers")}</h2>
-      <ul className="mt-4 space-y-3">
-        {rows.filter((r) => r.on).map((r) => (
-          <li key={r.id} className="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-3 sm:gap-y-1.5">
-            <div className="min-w-0">
-              <a className="font-display text-[17px] font-semibold underline decoration-2 underline-offset-2" href={PROVIDER_SITE[r.id]} target="_blank" rel="noreferrer">
-                {PROVIDER_LABEL[r.id]}
-              </a>
-              <div className="text-sm font-medium text-muted">{r.what}</div>
-            </div>
-            <span className="max-w-full rounded-2xl bg-card-2 px-3 py-1 text-left text-xs font-semibold text-fg sm:text-right">{t("swap.pv.live")}</span>
-          </li>
-        ))}
-      </ul>
-    </Panel>
-  );
-}
-
-function TwakDeskCard() {
-  const { t } = useLocale();
-  return (
-    <Panel tone="gold" shadow={false}>
-      <h2 className="text-[20px] font-semibold tracking-tight">{t("swap.twakTitle")}</h2>
-      <p className="mt-2 font-medium text-sub">{t("swap.twakBody")}</p>
-      <div className="mt-4">
-        <Link href="/trade" className="font-display text-[17px] font-semibold underline decoration-[3px] underline-offset-4 hover:text-gold">
-          {t("swap.twakLink")}
-        </Link>
-      </div>
-    </Panel>
   );
 }

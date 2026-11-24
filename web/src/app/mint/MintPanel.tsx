@@ -8,7 +8,8 @@ import { AnimatedNumber, ProgressFill } from "@/components/motion";
 import { DemoWheel, MyWheel } from "@/components/MyWheel";
 import { SpinFeed, WheelStage } from "@/components/PrizeBooth";
 import { AgentPathToggle } from "@/components/AgentPath";
-import { ChainNote, LegacyLaunchNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice, VrfSource } from "@/components/status";
+import { RiskLine } from "@/components/RiskNote";
+import { LegacyLaunchNote, NeedsContracts, NeedsWallet, RpcErrorNotice, TxNotice, VrfSource } from "@/components/status";
 import { Button, Check, Panel, Pill, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { DEMO_SPINS, LAUNCH_PHASES, useDemoWheel, useLaunchState, useRecentSpins } from "@/lib/draw";
@@ -161,7 +162,6 @@ export function MintPanel() {
         <Panel className="relative">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-[28px] font-semibold">{t("mint.wheelTitle")}</h2>
-            <ChainNote />
           </div>
           {legacy ? <LegacyLaunchNote /> : null}
           <div className="mt-3">
@@ -223,13 +223,16 @@ export function MintPanel() {
           </div>
         </Panel>
 
-        <Panel tone="raised" shadow={false}>
-          <h2 className="font-display text-[24px] font-semibold">{t("mint.how")}</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-6 font-medium text-sub">
-            <li>{t("mint.how1")}</li>
+        <details className="group rounded-2xl border border-line bg-card-2 px-5 py-4 sm:px-6">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold">
+            {t("mint.how")}
+            <span className="text-muted transition group-open:rotate-45" aria-hidden="true">
+              +
+            </span>
+          </summary>
+          <ol className="mt-3 list-decimal space-y-2 pl-6 text-[14.5px] font-medium text-sub">
             <li>{t("mint.how2", { fee: vrf.label })}</li>
             <li>{t("mint.how3")}</li>
-            <li>{t("mint.how4")}</li>
             <li>{t("mint.how5")}</li>
             <li>
               {rich("mint.how6", {
@@ -241,10 +244,7 @@ export function MintPanel() {
               })}
             </li>
           </ol>
-          <p className="mt-4 font-semibold text-sub">
-            {t("mint.loss")}
-          </p>
-        </Panel>
+        </details>
       </div>
 
       <div className="col-span-12 space-y-8 lg:col-span-5">
@@ -285,7 +285,6 @@ export function MintPanel() {
                   <Button tone="gold" size="lg" className="mt-6 w-full" disabled={!canMint || tx.busy} onClick={mint}>
                     {tx.busy ? t("wallet.checkWallet") : minted ? t("mint.btn.already") : legacy ? t("mint.btn.paused") : vrf.supported === false ? t("mint.btn.plain") : t("mint.btn.vrf", { fee: vrf.label })}
                   </Button>
-                  <p className="mt-3 text-center text-sm font-medium text-muted">{t("wallet.confirmNote")}</p>
                   <TxNotice state={tx.state} onClose={tx.reset} />
                   <AgentPathToggle flow="launch" referral={{ address: referrer, handle: referrer ? urlRef.handle : undefined }} className="mt-4" />
                 </>
@@ -297,6 +296,7 @@ export function MintPanel() {
                 </div>
               )}
             </NeedsWallet>
+            <RiskLine className="mt-3" />
           </div>
         </Panel>
 

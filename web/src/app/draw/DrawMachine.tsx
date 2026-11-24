@@ -5,7 +5,7 @@ import { towackLaunchAbi } from "@/abi";
 import { AnimatedNumber } from "@/components/motion";
 import { DemoWheel, MyWheel } from "@/components/MyWheel";
 import { PrizeLegend, SpinFeed, WheelStage } from "@/components/PrizeBooth";
-import { ChainNote, DeployingSoon, LegacyLaunchNote, NeedsWallet, TxNotice } from "@/components/status";
+import { DeployingSoon, LegacyLaunchNote, NeedsWallet, TxNotice } from "@/components/status";
 import { Button, ButtonLink, Panel, Stat } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
 import { DEMO_SPINS, useDemoWheel, useLaunchState, useMyPrize, useRecentSpins } from "@/lib/draw";
@@ -78,7 +78,6 @@ export function DrawMachine() {
       <Panel className="relative col-span-12 lg:col-span-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-[28px] font-semibold">{isMinter ? t("draw.yourSpin") : t("draw.wheel")}</h2>
-          <ChainNote />
         </div>
         {s.legacy ? <LegacyLaunchNote /> : null}
         <div className="mt-6">

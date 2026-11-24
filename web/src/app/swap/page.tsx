@@ -8,10 +8,10 @@ export const metadata: Metadata = { title: "Swap & bridge" };
 export default function SwapPage() {
   return (
     <>
-      <PageHeader kicker={<T k="swap.kicker" />} title={<T k="swap.title" />}>
+      <PageHeader center title={<T k="swap.title" />}>
         <T k="swap.lead" />
       </PageHeader>
-      <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">
+      <section className="mx-auto max-w-[1220px] px-4 pb-16 pt-6 sm:px-6">
         <SwapDesk />
       </section>
     </>

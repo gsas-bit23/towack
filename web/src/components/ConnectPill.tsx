@@ -8,11 +8,16 @@ const BASE =
 const FULL = "h-11 px-5 text-[14.5px]";
 const COMPACT = "h-10 px-3.5 text-[13.5px] sm:px-4 sm:text-[14px]";
 
-/** `compact`: Atlas outline button for the top bar (shows just "Connect" on phones). Full size = the gold in-page CTA. */
-export function ConnectPill({ label: labelProp, compact = false }: { label?: string; compact?: boolean }) {
+const BLOCK = "h-[52px] w-full !rounded-2xl px-6 text-[15.5px]";
+
+/**
+ * `compact`: Atlas outline button for the top bar (shows just "Connect" on phones). Full size = the gold in-page CTA.
+ * `block`: full-width, the same size as a card's main action button.
+ */
+export function ConnectPill({ label: labelProp, compact = false, block = false }: { label?: string; compact?: boolean; block?: boolean }) {
   const { t } = useLocale();
   const label = labelProp ?? t("wallet.connect");
-  const cls = `${BASE} ${compact ? COMPACT : FULL}`;
+  const cls = `${BASE} ${compact ? COMPACT : block ? BLOCK : FULL}`;
   const normal = compact
     ? `${cls} border-line-2 bg-transparent text-fg hover:border-[#4A525E] hover:bg-card`
     : `${cls} border-transparent bg-gold text-on-gold hover:bg-gold-2`;

@@ -2,11 +2,10 @@ import { defineMessages } from "../define";
 
 export const pages = defineMessages({
   // rebates
-  "reb.kicker": ["Weekly epochs · 104 weeks", "每周一个周期 · 共 104 周"],
-  "reb.title": ["Trader rebates.", "交易返佣。"],
+  "reb.title": ["Trader rebates", "交易返佣"],
   "reb.lead": [
-    "Rebates come from trading through the Towack router — not sit-and-earn staking. Each week, 100M ÷ 104 TWAK plus the 50% BNB fee share is split pro-rata to the router fees each trader paid that week. No trades, no rebate.",
-    "返佣来自通过 Towack 路由进行的交易 — 而非躺赚式质押。每周将 1 亿 ÷ 104 的 TWAK 加上 50% 的 BNB 手续费分成，按每位交易者当周支付的路由手续费比例分配。没有交易，就没有返佣。",
+    "Trade TWAK with an Agent ID wallet and get part of your fees back every week, plus a share of the TWAK budget.",
+    "使用 Agent ID 钱包交易 TWAK，每周可返还部分手续费，并按比例分得 TWAK 预算。",
   ],
   "reb.how": ["How rebates work", "返佣规则"],
   "reb.how1": ["Every swap through the Towack router pays 1% on the BNB leg.", "每笔经 Towack 路由的兑换都对 BNB 一侧收取 1%。"],
@@ -15,10 +14,6 @@ export const pages = defineMessages({
   "reb.how4": ["At the end of the week, your share = your fees ÷ all fees.", "周期结束时，你的份额 = 你的手续费 ÷ 全部手续费。"],
   "reb.how5": ["Weeks with no trades roll their budget into the next week.", "无交易的周期，其预算会顺延至下一周。"],
   "reb.how6": ["Claim any finished week, any time, on-chain.", "已结束的周期可随时在链上领取。"],
-  "reb.note": [
-    "Holding TWAK earns nothing here. Rebates return only part of the fees you paid plus a share of a fixed budget, and other traders dilute it. Not a yield product.",
-    "仅持有 TWAK 不会获得任何返佣。返佣只返还你所付手续费的一部分，外加固定预算中的份额，且会被其他交易者摊薄。这不是理财产品。",
-  ],
   "reb.txClaim": ["Claim rebates", "领取返佣"],
   "reb.epochs": ["Epochs", "周期"],
   "reb.loadErr": ["Could not load rebate epochs.", "无法读取返佣周期。"],
@@ -54,11 +49,10 @@ export const pages = defineMessages({
   "reb.claimNone": ["Claim epochs", "领取周期"],
 
   // referrals
-  "ref.kicker": ["Paid mint only · 0.005 BNB per friend", "仅限付费铸造 · 每位好友 0.005 BNB"],
-  "ref.title": ["Bring a friend, earn BNB.", "邀请好友，赚取 BNB。"],
+  "ref.title": ["Invite friends", "邀请好友"],
   "ref.lead": [
-    "Share your link. Every paid mint that names your wallet as referrer credits you 0.005 BNB (5% of the 0.1 BNB price) from the mint contract. Your friend pays the same 0.1 BNB. You need an Agent ID to earn, and you claim whenever you like. Genesis 300 has no referrals.",
-    "分享你的链接。每笔将你的钱包设为推荐人的付费铸造，铸造合约都会记给你 0.005 BNB（0.1 BNB 价格的 5%），好友仍只需支付 0.1 BNB。你需要持有 Agent ID 才能获得奖励，可随时领取。Genesis 300 不参与推荐。",
+    "Share your link. You get 0.005 BNB every time a friend mints with it; their price stays 0.1 BNB.",
+    "分享你的链接。好友每通过它铸造一次，你就获得 0.005 BNB；好友价格仍为 0.1 BNB。",
   ],
   "ref.linkTitle": ["Your referral link", "你的推荐链接"],
   "ref.handle": ["Your .ai handle (optional)", "你的 .ai 名称（可选）"],
@@ -67,21 +61,14 @@ export const pages = defineMessages({
   "ref.connectWhy": ["Connect the wallet that should earn referrals (it must hold an Agent ID).", "连接用于获得推荐奖励的钱包（须持有 Agent ID）。"],
   "ref.how": ["How referrals work", "推荐规则"],
   "ref.how1": ["Your link carries your wallet address. Friends who open it mint with you as their referrer.", "你的链接包含你的钱包地址，好友通过该链接铸造时，你即为其推荐人。"],
-  "ref.how2": [
-    "Each referred paid mint credits you 0.005 BNB (5% of the 0.1 BNB price). It comes out of the share that would otherwise go to LP / Draw V2, so your friend pays nothing extra.",
-    "每笔被推荐的付费铸造都会记给你 0.005 BNB（0.1 BNB 价格的 5%）。这部分来自原本分配给 LP / Draw V2 的份额，好友无需额外支付。",
-  ],
-  "ref.how3": ["Your wallet must hold an Agent ID, and you can't refer yourself: the contract rejects both.", "你的钱包必须持有 Agent ID，且不能推荐自己：合约会拒绝这两种情况。"],
-  "ref.how4": ["Claim any time. Referral BNB has no deadline and is never swept.", "可随时领取。推荐 BNB 没有截止期限，也不会被回收。"],
+  "ref.how2": ["Each referred paid mint credits you 0.005 BNB. Your friend pays nothing extra.", "每笔被推荐的付费铸造都会记给你 0.005 BNB，好友无需额外支付。"],
+  "ref.how3": ["Your wallet must hold an Agent ID, and you can't refer yourself.", "你的钱包必须持有 Agent ID，且不能推荐自己。"],
+  "ref.how4": ["Claim any time. Referral BNB never expires.", "可随时领取，推荐 BNB 永不过期。"],
   "ref.how5": ["Paid mint only. Genesis 300 has no referrals.", "仅限付费铸造，Genesis 300 不参与推荐。"],
-  "ref.note": ["Minting is a game of chance, not an investment. Only share with friends who understand that.", "铸造是概率游戏，不构成投资建议。请只分享给理解这一点的朋友。"],
   "ref.yours": ["Your referrals", "你的推荐"],
   "ref.dashWhy": ["Connect to see your referrals and claim.", "连接钱包查看推荐记录并领取。"],
   "ref.noAgentPill": ["NO AGENT ID", "无 AGENT ID"],
-  "ref.noAgent": [
-    "This wallet holds no Agent ID, so mints naming it would revert. Get an Agent ID in the official Binance App (mainnet) first.",
-    "该钱包未持有 Agent ID，以它为推荐人的铸造会失败。请先在币安官方 App（主网）获取 Agent ID。",
-  ],
+  "ref.noAgent": ["This wallet has no Agent ID, so it can't earn referrals yet. Claim one in the Binance App.", "该钱包未持有 Agent ID，暂时无法获得推荐奖励。请在币安 App 中领取。"],
   "ref.linkAria": ["Your referral link", "你的推荐链接"],
   "ref.copy": ["Copy link", "复制链接"],
   "ref.agentTitle": ["For friends with an AI agent", "给使用 AI 智能体的好友"],
@@ -102,29 +89,23 @@ export const pages = defineMessages({
   "ref.noReferred": ["No referred mints yet. Share your link!", "暂无推荐铸造，快去分享你的链接吧！"],
 
   // /r landing
-  "r.kicker": ["Agent ID holders only · 0.1 BNB + VRF fee", "仅限 Agent ID 持有者 · 0.1 BNB + VRF 费用"],
-  "r.title": ["A friend sent you a spin.", "好友送你一次转盘机会。"],
-  "r.lead": [
-    "Mint one Towack slot for 0.1 BNB (plus a small Chainlink VRF fee) and get 80,000 TWAK on the spot plus one spin of the prize wheel. Your friend earns 0.005 BNB from the contract when you mint with their link. Your price stays the same.",
-    "支付 0.1 BNB（另加少量 Chainlink VRF 费用）铸造一个 Towack 名额，即刻获得 80,000 TWAK 和一次转盘机会。通过好友链接铸造，好友将从合约获得 0.005 BNB，你的价格不变。",
-  ],
+  "r.title": ["A friend sent you a spin", "好友送你一次转盘机会"],
+  "r.lead": ["Mint for 0.1 BNB and get 80,000 TWAK plus one prize spin.", "支付 0.1 BNB 铸造，即得 80,000 TWAK 和一次转盘机会。"],
   "r.invitedBy": ["INVITED BY", "邀请人"],
   "r.friend": ["a Towack friend", "一位 Towack 好友"],
   "r.wallet": ["Referrer wallet {a}", "推荐人钱包 {a}"],
   "r.noRef": [
-    "This link has no referrer wallet (<code>?ref=0x…</code>), so a mint from here credits nobody. Ask your friend for their full link from the Referrals page.",
-    "该链接缺少推荐人钱包（<code>?ref=0x…</code>），从这里铸造不会计入任何推荐。请让好友从「推荐」页面复制完整链接。",
+    "This link has no referrer wallet (<code>?ref=0x…</code>). Ask your friend for the full link from their Referrals page.",
+    "该链接缺少推荐人钱包（<code>?ref=0x…</code>），请让好友从「推荐」页面复制完整链接。",
   ],
   "r.mint": ["Mint + spin", "铸造 + 转盘"],
-  "r.b1": ["You need an Agent ID in the wallet you mint with (one mint per Agent ID wallet).", "铸造所用钱包须持有 Agent ID（每个 Agent ID 钱包限铸一次）。"],
-  "r.b2": ["The referral is checked on-chain: it must be someone else's wallet that holds an Agent ID.", "推荐关系在链上校验：推荐人须为他人且持有 Agent ID 的钱包。"],
-  "r.b3": ["Game of chance, not an investment. Most spins get back less than the 0.1 BNB paid.", "概率游戏，不构成投资建议。大多数转盘的返还低于所付的 0.1 BNB。"],
+  "r.b1": ["You need an Agent ID in the wallet you mint with.", "铸造所用钱包须持有 Agent ID。"],
+  "r.b2": ["Your friend earns 0.005 BNB; your price stays the same.", "好友获得 0.005 BNB，你的价格不变。"],
   "r.agentTitle": ["Minting with an AI agent?", "用 AI 智能体铸造？"],
   "r.agentBody": ["Give your agent this instruction. The referrer is already filled in.", "把这段指令交给你的智能体，推荐人已自动填好。"],
 
   // tokenomics
-  "tok.kicker": ["TWAK · 1,000,000,000 fixed supply", "TWAK · 总量固定 1,000,000,000"],
-  "tok.title": ["1B TWAK, minted once.", "10 亿 TWAK，一次性铸造。"],
+  "tok.title": ["1B TWAK, minted once", "10 亿 TWAK，一次性铸造"],
   "tok.lead": [
     "Minted once at deploy to fixed contracts and wallets. No owner, no mint function, no transfer tax. Holders can burn their own tokens.",
     "部署时一次性铸造并分配至固定的合约和钱包。无所有者、无增发函数、无转账税。持有者可自行销毁代币。",
@@ -188,9 +169,10 @@ export const pages = defineMessages({
   ],
 
   // docs
-  "docs.kicker": ["Docs · FAQ · Risk", "文档 · 常见问题 · 风险"],
-  "docs.title": ["Read before you play.", "参与前请先阅读。"],
-  "docs.lead": ["How Towack works, what can go wrong, and what we will never do.", "Towack 如何运作、可能出现哪些风险，以及我们绝不会做的事。"],
+  "docs.title": ["Docs & risks", "文档与风险"],
+  "docs.lead": ["How Towack works, the risks, and what we will never do. Everything in one place.", "Towack 如何运作、有哪些风险，以及我们绝不会做的事，都在这里。"],
+  "docs.swapTitle": ["How Swap & bridge picks a route", "闪兑与跨链如何选择路由"],
+  "docs.swapProviders": ["Providers", "报价渠道"],
   "docs.riskPill": ["PLAIN-LANGUAGE RISK NOTE", "风险提示（通俗版）"],
   "docs.howToPlay": ["How to play", "参与指南"],
   "docs.h1": ["Get an Agent ID", "获取 Agent ID"],

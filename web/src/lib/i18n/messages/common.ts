@@ -29,24 +29,23 @@ export const common = defineMessages({
 
   // ---- footer / risk
   "footer.nav": ["Footer", "页脚导航"],
-  "footer.copyright": [
-    "© 2026 Towack. We never ask for keys, seed phrases, or pairing codes.",
-    "© 2026 Towack。我们绝不会索要私钥、助记词或配对码。",
-  ],
+  "footer.copyright": ["© 2026 Towack", "© 2026 Towack"],
   "footer.xAria": ["Towack on X, @towackxyz", "Towack 官方 X：@towackxyz"],
-  "risk.title": ["Plain-language risk note", "风险提示（通俗版）"],
+  "risk.footer": [
+    "A game of chance, not an investment. Not affiliated with Binance or BNB Chain. <a>Read the risks</a>",
+    "概率游戏，不构成投资。与 Binance、BNB Chain 无关联。<a>查看风险说明</a>",
+  ],
+  "risk.line": ["Trading involves risk. <a>Learn more</a>", "交易有风险。<a>了解更多</a>"],
   "risk.base": [
     "Towack is a game of chance, not an investment. No returns are promised. You can lose the BNB you pay to mint. Trading involves risk. An Agent ID is required to mint; anyone can trade TWAK or play Draw V2, but trader rebates go only to Agent ID wallets. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Contracts are open source.",
     "Towack 是一款概率游戏，不构成投资建议，不承诺任何收益。你可能损失为铸造支付的 BNB。交易有风险。铸造需持有 Agent ID；任何人都可以交易 TWAK 或参与 Draw V2，但交易返佣仅发放给持有 Agent ID 的钱包。本项目与 Binance、BNB Chain、PancakeSwap、Chainlink、Aster 均无关联。合约代码已开源。",
   ],
-  "risk.verify": ["Always verify contract addresses before signing.", "签名前请务必核对合约地址。"],
 
   // ---- wallet
   "wallet.connect": ["Connect wallet", "连接钱包"],
   "wallet.connectShort": ["Connect", "连接"],
   "wallet.wrongNetwork": ["Wrong network", "网络不符"],
   "wallet.checkWallet": ["Check your wallet…", "请在钱包中确认…"],
-  "wallet.confirmNote": ["Your wallet will ask you to confirm. We never sign for you.", "钱包会弹窗请你确认，我们绝不会代你签名。"],
 
   // ---- status / shared notices
   "status.unavailable": ["Unavailable", "暂不可用"],
@@ -57,10 +56,6 @@ export const common = defineMessages({
   "status.rpcDefault": ["Could not load on-chain data right now.", "暂时无法读取链上数据。"],
   "status.rpcSuffix": ["Check your connection or try again.", "请检查网络连接后重试。"],
   "status.retry": ["Retry", "重试"],
-  "status.connectToPlay": ["Connect your wallet to play", "连接钱包即可参与"],
-  "status.connectWhyDefault": ["Every action is signed in your own wallet. We never see your keys.", "所有操作均在你自己的钱包中签名，我们永远接触不到你的私钥。"],
-  "status.wrongNetBody": ["Towack runs on BNB Chain. Switch in your wallet to continue.", "Towack 运行在 BNB Chain 上，请在钱包中切换网络后继续。"],
-  "status.chainNote": ["Real BNB. Only play with what you can afford to lose.", "真实 BNB，请仅用你能承受损失的资金参与。"],
   "status.notSet": ["not set", "未设置"],
   "status.legacy": ["Minting is temporarily paused. Please check back soon.", "铸造已暂停，请稍后再来。"],
   "status.vrfUnverified": [
@@ -156,23 +151,18 @@ export const common = defineMessages({
   "nf.home": ["Back to Towack", "返回 Towack"],
 
   // ---- AI agent path (chrome only: the instruction text itself stays English for the agent)
-  "agent.show": ["Give this to your AI agent", "交给你的 AI 智能体执行"],
+  "agent.show": ["Use your AI agent instead", "改用 AI 智能体执行"],
   "agent.hide": ["Hide AI agent steps", "收起 AI 智能体步骤"],
   "agent.bawPill": ["BINANCE AGENTIC WALLET", "BINANCE AGENTIC WALLET"],
   "agent.mainnetPill": ["MAINNET ONLY · CHAIN 56", "仅限主网 · CHAIN 56"],
   "agent.intro": [
-    "Paste this into your AI agent (e.g. Claude Code) that has Binance's official <a>binance-agentic-wallet</a> skill.",
-    "将以下内容粘贴给已安装币安官方 <a>binance-agentic-wallet</a> 技能的 AI 智能体（如 Claude Code）。",
+    "Paste this into an AI agent that has Binance's <a>Agentic Wallet skill</a>. It previews every step and waits for your OK.",
+    "粘贴给已安装币安 <a>Agentic Wallet 技能</a>的 AI 智能体。它会预览每一步，并等待你确认。",
   ],
   "agent.perpsNote": [
-    "Aster orders are <b>not</b> a BSC contract call, so BAW can't place them directly. BAW signs one <code>sign-message</code> (preview, your OK, then execute) that approves a trade-only Aster API wallet your agent keeps locally; that wallet signs each order after you say yes.",
-    "Aster 订单<b>不是</b> BSC 合约调用，BAW 无法直接下单。BAW 只需签署一次 <code>sign-message</code>（先预览、经你确认后执行），授权一个仅可交易的 Aster API 钱包，由智能体保存在本地；之后每笔订单都在你同意后由该钱包签名。",
+    "Your wallet signs one approval for a trade-only Aster API wallet (no withdrawals); every order still needs your OK.",
+    "你的钱包只需签署一次授权，开通一个仅可交易的 Aster API 钱包（不可提币）；每笔订单仍需你确认。",
   ],
-  "agent.contractNote": [
-    "It runs <code>baw contract-call preview</code> first and waits for your explicit OK before <code>execute</code>.",
-    "它会先运行 <code>baw contract-call preview</code>，在得到你的明确确认后才会 <code>execute</code>。",
-  ],
-  "agent.siteNote": ["This site only shows text: it never signs, never sends, and never asks for keys.", "本站只展示文本：不会签名、不会发送交易，也不会索要私钥。"],
   "agent.missing": ["Some contract addresses are unavailable right now ({list}). Do not send anything.", "部分合约地址暂不可用（{list}），请勿发送任何交易。"],
   "agent.aria": ["Instruction for your AI agent", "给 AI 智能体的指令"],
   "agent.instructionLang": ["The instruction stays in English so your agent reads it exactly.", "指令保留英文原文，以便智能体准确执行。"],
