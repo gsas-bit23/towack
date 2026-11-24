@@ -1,31 +1,18 @@
 "use client";
 
-import { zeroAddress } from "viem";
-import { useReadContract } from "wagmi";
 import { AgentPathPanel } from "@/components/AgentPath";
 import { ButtonLink, Panel, Pill } from "@/components/ui";
-import { useTowack } from "@/lib/chain";
-import { agentNftAbi } from "@/lib/genesis";
 import { mintHref, shortAddr, useReferralFromUrl } from "@/lib/referral";
 import { useLocale, type MessageKey } from "@/lib/i18n";
 
 export function RefLanding() {
-  const { addresses, chainId } = useTowack();
   const urlRef = useReferralFromUrl();
   const { t, rich } = useLocale();
-  const bareHandle = urlRef.handle?.replace(/\.ai$/, "");
 
-  // When `?ref=` is absent on mainnet, try resolving the handle on-chain via HandleRegistry.ownerOfHandle(string).
-  const { data: resolvedOwner, isLoading: resolving } = useReadContract({
-    address: addresses.agentId,
-    abi: agentNftAbi,
-    functionName: "ownerOfHandle",
-    args: bareHandle ? [bareHandle] : undefined,
-    chainId,
-    query: { enabled: Boolean(!urlRef.address && bareHandle && addresses.agentId), retry: false },
-  });
-  const onchainAddr = resolvedOwner && resolvedOwner !== zeroAddress ? resolvedOwner : undefined;
-  const ref = { address: urlRef.address ?? onchainAddr, handle: urlRef.handle };
+  // The referrer wallet comes ONLY from the `?ref=` the referrer put in their own link. The handle is a display
+  // label: this page never resolves a name.ai to a wallet, so it can't be used to look up other people's wallets by
+  // name (Agent ID Hackathon rule).
+  const ref = { address: urlRef.address, handle: urlRef.handle };
 
   return (
     <div className="grid grid-cols-12 gap-x-0 gap-y-8 lg:gap-x-8 [&>*]:min-w-0">
@@ -36,10 +23,7 @@ export function RefLanding() {
           {ref.address ? (
             <p className="mt-2 font-mono text-sm font-medium text-sub break-all" title={ref.address}>
               {t("r.wallet", { a: shortAddr(ref.address) })}
-              {!urlRef.address && onchainAddr ? t("r.resolved") : ""}
             </p>
-          ) : resolving ? (
-            <p className="mt-3 rounded-2xl border border-line bg-card-2 px-4 py-3 font-medium">{t("r.resolving")}</p>
           ) : (
             <p className="mt-3 rounded-2xl border border-line bg-gold/5 px-4 py-3 font-medium">
               {rich("r.noRef", { code: (c) => <code className="rounded bg-card px-1">{c}</code> })}

@@ -24,6 +24,21 @@ Official X: [@towackxyz](https://x.com/towackxyz).
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design details and [STATUS.md](STATUS.md) for progress.
 
+## Owner permissions (BSC mainnet)
+No address can mint new TWAK, change fees or tax, pause trading, freeze tokens, or withdraw user funds or prize BNB. The privileged roles that do exist, read from the live contracts:
+
+| Contract | Owner / admin | What it can do | What it cannot do |
+|---|---|---|---|
+| TowackToken `0xeC59…e494` | none | n/a | no mint function, no tax, no pause, no blacklist |
+| TowackLaunch `0xc102…3E51` | none | n/a (`sweepUnclaimed` is permissionless and only moves expired, unclaimed prizes to DrawV2) | move mint proceeds, reserved prizes or LP anywhere else |
+| TowackRouter `0x3e4a…C775` | none | n/a (each wallet sets only its own daily limit) | change the 1% fee or its 50/30/20 split |
+| TeamVesting `0x9d2a…cEF3` | none | n/a | revoke or speed up vesting; the beneficiary is fixed |
+| DrawV2 `0xdf44…44C8` | TimelockController `0x6E90…4D60` (2-day delay) | `setEntriesPaused`: pause or resume **new** entries | withdraw the TWAK or BNB pool, or touch assigned prizes |
+| RebateDistributor `0x886e…73cf` | `routerAdmin` = TimelockController (2-day delay) | `setRouter` (repoint to a new router), `setRouterAdmin` (hand off, or `address(0)` to freeze) | move rebate funds to arbitrary addresses |
+| TowackGenesis `0x5B30…c73A` | Towack ecosystem wallet `0x38A0…6776` (Ownable2Step; renounce disabled) | `open` / `close` the claim window; `sweepSurplus` sends TWAK not needed for remaining claims back to the ecosystem wallet | take back TWAK already claimed; each claim pays 20,000 TWAK in the same transaction |
+
+Full addresses: [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) and `web/src/config/addresses.json` (chain `"56"`).
+
 ## Frontend (web/)
 Next.js App Router + wagmi/viem/RainbowKit + motion, "Atlas" product design (branch `design/atlas`). The prize wheel on /mint and /draw has a `?demo=wheel` preview when no live per-mint launch contract is configured. The production app is locked to BSC mainnet (56) with no network switch; live addresses are in `web/src/config/addresses.json` under `"56"` (the `"97"` section is historical and unused at runtime).
 ```sh

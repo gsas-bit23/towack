@@ -111,8 +111,6 @@ export const pages = defineMessages({
   "r.invitedBy": ["INVITED BY", "邀请人"],
   "r.friend": ["a Towack friend", "一位 Towack 好友"],
   "r.wallet": ["Referrer wallet {a}", "推荐人钱包 {a}"],
-  "r.resolved": [" (resolved on-chain)", "（链上解析）"],
-  "r.resolving": ["Resolving handle on-chain…", "正在链上解析名称…"],
   "r.noRef": [
     "This link has no referrer wallet (<code>?ref=0x…</code>), so a mint from here credits nobody. Ask your friend for their full link from the Referrals page.",
     "该链接缺少推荐人钱包（<code>?ref=0x…</code>），从这里铸造不会计入任何推荐。请让好友从「推荐」页面复制完整链接。",
@@ -280,6 +278,11 @@ export const pages = defineMessages({
   "docs.a11": [
     "Yes. The contracts and this site are open source. Always verify the published contract addresses before signing.",
     "是的。合约与本站代码均已开源。签名前请务必核对公布的合约地址。",
+  ],
+  "docs.q12": ["Who can change what? (owner permissions)", "谁能修改什么？（权限说明）"],
+  "docs.a12": [
+    "No one can mint new TWAK, change fees or tax, freeze tokens, or withdraw your funds or prize BNB. TWAK token, TowackLaunch, TowackRouter and TeamVesting have no owner. DrawV2: owned by the TimelockController (2-day delay); it can only pause NEW entries. It cannot move the pool or touch assigned prizes. RebateDistributor: the TimelockController can repoint it to a new router (public, 2-day delay). Genesis 300: owned by the Towack ecosystem wallet; it can open or close the claim window and send TWAK not needed for remaining claims back to the ecosystem wallet. Each claim is paid in full in the same transaction. Every change is an on-chain transaction anyone can see.",
+    "任何人都无法增发 TWAK、修改费率或税率、冻结代币，或提走你的资金与奖金 BNB。TWAK 代币、TowackLaunch、TowackRouter 与 TeamVesting 均无所有者。DrawV2：所有者为 TimelockController（2 天延迟），仅能暂停新的参与，无法挪用奖池或已分配的奖金。RebateDistributor：TimelockController 可将其指向新的路由合约（公开且有 2 天延迟）。Genesis 300：所有者为 Towack 生态钱包，可开启或关闭领取窗口，并将剩余领取不需要的 TWAK 退回生态钱包；每次领取都在同一笔交易中全额发放。所有变更都是任何人可查看的链上交易。",
   ],
   "docs.safety": ["Safety promises", "安全承诺"],
   "docs.s1": ["We never ask for your wallet's private key, seed phrase, or pairing codes.", "我们绝不会索要你钱包的私钥、助记词或配对码。"],

@@ -134,7 +134,10 @@ export const trade = defineMessages({
     "需在钱包中确认两次：先向 {label} 合约精确授权 {amt} {sym}，再执行{action}。绝不无限授权。",
   ],
   "swap.confirmAll": ["You confirm every step in your own wallet. Towack never signs, holds or relays your funds.", "每一步都需你在自己的钱包中确认。Towack 绝不签名、托管或转发你的资金。"],
-  "swap.estimates": ["Quotes are estimates and refresh every 20 seconds. Prices move; bridges take time.", "报价仅为预估，每 20 秒刷新一次。价格会波动，跨链需要时间。"],
+  "swap.estimates": [
+    "Trading involves risk. Prices can move fast, and you can lose money. Quotes are estimates and refresh every 20 seconds; bridges take time. Routes run on third-party contracts (PancakeSwap, Uniswap, Relay).",
+    "交易有风险。价格可能快速波动，你可能亏损。报价仅为预估，每 20 秒刷新一次；跨链需要时间。路由在第三方合约（PancakeSwap、Uniswap、Relay）上执行。",
+  ],
   "swap.txApprove": ["Approve exactly {amt} {sym}", "精确授权 {amt} {sym}"],
   "swap.enterAmount": ["Enter an amount to compare routes.", "输入数量以比较路由。"],
   "swap.asking": ["Asking PancakeSwap, Uniswap and Relay…", "正在向 PancakeSwap、Uniswap 和 Relay 询价…"],
