@@ -19,7 +19,8 @@ Requires Binance's official skill: https://github.com/binance/binance-skills-hub
   1. `baw contract-call preview --binanceChainId 56 --from <wallet> --to <contract> --value <wei> --inputData <hex> --json`
   2. Show the user the parsed tx, the risks and `authorityChanges`. Wait for an explicit "yes".
   3. Only then `baw contract-call execute --requestId <requestId> --json`. Never execute without a fresh preview and the user's "yes"; a two-step flow (approve, then sell/enter) needs a preview + "yes" for **each** step.
-- **Read the execute result.** `BROADCASTED` returns a `txHash`: check it on BscScan before reporting success. `PENDING_CONFIRMATION` means the user must approve the transaction in the Binance App first. Tell them, wait, then check the result. It is **not** a failure: never re-send it. If preview or execute returns an error, relay it exactly as returned. If execute says the preview expired, run preview again.
+- **Read the execute result.** `BROADCASTED` returns a `txHash`: check it on BscScan before reporting success. `PENDING_CONFIRMATION` means the user must approve the transaction in the Binance App first. Tell them, wait, then check the result. It is **not** a failure: never re-send it. If preview or execute returns an error, relay it exactly as returned. If execute says the preview expired, run preview again. The Binance App may label a pending call "High-risk transaction" (Developer Mode calls to a token with no price yet get this label even when the preview shows no risks): tell the user to check the amount and contract in the App before approving.
+- **Explain a refused preview.** BAW reports every contract revert as `351805 "Transaction simulation failed: execution reverted"`, without the reason. Before telling the user, run an `eth_call` with the same `to`, `data` and `value`, `from` = the user's wallet (for example `cast call <to> <data> --value <wei> --from <wallet> --rpc-url https://bsc-dataseed.bnbchain.org`). Match the first 4 bytes of the revert data against [Revert reasons](#revert-reasons) and say the reason in plain words. Never retry or alter the transaction to get around a revert.
 - `--value` is raw wei (integer). Never pass a gas price.
 - **VRF fee.** Every randomness request (paid mint, Draw V2 entry, retries; Genesis 300 has none) is paid by the user in native BNB to the Chainlink VRF v2.5 direct-funding wrapper. Quote it with `vrfFeeAt(uint256 gasPrice)` (selector `0xa3eaf9d8`) via an `eth_call` at `gasPrice = max(liveGasPrice * 3, 0.25 gwei)` (`0.25 gwei` = `250000000` wei), on the contract you are about to call. BAW often broadcasts above the base gas price; underpaying reverts, and any unused fee is refunded by the Towack contract in the same tx.
 - Exact TWAK approvals only, never unlimited (never `type(uint256).max`).
@@ -203,6 +204,39 @@ Send params in exactly this field order (it is the order the in-app box emits): 
 - Leverage (optional, after margin mode, before the order): `POST /fapi/v3/leverage` `symbol, leverage` (integer 1–125, within the symbol's bracket).
 - Cancel: `DELETE /fapi/v3/order` `symbol, orderId`.
 - Each of these requests (margin mode, leverage, entry, each TP/SL leg, cancel) is signed separately as in Signing → 2, after the user's yes to the full preview.
+
+## Revert reasons
+
+First 4 bytes of the revert data from an `eth_call` (see "Explain a refused preview"). Arguments, where present, follow ABI-encoded.
+
+| Selector | Error | Contract | Plain meaning |
+|---|---|---|---|
+| `0xddefae28` | `AlreadyMinted()` | Genesis / Launch | This wallet already claimed Genesis (or already did its one paid mint). |
+| `0xddafad98` | `NotOpen()` | Genesis | The Genesis claim window is closed. |
+| `0x52df9fe5` | `SoldOut()` | Genesis / Launch | No slots left. |
+| `0x390772fc` | `NotAgentOwner()` | Genesis | The wallet does not own that Agent ID (or holds none). |
+| `0x31950ee8` | `TokenIdUsed()` | Genesis | That Agent ID was already used for a Genesis claim. |
+| `0x951b974f` | `MintNotOpen()` | Launch | The paid-mint window is not open (not started or ended). |
+| `0xf947691f` | `NoAgentId()` | Launch | The minting wallet holds no Agent ID. |
+| `0x96fe8cdd` | `WrongPhase(uint8)` | Launch | Wrong phase for this action (0 minting, 1 closed, 2 finalized). |
+| `0xf7760f25` | `WrongPrice()` | Launch | `--value` is below 0.1 BNB. |
+| `0xbcece03d` | `VrfFeeTooLow(uint256 sent, uint256 required)` | Launch / DrawV2 | The Chainlink fee in `--value` is too low: re-quote `vrfFeeAt` and preview again. |
+| `0x55e8f70e` | `SelfReferral()` | Launch | The referrer is the minting wallet itself. |
+| `0x4042fe11` | `ReferrerHasNoAgentId()` | Launch | The referrer wallet holds no Agent ID: offer to mint with `address(0)`. |
+| `0x969bf728` | `NothingToClaim()` | Launch / DrawV2 | Nothing is owed to this wallet (yet). For DrawV2, the spin may still be waiting for Chainlink. |
+| `0x646cf558` | `AlreadyClaimed()` | Launch | The prize was already claimed. |
+| `0x689f0d83` | `NotAssigned()` | Launch | Chainlink has not answered yet: wait and retry later. |
+| `0xf0f25a33` | `ClaimWindowClosed()` | Launch | The prize claim window has closed. |
+| `0xdbe9051c` | `NothingToClaimReferral()` | Launch | No referral BNB waiting. |
+| `0x3750d157` | `EntriesPaused()` | DrawV2 | New entries are paused by the Timelock. |
+| `0xf562b2d5` | `EntryTooSmall(uint256 amount, uint256 min)` | DrawV2 | Below the 100 TWAK minimum. |
+| `0x2642f430` | `EntryTooLarge(uint256 amount, uint256 max)` | DrawV2 | Above the current max entry (0.5% of the available pool). |
+| `0xeb8e6ac3` | `PoolTooSmall(uint256 needed, uint256 available)` | DrawV2 | The pool can't cover a 10× win on this entry: enter less. |
+| `0x6c3ad9d2` | `EpochNotFinished(uint256 epoch)` | RebateDistributor | That rebate week isn't over yet: drop it from the list. |
+| `0xef664d6a` | `DailyLimitExceeded(uint256 wouldSpend, uint256 limit)` | TowackRouter | Over the wallet's own daily router limit. |
+| `0x2c19b8b8` | `InsufficientOutput(uint256 out, uint256 min)` | TowackRouter | The price moved past the slippage limit: re-quote. |
+| `0xb69ec3f0` | `PairLocked()` | TWAK | Trading has not opened yet (before listing). |
+| `0x08c379a0` | `Error(string)` | any | A plain text error, e.g. `"PancakeLibrary: INSUFFICIENT_LIQUIDITY"` before listing, or `"ERC20: insufficient allowance"` when the approve step is missing. |
 
 ## Risk
 

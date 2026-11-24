@@ -15,6 +15,8 @@ describe("BAW agent instructions (official external-sign flow)", () => {
     expect(text).toMatch(/WAIT for my explicit "yes"/);
     expect(text).toContain("PENDING_CONFIRMATION"); // approve in the Binance App: not a failure
     expect(text).toContain("BROADCASTED");
+    expect(text).toContain("351805"); // BAW's reason-less revert: look the reason up via eth_call
+    expect(text).toContain("Revert reasons");
   });
 
   it.each(["launch", "genesis"] as AgentFlow[])("%s: runs the official Agent ID pre-check first", (flow) => {

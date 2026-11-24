@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { encodeFunctionData, toFunctionSelector, zeroAddress, type Address } from "viem";
 import { ADDRESSES } from "@/config/addresses";
-import { DEV_MODE_RULE, EXECUTE_RESULT_RULE } from "@/lib/agentRules";
+import { DEV_MODE_RULE, EXECUTE_RESULT_RULE, REVERT_REASON_RULE } from "@/lib/agentRules";
 import { buildSwapInstruction, type AgentRoute } from "@/lib/agentSwap";
 import { buildPerpsInstruction, type PerpsAgentIntent } from "@/lib/aster/instruction";
 import { useLocale } from "@/lib/i18n";
@@ -84,6 +84,7 @@ ${DEV_MODE_RULE}
 - For every transaction: \`baw contract-call preview --binanceChainId 56 --from <my wallet> --to <contract> --value <wei> --inputData <hex> --json\` (<my wallet> from \`baw wallet address --json\`).
   Show me the parsed tx, the risks and the authorityChanges, then WAIT for my explicit "yes".
   Only then: \`baw contract-call execute --requestId <requestId> --json\`. Never execute without a fresh preview + my yes.
+${REVERT_REASON_RULE}
 ${EXECUTE_RESULT_RULE}
 - --value is raw wei (an integer). Do not pass a gas price.`;
 

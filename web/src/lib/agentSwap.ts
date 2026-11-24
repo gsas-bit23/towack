@@ -1,5 +1,5 @@
 import { formatUnits, toFunctionSelector, zeroAddress } from "viem";
-import { DEV_MODE_RULE, EXECUTE_RESULT_RULE } from "./agentRules";
+import { DEV_MODE_RULE, EXECUTE_RESULT_RULE, REVERT_REASON_RULE } from "./agentRules";
 import { CHAIN_NAMES, isNative, VENUES, type ProviderId, type Token } from "./quotes";
 import { RELAY_API } from "./quotes/relay";
 import { EEEE, ORIGIN_TOKENS } from "./quotes/tokens";
@@ -58,6 +58,7 @@ ${DEV_MODE_RULE}
 - For every transaction: \`baw contract-call preview --binanceChainId 56 --from <my wallet> --to <contract> --value <wei> --inputData <hex> --json\`.
   Show me the parsed tx, the risks and the authorityChanges, then WAIT for my explicit "yes".
   Only then: \`baw contract-call execute --requestId <requestId> --json\`. Never execute without a fresh preview + my yes (a separate yes for the approval and for the swap).
+${REVERT_REASON_RULE}
 ${EXECUTE_RESULT_RULE}
 - --value is raw wei (an integer). Do not pass a gas price. Approvals are for the EXACT amount only, never unlimited / max uint.
 - Quotes go stale in seconds: always re-quote right before you build the calldata. If the fresh quote is more than my slippage worse than the page's estimate, stop and ask me.`;
