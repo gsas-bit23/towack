@@ -419,7 +419,9 @@ contract DrawV2Test is Fixture, WheelWords {
     function test_OnlyVRFWrapperCanFulfillCanFulfil() public {
         _enter(alice, 1_000e18);
         uint256[] memory w = new uint256[](1);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, address(this), address(vrf)));
+        vm.expectRevert(
+            abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, address(this), address(vrf))
+        );
         drawV2.rawFulfillRandomWords(1, w);
     }
 

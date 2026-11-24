@@ -26,10 +26,7 @@ interface IDraw {
     function enter(uint256 amount) external returns (uint256 spinId, uint256 requestId);
     function claim() external;
     function lastSpinOf(address) external view returns (uint256);
-    function spins(uint256)
-        external
-        view
-        returns (address, uint8, uint8, uint64, uint256, uint256, uint256, uint256);
+    function spins(uint256) external view returns (address, uint8, uint8, uint64, uint256, uint256, uint256, uint256);
     function owedTwak(address) external view returns (uint256);
     function owedBnb(address) external view returns (uint256);
 }

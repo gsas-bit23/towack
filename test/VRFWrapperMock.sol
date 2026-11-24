@@ -19,7 +19,9 @@ interface IWrapperConsumer {
 ///    (`_callWithExactGas`), never reverts on a failed callback (emits WrapperFulfillmentFailed instead).
 contract VRFWrapperMock {
     event WrapperFulfillmentFailed(uint256 indexed requestId, address indexed consumer);
-    event Requested(uint256 indexed requestId, address indexed consumer, uint32 callbackGasLimit, uint16 conf, uint256 paid);
+    event Requested(
+        uint256 indexed requestId, address indexed consumer, uint32 callbackGasLimit, uint16 conf, uint256 paid
+    );
 
     struct Callback {
         address consumer;
@@ -62,9 +64,10 @@ contract VRFWrapperMock {
     // ---------------------------------------------------------------- pricing (official formula)
     function _price(uint256 gas, uint32 numWords, uint256 gp) internal view returns (uint256) {
         uint256 wrapperCost = gp * wrapperGasOverhead;
-        uint256 coordCost = gp * (gas + coordinatorGasOverheadNative + uint256(numWords) * coordinatorGasOverheadPerWord);
-        return wrapperCost + coordCost * (uint256(nativePremiumPercentage) + 100) / 100
-            + 1e12 * uint256(fulfillmentFlatFeeNativePPM);
+        uint256 coordCost =
+            gp * (gas + coordinatorGasOverheadNative + uint256(numWords) * coordinatorGasOverheadPerWord);
+        return wrapperCost + coordCost * (uint256(nativePremiumPercentage) + 100) / 100 + 1e12
+            * uint256(fulfillmentFlatFeeNativePPM);
     }
 
     function calculateRequestPriceNative(uint32 callbackGasLimit, uint32 numWords) external view returns (uint256) {

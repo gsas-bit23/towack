@@ -83,8 +83,8 @@ contract TowackLaunch is VRFConsumerV25, TokenBound, ReentrancyGuard {
 
     /// @dev Remaining slots per tier, packed 16 bits per tier (tier k at bits [16k, 16k+16)).
     /// 500 / 600 / 800 / 1600 / 20 / 40 / 80 / 160 / 320 / 400 / 480 = 5000.
-    uint256 internal constant INITIAL_DECK = 500 | (600 << 16) | (800 << 32) | (1600 << 48) | (20 << 64)
-        | (40 << 80) | (80 << 96) | (160 << 112) | (320 << 128) | (400 << 144) | (480 << 160);
+    uint256 internal constant INITIAL_DECK = 500 | (600 << 16) | (800 << 32) | (1600 << 48) | (20 << 64) | (40 << 80)
+        | (80 << 96) | (160 << 112) | (320 << 128) | (400 << 144) | (480 << 160);
 
     /// @notice Total BNB / bonus TWAK of the full deck (all 5000 slots drawn).
     uint256 public constant DECK_BNB_TOTAL = 166.25 ether; // 175 BNB * 0.95
