@@ -179,9 +179,15 @@ contract OfficialVRFTest is Fixture {
             );
         }
         // the mock exposes the official wrapper's selectors
-        assertEq(VRFWrapperMock.calculateRequestPriceNative.selector, IVRFV2PlusWrapper.calculateRequestPriceNative.selector);
-        assertEq(VRFWrapperMock.estimateRequestPriceNative.selector, IVRFV2PlusWrapper.estimateRequestPriceNative.selector);
-        assertEq(VRFWrapperMock.requestRandomWordsInNative.selector, IVRFV2PlusWrapper.requestRandomWordsInNative.selector);
+        assertEq(
+            VRFWrapperMock.calculateRequestPriceNative.selector, IVRFV2PlusWrapper.calculateRequestPriceNative.selector
+        );
+        assertEq(
+            VRFWrapperMock.estimateRequestPriceNative.selector, IVRFV2PlusWrapper.estimateRequestPriceNative.selector
+        );
+        assertEq(
+            VRFWrapperMock.requestRandomWordsInNative.selector, IVRFV2PlusWrapper.requestRandomWordsInNative.selector
+        );
         assertEq(bytes4(keccak256("lastRequestId()")), IVRFV2PlusWrapper.lastRequestId.selector); // mock getter
         assertEq(bytes4(keccak256("link()")), IVRFV2PlusWrapper.link.selector); // mock getter
         // our callback entry point is the one the official wrapper calls
@@ -241,7 +247,11 @@ contract OfficialVRFTest is Fixture {
             assertEq(drawV2.vrfFeeAt(g), wrapperPriceAt(DRAW_CALLBACK_GAS, g) * 11_000 / 10_000);
             assertEq(drawV2.vrfFeeAt(g), vrf.estimateRequestPriceNative(DRAW_CALLBACK_GAS, 1, g) * 11_000 / 10_000);
         }
-        assertEq(drawV2.vrfFeeAt(0), 0, "no flat fee on BSC: an eth_call quote at gas price 0 is 0 (UI must pass a gas price)");
+        assertEq(
+            drawV2.vrfFeeAt(0),
+            0,
+            "no flat fee on BSC: an eth_call quote at gas price 0 is 0 (UI must pass a gas price)"
+        );
         assertEq(drawV2.vrfFee(), drawV2.vrfFeeAt(tx.gasprice));
         assertEq(launchFee, launch.vrfFeeAt(TEST_GAS_PRICE));
         // 1 gwei, Launch 165k: 13,400 + 264,935 * 1.6 = 437,296 gwei-units -> 0.000437296 BNB (matches the live

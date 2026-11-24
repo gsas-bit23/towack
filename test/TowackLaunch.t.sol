@@ -54,7 +54,9 @@ contract TowackLaunchTest is Fixture {
         vm.expectRevert(TowackLaunch.WrongPrice.selector);
         launch.mint{value: 0.09 ether}();
         // exactly 0.1 BNB is no longer enough: the VRF fee is on top
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, wrapperPrice(LAUNCH_CALLBACK_GAS)));
+        vm.expectRevert(
+            abi.encodeWithSelector(VRFConsumerV25.VrfFeeTooLow.selector, 0, wrapperPrice(LAUNCH_CALLBACK_GAS))
+        );
         launch.mint{value: PRICE}();
         vm.stopPrank();
         assertEq(u.balance, 1 ether);
@@ -149,7 +151,9 @@ contract TowackLaunchTest is Fixture {
     function test_OnlyVRFWrapperCanFulfillCanFulfill() public {
         mintN(1);
         uint256[] memory w = new uint256[](1);
-        vm.expectRevert(abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, address(this), address(vrf)));
+        vm.expectRevert(
+            abi.encodeWithSelector(VRFConsumerV25.OnlyVRFWrapperCanFulfill.selector, address(this), address(vrf))
+        );
         launch.rawFulfillRandomWords(1, w);
     }
 

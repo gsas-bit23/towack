@@ -231,9 +231,7 @@ contract DeployFullStackMainnet is Script {
 
     function _vrf(uint32 gasLimit) internal pure returns (VRFConsumerV25.VRFConfig memory) {
         return VRFConsumerV25.VRFConfig({
-            wrapper: VRF_WRAPPER,
-            requestConfirmations: REQUEST_CONFIRMATIONS,
-            callbackGasLimit: gasLimit
+            wrapper: VRF_WRAPPER, requestConfirmations: REQUEST_CONFIRMATIONS, callbackGasLimit: gasLimit
         });
     }
 

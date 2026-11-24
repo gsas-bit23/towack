@@ -15,7 +15,10 @@ import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interface
 import {IPancakePair} from "../../src/interfaces/IPancakeV2.sol";
 
 interface IWrapperCallbacks {
-    function s_callbacks(uint256 id) external view returns (address callbackAddress, uint32 callbackGasLimit, uint64 requestGasPrice);
+    function s_callbacks(uint256 id)
+        external
+        view
+        returns (address callbackAddress, uint32 callbackGasLimit, uint64 requestGasPrice);
     function rawFulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external;
 }
 
@@ -41,8 +44,9 @@ contract ForkPancakeTest is Test {
         vm.txGasPrice(1 gwei); // the wrapper prices at tx.gasprice
         VRFConsumerV25.VRFConfig memory cfg = VRFConsumerV25.VRFConfig(address(vrf), 3, 165_000);
         DrawV2 drawV2 = new DrawV2(address(this), address(0), cfg);
-        TowackLaunch launch =
-            new TowackLaunch(address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg, false);
+        TowackLaunch launch = new TowackLaunch(
+            address(agentId), WBNB, address(drawV2), block.timestamp, block.timestamp + 1 days, cfg, false
+        );
         RebateDistributor rebates = new RebateDistributor();
         TeamVesting team = new TeamVesting(address(1));
         TowackToken token = new TowackToken(

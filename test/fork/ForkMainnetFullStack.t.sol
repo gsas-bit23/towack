@@ -17,7 +17,10 @@ import {IPancakePair} from "../../src/interfaces/IPancakeV2.sol";
 import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFV2PlusWrapper.sol";
 
 interface IMainnetWrapperCallbacks {
-    function s_callbacks(uint256 id) external view returns (address callbackAddress, uint32 callbackGasLimit, uint64 requestGasPrice);
+    function s_callbacks(uint256 id)
+        external
+        view
+        returns (address callbackAddress, uint32 callbackGasLimit, uint64 requestGasPrice);
     function rawFulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external;
 }
 

@@ -105,7 +105,13 @@ contract EstimateFullRedeploy is Script {
         o.drawV2 = address(new DrawV2(o.timelock, address(0), _cfg(n, DRAW_CALLBACK_GAS)));
         o.launch = address(
             new TowackLaunch(
-                n.agentId, n.wbnb, o.drawV2, block.timestamp, block.timestamp + 3 days, _cfg(n, LAUNCH_CALLBACK_GAS), false
+                n.agentId,
+                n.wbnb,
+                o.drawV2,
+                block.timestamp,
+                block.timestamp + 3 days,
+                _cfg(n, LAUNCH_CALLBACK_GAS),
+                false
             )
         );
         o.rebates = address(new RebateDistributor());

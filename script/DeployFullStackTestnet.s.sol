@@ -114,9 +114,7 @@ contract DeployFullStackTestnet is Script {
     function _wrapper() internal view returns (address w) {
         w = vm.envOr("VRF_WRAPPER", DEFAULT_VRF_WRAPPER);
         require(w.code.length > 0, "VRF_WRAPPER has no code");
-        require(
-            IVRFV2PlusWrapper(w).estimateRequestPriceNative(DRAW_CALLBACK_GAS, 1, 1 gwei) > 0, "wrapper quote is 0"
-        );
+        require(IVRFV2PlusWrapper(w).estimateRequestPriceNative(DRAW_CALLBACK_GAS, 1, 1 gwei) > 0, "wrapper quote is 0");
     }
 
     function _cfg(address wrapper, uint32 gasLimit) internal pure returns (VRFConsumerV25.VRFConfig memory) {

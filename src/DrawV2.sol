@@ -107,7 +107,9 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
     event Entered(uint256 indexed spinId, address indexed player, uint256 amount, uint256 maxTwak, uint256 bnbCap);
     event SpinRequested(uint256 indexed spinId, uint256 indexed requestId);
     event SpinRetried(uint256 indexed spinId, uint256 oldRequestId, uint256 newRequestId);
-    event SpinAssigned(uint256 indexed spinId, address indexed player, uint256 prizeId, uint256 twakPrize, uint256 bnbPrize);
+    event SpinAssigned(
+        uint256 indexed spinId, address indexed player, uint256 prizeId, uint256 twakPrize, uint256 bnbPrize
+    );
     event Claimed(address indexed player, uint256 twak, uint256 bnb);
     event EntriesPausedSet(bool paused);
 
@@ -246,13 +248,7 @@ contract DrawV2 is VRFConsumerV25, TokenBound, Ownable, ReentrancyGuard {
     /// 2% × amount / maxEntry of free BNB.
     /// `msg.value` pays the Chainlink VRF fee (`vrfFeeAt(gasPrice)`); it never enters the BNB pot and any
     /// excess is refunded.
-    function enter(uint256 amount)
-        external
-        payable
-        nonReentrant
-        whenBound
-        returns (uint256 spinId, uint256 requestId)
-    {
+    function enter(uint256 amount) external payable nonReentrant whenBound returns (uint256 spinId, uint256 requestId) {
         if (entriesPaused) revert EntriesPaused();
         if (amount < MIN_ENTRY) revert EntryTooSmall(amount, MIN_ENTRY);
         uint256 avail = availableTwak();
