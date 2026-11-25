@@ -3,10 +3,13 @@
 // Live parts of the Atlas home: hero stats + featured Launch card + activity, all from contract reads.
 // Nothing here is placeholder data: when a value cannot be read it shows "—".
 
+import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { formatUnits } from "viem";
-import { useReadContracts } from "wagmi";
-import { drawV2Abi } from "@/abi";
-import { InstrumentArc } from "@/components/art";
+import { useReadContract, useReadContracts } from "wagmi";
+import { agentDealsV2Abi, drawV2Abi } from "@/abi";
+import { AgentMesh } from "@/components/AgentMesh";
+import { api, type Stats } from "@/lib/exchange/client";
 import { AnimatedNumber, ProgressFill, Skeleton, Stagger, StaggerItem, StageIn } from "@/components/motion";
 import { ButtonLink, Pill } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
@@ -39,69 +42,99 @@ function useDrawV2Pool() {
   };
 }
 
+/** Live Exchange + deals counters for the hero (API stats + AgentDealsV2.dealCount). */
+function useAgentEconomy() {
+  const { chainId, addresses } = useTowack();
+  const { data: stats } = useQuery({ queryKey: ["ex-stats"], queryFn: () => api<Stats>("/stats"), refetchInterval: 30_000, retry: 1 });
+  const { data: deals } = useReadContract({
+    address: addresses.agentDealsV2,
+    abi: agentDealsV2Abi,
+    functionName: "dealCount",
+    chainId,
+    query: { enabled: Boolean(addresses.agentDealsV2), refetchInterval: 30_000 },
+  });
+  return { agents: stats?.agents, deals: deals === undefined ? undefined : Number(deals) };
+}
+
+const DEAL_STEPS = ["offer", "escrow", "deliver", "jury", "settle"] as const;
+
 export function HomeHero() {
   const { meta } = useTowack();
   const { t } = useLocale();
   const s = useLaunchState();
+  const eco = useAgentEconomy();
   const minted = s.mintCount === undefined ? undefined : Number(s.mintCount);
   const cap = Number(s.cap);
-  const progress = minted === undefined ? 0.02 : minted / cap;
   const loading = Boolean(s.launch) && minted === undefined;
+
+  const stats: { key: string; label: string; value: ReactNode; sub: string; accent?: boolean }[] = [
+    { key: "agents", label: t("hero.stat.agents"), value: eco.agents === undefined ? "—" : <AnimatedNumber value={eco.agents} />, sub: t("hero.stat.agentsSub") },
+    { key: "deals", label: t("hero.stat.deals"), value: eco.deals === undefined ? "—" : <AnimatedNumber value={eco.deals} />, sub: t("hero.stat.dealsSub") },
+    {
+      key: "minted",
+      label: t("home.stat.minted"),
+      value: loading ? (
+        <Skeleton className="h-7 w-24" label={t("home.stat.loadingMinted")} />
+      ) : (
+        <>
+          <AnimatedNumber value={minted} />
+          <span className="text-[14px] text-muted md:text-[15px]"> / {cap.toLocaleString("en-US")}</span>
+        </>
+      ),
+      sub: t("home.stat.mintedSub"),
+    },
+    { key: "judge", label: t("hero.stat.judge"), value: "0.5%", sub: t("hero.stat.judgeSub"), accent: true },
+  ];
 
   return (
     <section className="relative overflow-hidden border-b border-line">
-      {/* soft gold radial + instrument arc (decorative; static under reduced motion) */}
-      <div className="hero-glow pointer-events-none absolute -right-[180px] -top-[200px] h-[760px] w-[760px] rounded-full" aria-hidden="true" />
-      <InstrumentArc
-        progress={progress}
-        className="pointer-events-none absolute -right-[170px] -top-[90px] h-[360px] w-[360px] opacity-35 sm:-right-[120px] md:-right-[90px] md:-top-[60px] md:h-[560px] md:w-[560px] md:opacity-80"
-      />
-      <div className="relative mx-auto max-w-[1200px] px-4 pb-10 pt-9 sm:px-8 md:pb-14 md:pt-[72px]">
-        <StageIn>
-          <span className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted">
-            <span className="live-dot" aria-hidden="true" />
-            {t("home.liveOn", { chain: meta.name })}
-          </span>
-          <h1 className="mt-4 max-w-[760px] text-[38px] font-bold leading-[1.04] tracking-[-0.035em] sm:text-[48px] md:text-[60px]">
-            {t("home.title")} <span className="font-medium text-muted">{t("home.titleTail")}</span>
-          </h1>
-          <p className="mt-4 max-w-[600px] text-[16px] leading-relaxed text-sub md:mt-5 md:text-[18px]">
-            {t("home.lead")}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3 md:mt-8">
-            <ButtonLink href="/mint" size="lg" className="max-sm:flex-1">
-              {t("home.ctaMint")}
-            </ButtonLink>
-            <ButtonLink href="/swap" tone="line" size="lg" className="max-sm:flex-1">
-              {t("home.ctaSwap")}
-            </ButtonLink>
+      <div className="hero-glow pointer-events-none absolute -right-[220px] -top-[220px] h-[820px] w-[820px] rounded-full" aria-hidden="true" />
+      <div className="relative mx-auto max-w-[1240px] px-4 pb-10 pt-9 sm:px-8 md:pb-14 md:pt-16">
+        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-6">
+          <StageIn>
+            <span className="sys-label inline-flex items-center gap-2">
+              <span className="live-dot" aria-hidden="true" />
+              {t("hero.kicker", { chain: meta.name })}
+            </span>
+            <h1 className="mt-5 text-[34px] leading-[1.06] sm:text-[44px] md:text-[54px]">
+              {t("hero.titleA")} <span className="signal-text">{t("hero.titleB")}</span> {t("hero.titleC")}
+            </h1>
+            <p className="mt-5 max-w-[560px] text-[16px] leading-relaxed text-sub md:text-[17.5px]">{t("hero.lead")}</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <ButtonLink href="/exchange" size="lg" className="max-sm:flex-1">
+                {t("hero.ctaExchange")} <span aria-hidden="true">→</span>
+              </ButtonLink>
+              <ButtonLink href="/mint" tone="line" size="lg" className="max-sm:flex-1">
+                {t("hero.ctaMint")}
+              </ButtonLink>
+            </div>
+            <ol className="hud mt-8 max-w-[560px] rounded-2xl border border-line bg-card px-4 py-3.5 font-mono text-[12.5px] sm:px-5" aria-label={t("hero.console.aria")}>
+              <li className="mb-2 flex items-center justify-between text-[10.5px] uppercase tracking-[.16em] text-dim">
+                <span>{t("hero.console.title")}</span>
+                <span className="text-gold/80">AgentDealsV2</span>
+              </li>
+              {DEAL_STEPS.map((k, i) => (
+                <li key={k} className="grid grid-cols-[24px_68px_minmax(0,1fr)] items-baseline gap-2 py-[3px] sm:grid-cols-[26px_84px_minmax(0,1fr)]">
+                  <span className="text-dim">{String(i + 1).padStart(2, "0")}</span>
+                  <span className={i === 3 ? "text-ion" : "text-gold"}>{t(`hero.step.${k}` as MessageKey)}</span>
+                  <span className="text-sub sm:truncate">{t(`hero.step.${k}Body` as MessageKey)}</span>
+                </li>
+              ))}
+            </ol>
+          </StageIn>
+          <div className="relative mx-auto w-full max-w-[560px]">
+            <AgentMesh className="h-auto w-full" />
           </div>
-        </StageIn>
+        </div>
 
-        <Stagger className="relative mt-8 grid grid-cols-2 rounded-2xl border border-line bg-surface/80 md:mt-14 md:grid-cols-4">
-          <StaggerItem className="min-w-0 px-4 py-4 md:px-[22px] md:py-5">
-            <small className="block text-[13px] font-medium text-muted">{t("home.stat.minted")}</small>
-            <b className="mt-1.5 block whitespace-nowrap font-mono text-[22px] font-medium leading-tight tracking-tight md:text-[28px]">
-              {loading ? <Skeleton className="h-7 w-24" label={t("home.stat.loadingMinted")} /> : <AnimatedNumber value={minted} />}
-              <span className="text-[14px] text-muted md:text-[16px]"> / {cap.toLocaleString("en-US")}</span>
-            </b>
-            <em className="text-[12.5px] not-italic text-dim">{t("home.stat.mintedSub")}</em>
-          </StaggerItem>
-          <StaggerItem className="min-w-0 border-l border-line px-4 py-4 md:px-[22px] md:py-5">
-            <small className="block text-[13px] font-medium text-muted">{t("home.stat.supply")}</small>
-            <b className="mt-1.5 block font-mono text-[22px] font-medium leading-tight tracking-tight md:text-[28px]">1B</b>
-            <em className="text-[12.5px] not-italic text-dim">{t("home.stat.supplySub")}</em>
-          </StaggerItem>
-          <StaggerItem className="min-w-0 border-t border-line px-4 py-4 md:border-l md:border-t-0 md:px-[22px] md:py-5">
-            <small className="block text-[13px] font-medium text-muted">{t("home.stat.fee")}</small>
-            <b className="mt-1.5 block font-mono text-[22px] font-medium leading-tight tracking-tight md:text-[28px]">1%</b>
-            <em className="text-[12.5px] not-italic text-dim">{t("home.stat.feeSub")}</em>
-          </StaggerItem>
-          <StaggerItem className="min-w-0 border-l border-t border-line px-4 py-4 md:border-t-0 md:px-[22px] md:py-5">
-            <small className="block text-[13px] font-medium text-muted">{t("home.stat.draw")}</small>
-            <b className="mt-1.5 block font-mono text-[22px] font-medium leading-tight tracking-tight text-gold md:text-[28px]">95%</b>
-            <em className="text-[12.5px] not-italic text-dim">{t("home.stat.drawSub")}</em>
-          </StaggerItem>
+        <Stagger className="relative mt-10 grid grid-cols-2 overflow-hidden rounded-2xl border border-line bg-card md:mt-12 md:grid-cols-4">
+          {stats.map((st, i) => (
+            <StaggerItem key={st.key} className={`min-w-0 px-4 py-4 md:px-[22px] md:py-5 ${i % 2 ? "border-l border-line" : ""} ${i >= 2 ? "border-t border-line md:border-t-0" : ""} ${i === 2 ? "md:border-l" : ""}`}>
+              <small className="block font-mono text-[11px] font-medium uppercase tracking-[.14em] text-muted">{st.label}</small>
+              <b className={`mt-2 block whitespace-nowrap font-mono text-[22px] font-medium leading-tight tracking-tight md:text-[28px] ${st.accent ? "text-gold" : ""}`}>{st.value}</b>
+              <em className="text-[12.5px] not-italic text-dim">{st.sub}</em>
+            </StaggerItem>
+          ))}
         </Stagger>
       </div>
     </section>

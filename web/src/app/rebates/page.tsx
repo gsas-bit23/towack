@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Rebates" };
 export default function RebatesPage() {
   return (
     <>
-      <PageHeader title={<T k="reb.title" />}>
+      <PageHeader sys="DEX://REBATES" title={<T k="reb.title" />}>
         <T k="reb.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">

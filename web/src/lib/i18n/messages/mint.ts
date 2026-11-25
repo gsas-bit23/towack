@@ -136,7 +136,7 @@ export const mint = defineMessages({
   // prize tables
   "deck.keep80k": ["keep your 80k TWAK", "保留 8 万 TWAK"],
   "deck.noPrize": ["NO PRIZE", "未中奖"],
-  "deck.bnbRefunds": ["3,500 BNB refunds (gold)", "3,500 个 BNB 返还（金色）"],
+  "deck.bnbRefunds": ["3,500 BNB refunds (lime)", "3,500 个 BNB 返还（青柠色）"],
   "deck.twakBonuses": ["1,020 TWAK bonuses (green)", "1,020 个 TWAK 奖励（绿色）"],
   "deck.none": ["480 no prize", "480 个未中奖"],
   "deck.bonusCaption": ["slots per multiplier · extra TWAK on top of the 80,000 from the mint", "各倍数名额数 · 在铸造所得 80,000 TWAK 之外额外发放"],

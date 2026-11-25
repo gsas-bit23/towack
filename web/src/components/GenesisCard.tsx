@@ -228,7 +228,7 @@ export function GenesisCard() {
                 {t("genesis.gasOnly")}
               </Pill>
             </div>
-            <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.05] sm:text-[40px]">{t("genesis.title")}</h2>
+            <h2 className="mt-2 font-display text-[24px] font-semibold leading-[1.12] sm:text-[30px]">{t("genesis.title")}</h2>
             <p className="mt-3 font-medium text-sub">
               {rich("genesis.body", { b: (c) => <b className="text-fg">{c}</b> }, { cost: t("genesis.cost"), base: BASE_TEXT, budget: GENESIS_BUDGET })}
             </p>

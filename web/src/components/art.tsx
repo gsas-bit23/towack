@@ -1,12 +1,20 @@
 // Atlas illustration pieces (pure SVG, decorative, aria-hidden).
 
-/** Towack mark: a ring with a gold arc and a T. */
+/** Towack mark: a hexagonal agent chip with a T drawn as three linked nodes (signal lime + ion violet). */
 export function CoinMark({ size = 28, className }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" className={className} aria-hidden="true">
-      <circle cx="14" cy="14" r="12" fill="none" stroke="#2E353F" strokeWidth="2.5" />
-      <path d="M14 2a12 12 0 0 1 10.4 18" fill="none" stroke="#F0B90B" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M8.5 9h11v2.6h-4.2V20h-2.6v-8.4H8.5z" fill="#EAECEF" />
+      <defs>
+        <linearGradient id="tw-mark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#C6F432" />
+          <stop offset="1" stopColor="#8B7CFF" />
+        </linearGradient>
+      </defs>
+      <path d="M14 1.8 24.6 7.9v12.2L14 26.2 3.4 20.1V7.9z" fill="#0A0C15" stroke="url(#tw-mark)" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M8.6 10.2h10.8M14 10.2v8.6" stroke="#EEF1F8" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="8.6" cy="10.2" r="2" fill="#C6F432" />
+      <circle cx="19.4" cy="10.2" r="2" fill="#C6F432" />
+      <circle cx="14" cy="19" r="2.2" fill="#8B7CFF" />
     </svg>
   );
 }
@@ -51,16 +59,16 @@ export function InstrumentArc({ progress = 0.62, className = "" }: { progress?: 
             y1={t.y1.toFixed(2)}
             x2={t.x2.toFixed(2)}
             y2={t.y2.toFixed(2)}
-            stroke={t.major ? "#3A414B" : "#20262D"}
+            stroke={t.major ? "#34406A" : "#1A2032"}
             strokeWidth={t.major ? 1.6 : 1}
           />
         ))}
       </g>
-      <path d={arc(218, start, start + sweep)} fill="none" stroke="#2B3139" strokeWidth="6" strokeLinecap="round" />
-      <path d={arc(218, start, end)} fill="none" stroke="#F0B90B" strokeWidth="6" strokeLinecap="round" opacity=".9" />
-      <circle cx={C} cy={C} r="160" fill="none" stroke="#1E2329" />
-      <circle cx={C} cy={C} r="110" fill="none" stroke="#1E2329" strokeDasharray="2 6" />
-      <circle cx={kx.toFixed(2)} cy={ky.toFixed(2)} r="6" fill="#0B0E11" stroke="#F0B90B" strokeWidth="2" />
+      <path d={arc(218, start, start + sweep)} fill="none" stroke="#1E2540" strokeWidth="6" strokeLinecap="round" />
+      <path d={arc(218, start, end)} fill="none" stroke="#C6F432" strokeWidth="6" strokeLinecap="round" opacity=".9" />
+      <circle cx={C} cy={C} r="160" fill="none" stroke="#1A2032" />
+      <circle cx={C} cy={C} r="110" fill="none" stroke="#1A2032" strokeDasharray="2 6" />
+      <circle cx={kx.toFixed(2)} cy={ky.toFixed(2)} r="6" fill="#05060B" stroke="#C6F432" strokeWidth="2" />
     </svg>
   );
 }

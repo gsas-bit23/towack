@@ -125,12 +125,12 @@ export function SpinWheel({
       <div className="relative aspect-square">
         {/* Static bezel: dark ring with degree ticks and numerals. */}
         <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full">
-          <circle cx={C} cy={C} r={199} fill="#12161B" stroke="#2E353F" strokeWidth="1" />
+          <circle cx={C} cy={C} r={199} fill="#0A0C15" stroke="#262E46" strokeWidth="1" />
           {BEZEL_TICKS.map((t, i) => (
-            <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke={t.major ? "#4A525E" : "#2B3139"} strokeWidth={t.major ? 1.4 : 0.8} />
+            <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke={t.major ? "#34406A" : "#1E2540"} strokeWidth={t.major ? 1.4 : 0.8} />
           ))}
           {BEZEL_NUMS.map((n) => (
-            <text key={n.label} x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontFamily="var(--font-plex-mono), monospace" fontSize="7.5" fill="#6B7380">
+            <text key={n.label} x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontFamily="var(--font-geist-mono), monospace" fontSize="7.5" fill="#5B6582">
               {n.label}
             </text>
           ))}
@@ -138,7 +138,7 @@ export function SpinWheel({
         {/* Rotation lives inside the SVG so the spinning square's corners never widen the page. */}
         <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full">
           <motion.g style={{ rotate: rot, transformBox: "view-box", transformOrigin: "50% 50%" }}>
-            <circle cx={C} cy={C} r={R + 4} fill="#0B0E11" />
+            <circle cx={C} cy={C} r={R + 4} fill="#05060B" />
             {slices.map((s) => {
               const p = prizes[s.id];
               const width = s.end - s.start;
@@ -147,7 +147,7 @@ export function SpinWheel({
               const fs = width < 16 ? 13 : width < 30 ? 14 : cols > 5 ? 12 : 17;
               return (
                 <g key={s.id}>
-                  <path d={slicePath(s.start, s.end)} fill={p.fill} stroke="#0B0E11" strokeWidth="2" strokeLinejoin="round" />
+                  <path d={slicePath(s.start, s.end)} fill={p.fill} stroke="#05060B" strokeWidth="2" strokeLinejoin="round" />
                   {/* radial labels reading outward (the wheel rotates, so no fixed "upright" side exists) */}
                   <g transform={`rotate(${(s.mid - 90).toFixed(2)} ${C} ${C})`}>
                     <text
@@ -155,7 +155,7 @@ export function SpinWheel({
                       y={C}
                       textAnchor="end"
                       dominantBaseline="central"
-                      fontFamily="var(--font-plex-mono), monospace"
+                      fontFamily="var(--font-geist-mono), monospace"
                       fontWeight="500"
                       fontSize={fs}
                       fill={p.ink}
@@ -168,38 +168,38 @@ export function SpinWheel({
             })}
             {/* fine rim ticks that turn with the wheel */}
             {RIM_TICKS.map((t, i) => (
-              <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#0B0E11" strokeOpacity=".55" strokeWidth="1" />
+              <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#05060B" strokeOpacity=".55" strokeWidth="1" />
             ))}
             {winSlice ? (
               <path
                 d={slicePath(winSlice.start, winSlice.end)}
-                fill="rgba(240,185,11,.10)"
-                stroke="#FCD535"
+                fill="rgba(198,244,50,.10)"
+                stroke="#DBFF6E"
                 strokeWidth="3"
                 strokeLinejoin="round"
                 className={mode === "landed" || reduce ? "" : "win-flash"}
               />
             ) : null}
-            <circle cx={C} cy={C} r={74} fill="#0B0E11" stroke="#232931" strokeWidth="1" />
-            <circle cx={C} cy={C} r={62} fill="none" stroke="#232931" strokeDasharray="2 5" />
+            <circle cx={C} cy={C} r={74} fill="#05060B" stroke="#1A2032" strokeWidth="1" />
+            <circle cx={C} cy={C} r={62} fill="none" stroke="#1A2032" strokeDasharray="2 5" />
           </motion.g>
         </svg>
 
         {/* hub (does not rotate): Towack mark */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 w-[24%] -translate-x-1/2 -translate-y-1/2">
           <svg viewBox="0 0 100 100" className="relative w-full">
-            <circle cx="50" cy="50" r="46" fill="#161A20" stroke="#2E353F" strokeWidth="1.5" />
-            <circle cx="50" cy="50" r="30" fill="none" stroke="#2E353F" strokeWidth="5" />
-            <path d="M50 20a30 30 0 0 1 26 45" fill="none" stroke="#F0B90B" strokeWidth="5" strokeLinecap="round" />
-            <path d="M36.5 38h27v6.4H53.3V65h-6.4V44.4H36.5z" fill="#EAECEF" />
+            <circle cx="50" cy="50" r="46" fill="#0D101B" stroke="#262E46" strokeWidth="1.5" />
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#262E46" strokeWidth="5" />
+            <path d="M50 20a30 30 0 0 1 26 45" fill="none" stroke="#C6F432" strokeWidth="5" strokeLinecap="round" />
+            <path d="M36.5 38h27v6.4H53.3V65h-6.4V44.4H36.5z" fill="#EEF1F8" />
           </svg>
         </div>
 
         {/* pointer at 12 o'clock */}
         <motion.div className="absolute left-1/2 top-[-4%] w-[7%] -translate-x-1/2" style={{ rotate: flick, transformOrigin: "50% 20%" }}>
           <svg viewBox="0 0 30 46" className="w-full">
-            <path d="M15 44 L3 6 Q15 0 27 6 Z" fill="#F0B90B" stroke="#0B0E11" strokeWidth="1.5" strokeLinejoin="round" />
-            <circle cx="15" cy="10" r="3" fill="#0B0E11" />
+            <path d="M15 44 L3 6 Q15 0 27 6 Z" fill="#C6F432" stroke="#05060B" strokeWidth="1.5" strokeLinejoin="round" />
+            <circle cx="15" cy="10" r="3" fill="#05060B" />
           </svg>
         </motion.div>
       </div>

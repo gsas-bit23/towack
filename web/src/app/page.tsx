@@ -18,17 +18,22 @@ const PATHS: { href: string; icon: IconName; key: "launch" | "swap" | "draw" | "
 const FEES: { pct: string; color: string; text: string; key: "rebate" | "treasury" | "dev" }[] = [
   { pct: "50%", color: "bg-gold", text: "text-gold", key: "rebate" },
   { pct: "30%", color: "bg-up", text: "text-up", key: "treasury" },
-  { pct: "20%", color: "bg-[#4A525E]", text: "text-sub", key: "dev" },
+  { pct: "20%", color: "bg-[#34406A]", text: "text-sub", key: "dev" },
 ];
 
 const k = (s: string) => s as MessageKey;
 
-function SecHead({ title, href, link }: { title: ReactNode; href?: string; link?: ReactNode }) {
+function SecHead({ n, sys, title, href, link }: { n: string; sys: string; title: ReactNode; href?: string; link?: ReactNode }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-4">
-      <h2 className="text-[22px] font-semibold tracking-[-0.02em]">{title}</h2>
+    <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+      <div className="min-w-0">
+        <div className="sys-label">
+          <span className="text-gold">{n}</span> {"//"} {sys}
+        </div>
+        <h2 className="mt-2 text-[22px] sm:text-[26px]">{title}</h2>
+      </div>
       {href ? (
-        <Link href={href} className="text-[14px] font-medium text-muted transition-colors hover:text-fg">
+        <Link href={href} className="shrink-0 font-mono text-[12.5px] uppercase tracking-[.1em] text-muted transition-colors hover:text-gold">
           {link} →
         </Link>
       ) : null}
@@ -36,19 +41,56 @@ function SecHead({ title, href, link }: { title: ReactNode; href?: string; link?
   );
 }
 
+const AGENT_CARDS: { key: "exchange" | "deals" | "judges"; icon: IconName; tone: string }[] = [
+  { key: "exchange", icon: "id", tone: "text-gold" },
+  { key: "deals", icon: "shield", tone: "text-[#9bf0ff]" },
+  { key: "judges", icon: "book", tone: "text-ion" },
+];
+
 export default function Home() {
   return (
     <>
       <HomeHero />
 
       <div className="mx-auto max-w-[1200px] px-4 sm:px-8">
-        <section className="pt-10">
+        {/* Agent economy: Exchange, deals, judges */}
+        <section id="agents" className="pt-14">
+          <SecHead n="01" sys="AGENT://ECONOMY" title={<T k="home.agents.title" />} href="/exchange" link={<T k="home.agents.link" />} />
+          <Stagger className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {AGENT_CARDS.map((c) => (
+              <StaggerItem key={c.key} className="min-w-0">
+                <Link href="/exchange" className="lift hud group flex h-full flex-col gap-3 rounded-2xl border border-line bg-card p-6">
+                  <div className="flex items-center justify-between">
+                    <span className={`grid h-11 w-11 place-items-center rounded-xl border border-line-2 bg-card-2 ${c.tone}`}>
+                      <Icon name={c.icon} />
+                    </span>
+                    <span className="sys-label">
+                      <T k={k(`home.agents.${c.key}Tag`)} />
+                    </span>
+                  </div>
+                  <h3 className="mt-2 text-[18px] font-semibold">
+                    <T k={k(`home.agents.${c.key}`)} />
+                  </h3>
+                  <p className="text-[14px] leading-relaxed text-muted">
+                    <T k={k(`home.agents.${c.key}Body`)} />
+                  </p>
+                  <span className="mt-auto pt-1 font-mono text-[12.5px] uppercase tracking-[.1em] text-sub transition-colors group-hover:text-gold">
+                    <T k={k(`home.agents.${c.key}Go`)} /> →
+                  </span>
+                </Link>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </section>
+
+        <section className="pt-14">
+          <SecHead n="02" sys="TWAK://LAUNCH" title={<T k="home.launch.title" />} href="/mint" link={<T k="home.launch.link" />} />
           <FeaturedLaunch />
         </section>
 
         {/* Draw V1 prize deck */}
         <section id="draw" className="pt-14">
-          <SecHead title={<T k="home.deck.title" />} href="/draw" link={<T k="home.deck.link" />} />
+          <SecHead n="03" sys="VRF://PRIZE-DECK" title={<T k="home.deck.title" />} href="/draw" link={<T k="home.deck.link" />} />
           <Reveal className="rounded-2xl border border-line bg-card p-5 sm:p-7">
             <p className="max-w-[820px] text-[15px] leading-relaxed text-sub">
               <T k="home.deck.body" tags={{ b: "font-semibold text-fg" }} />
@@ -81,7 +123,7 @@ export default function Home() {
 
         {/* Router */}
         <section id="router" className="pt-14">
-          <SecHead title={<T k="home.router.title" />} href="/trade" link={<T k="home.router.link" />} />
+          <SecHead n="04" sys="DEX://ROUTER" title={<T k="home.router.title" />} href="/trade" link={<T k="home.router.link" />} />
           <Reveal className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line bg-card lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
             <div className="min-w-0 border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
               <p className="text-[15px] leading-relaxed text-sub">
@@ -141,7 +183,7 @@ export default function Home() {
 
         {/* Tokenomics */}
         <section id="tokenomics" className="pt-14">
-          <SecHead title={<T k="home.tok.title" />} href="/tokenomics" link={<T k="home.tok.link" />} />
+          <SecHead n="05" sys="TWAK://SUPPLY" title={<T k="home.tok.title" />} href="/tokenomics" link={<T k="home.tok.link" />} />
           <Reveal className="rounded-2xl border border-line bg-card p-5 sm:p-7">
             <div className="mb-6 flex flex-wrap gap-2">
               <Pill>
@@ -166,7 +208,7 @@ export default function Home() {
 
         {/* Roadmap */}
         <section id="roadmap" className="pt-14">
-          <SecHead title={<T k="home.road.title" />} />
+          <SecHead n="06" sys="SYS://ROADMAP" title={<T k="home.road.title" />} />
           <Stagger className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <StaggerItem className="lift min-w-0 rounded-2xl border border-line bg-card p-6">
               <div className="flex items-center justify-between gap-2">
@@ -225,7 +267,7 @@ export default function Home() {
 
         {/* Paths */}
         <section className="pb-4 pt-14">
-          <SecHead title={<T k="home.next" />} />
+          <SecHead n="07" sys="NAV://NEXT" title={<T k="home.next" />} />
           <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
             {PATHS.map((p) => (
               <StaggerItem key={p.href} className="min-w-0">

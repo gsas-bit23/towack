@@ -209,7 +209,7 @@ export function SpinFeed({ spins, emptyText }: { spins: Spin[]; emptyText?: stri
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
               className="flex items-center gap-3 border-t border-line bg-card px-4 py-2.5 first:border-t-0"
             >
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.kind === "none" ? "#3A414B" : p.fill }} aria-hidden="true" />
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.kind === "none" ? "#2A3352" : p.fill }} aria-hidden="true" />
               <span className="font-mono text-[13px] text-sub">{shortAddr(s.minter)}</span>
               <span className={`flex-1 text-right text-[14px] font-semibold ${p.jackpot ? "text-gold" : p.kind === "none" ? "text-muted" : ""}`}>{prizeLabel(t, p)}</span>
               <span className="w-[62px] text-right font-mono text-[11.5px] text-dim">{s.demo ? t("common.demo") : ago(t, now, s.time)}</span>

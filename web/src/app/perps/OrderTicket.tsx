@@ -229,7 +229,7 @@ export function OrderTicket({
             role="tab"
             aria-selected={form.side === s}
             onClick={() => set({ side: s })}
-            className={`rounded-lg py-2 text-[14px] font-semibold ${form.side === s ? (s === "BUY" ? "bg-up text-[#0B0E11]" : "bg-down text-white") : "text-muted hover:text-fg"}`}
+            className={`rounded-lg py-2 text-[14px] font-semibold ${form.side === s ? (s === "BUY" ? "bg-up text-[#05060B]" : "bg-down text-white") : "text-muted hover:text-fg"}`}
           >
             {s === "BUY" ? tr("perps.buyLong") : tr("perps.sellShort")}
           </button>
@@ -424,7 +424,7 @@ export function OrderTicket({
             type="button"
             disabled={!plan || levBad}
             onClick={() => setReview(true)}
-            className={`press h-11 w-full rounded-[10px] text-[14.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${form.side === "BUY" ? "bg-up text-[#0B0E11]" : "bg-down text-white"}`}
+            className={`press h-11 w-full rounded-[10px] text-[14.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${form.side === "BUY" ? "bg-up text-[#05060B]" : "bg-down text-white"}`}
           >
             {form.side === "BUY" ? tr("perps.t.reviewLong") : tr("perps.t.reviewShort")}
           </button>

@@ -61,11 +61,11 @@ export function Nav() {
   const sheet = reduce ? { initial: false as const } : { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -6 } };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-[rgba(11,14,17,.86)] backdrop-blur-[12px]">
+    <header className="sticky top-0 z-50 border-b border-line bg-[rgba(5,6,11,.74)] backdrop-blur-[14px]">
       <nav className="mx-auto flex h-[58px] max-w-[1280px] items-center gap-3 px-4 sm:px-6 xl:h-16 xl:gap-8 xl:px-8" aria-label={t("nav.main")}>
-        <Link href="/" className="flex min-h-10 shrink-0 items-center gap-2.5 text-[18px] font-bold tracking-[-0.02em]" aria-label={t("nav.home")}>
-          <CoinMark size={28} />
-          <span className="hidden min-[360px]:inline">Towack</span>
+        <Link href="/" className="flex min-h-10 shrink-0 items-center gap-2.5" aria-label={t("nav.home")}>
+          <CoinMark size={30} />
+          <span className="hidden font-display text-[15px] font-semibold uppercase tracking-[.14em] min-[360px]:inline">Towack</span>
         </Link>
 
         <div className="hidden min-w-0 items-center gap-1 xl:flex">

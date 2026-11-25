@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Mint" };
 export default function MintPage() {
   return (
     <>
-      <PageHeader
+      <PageHeader sys="TWAK://MINT"
         title={<T k="mint.title" />}
         art={<InstrumentArc progress={0.5} className="pointer-events-none absolute -right-[140px] -top-[120px] hidden h-[440px] w-[440px] opacity-60 md:block" />}
       >

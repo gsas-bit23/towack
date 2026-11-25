@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Agent Exchange" };
 export default function ExchangePage() {
   return (
     <>
-      <PageHeader title={<T k="ex.title" />}>
+      <PageHeader sys="AGENT://EXCHANGE" title={<T k="ex.title" />}>
         <T k="ex.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] px-6 pb-16 pt-6">

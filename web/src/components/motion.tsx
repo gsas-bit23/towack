@@ -229,7 +229,7 @@ export function Confetti({ fire, big = false }: { fire: number; big?: boolean })
       <motion.span
         key={`f-${active}`}
         className="absolute -left-[160px] -top-[160px] block h-[320px] w-[320px] rounded-full"
-        style={{ background: "radial-gradient(closest-side, rgba(240,185,11,.35), rgba(240,185,11,0))" }}
+        style={{ background: "radial-gradient(closest-side, rgba(198,244,50,.35), rgba(198,244,50,0))" }}
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: [0, 1, 0], scale: [0.6, 1, 1.15] }}
         transition={{ duration: 1.1, ease: "easeOut", times: [0, 0.3, 1] }}
@@ -267,11 +267,11 @@ export function SuccessCheck({ className = "h-10 w-10" }: { className?: string }
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 420, damping: 22 }}
     >
-      <circle cx="20" cy="20" r="19" fill="rgba(240,185,11,.12)" stroke="#F0B90B" strokeWidth="1.5" />
+      <circle cx="20" cy="20" r="19" fill="rgba(198,244,50,.12)" stroke="#C6F432" strokeWidth="1.5" />
       <motion.path
         d="M12 20.5 18 26 28.5 14.5"
         fill="none"
-        stroke="#F0B90B"
+        stroke="#C6F432"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"

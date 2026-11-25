@@ -10,7 +10,7 @@ const DECK_ROWS = ["draw.deck1", "draw.deck2", "draw.deck3", "draw.deck4"] as co
 export default function DrawPage() {
   return (
     <>
-      <PageHeader title={<T k="draw.title" />}>
+      <PageHeader sys="VRF://DRAW-V1" title={<T k="draw.title" />}>
         <T k="draw.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">

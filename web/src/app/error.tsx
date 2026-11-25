@@ -10,7 +10,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
     <section className="mx-auto max-w-[720px] px-6 py-20">
       <Panel className="text-center">
         <div className="inline-block rounded-full border border-line bg-gold/10 px-4 py-1 text-xs font-semibold text-fg">{t("err.badge")}</div>
-        <h1 className="mt-4 font-display text-[36px] font-semibold leading-tight">{t("err.title")}</h1>
+        <h1 className="mt-4 font-display text-[28px] font-semibold sm:text-[32px] leading-tight">{t("err.title")}</h1>
         <p className="mt-2 font-medium text-sub">
           {t("err.body")}
         </p>

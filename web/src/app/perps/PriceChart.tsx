@@ -8,8 +8,8 @@ import type { AsterNet } from "@/lib/aster/markets";
 import { CHART_INTERVALS, fetchKlines, type Candle, type ChartInterval } from "@/lib/aster/marketData";
 import type { FeedStatus } from "./useAsterStream";
 
-const UP = "#0ECB81";
-const DOWN = "#F6465D";
+const UP = "#2FE3A0";
+const DOWN = "#FF4D6D";
 type Lib = typeof import("lightweight-charts");
 
 const toBar = (c: Candle): CandlestickData<UTCTimestamp> => ({ time: c.time as UTCTimestamp, open: c.open, high: c.high, low: c.low, close: c.close });
@@ -66,11 +66,11 @@ export function PriceChart({
       const mono = getComputedStyle(el).fontFamily || "ui-monospace, monospace";
       const chart = lib.createChart(el, {
         autoSize: true,
-        layout: { background: { type: lib.ColorType.Solid, color: "#0B0E11" }, textColor: "#8B94A3", fontFamily: mono, fontSize: 11 },
+        layout: { background: { type: lib.ColorType.Solid, color: "#05060B" }, textColor: "#7F89A3", fontFamily: mono, fontSize: 11 },
         grid: { vertLines: { color: "rgba(35,41,49,.55)" }, horzLines: { color: "rgba(35,41,49,.55)" } },
-        rightPriceScale: { borderColor: "#232931" },
-        timeScale: { borderColor: "#232931", timeVisible: true, secondsVisible: false, rightOffset: 4 },
-        crosshair: { mode: lib.CrosshairMode.Normal, vertLine: { color: "#4A525E", labelBackgroundColor: "#1D2229" }, horzLine: { color: "#4A525E", labelBackgroundColor: "#1D2229" } },
+        rightPriceScale: { borderColor: "#1A2032" },
+        timeScale: { borderColor: "#1A2032", timeVisible: true, secondsVisible: false, rightOffset: 4 },
+        crosshair: { mode: lib.CrosshairMode.Normal, vertLine: { color: "#34406A", labelBackgroundColor: "#141A2A" }, horzLine: { color: "#34406A", labelBackgroundColor: "#141A2A" } },
         kineticScroll: { touch: !reduce, mouse: false },
         handleScroll: { vertTouchDrag: false },
       });

@@ -21,7 +21,7 @@ const RICH_LINK = "inline-flex min-h-10 items-center underline decoration-2 unde
 export default function DocsPage() {
   return (
     <>
-      <PageHeader title={<T k="docs.title" />}>
+      <PageHeader sys="SYS://DOCS" title={<T k="docs.title" />}>
         <T k="docs.lead" />
       </PageHeader>
       <section className="mx-auto max-w-[1220px] space-y-10 px-6 pb-16 pt-6">
@@ -35,7 +35,7 @@ export default function DocsPage() {
         </div>
 
         <div>
-          <h2 className="font-display text-[40px] font-semibold">
+          <h2 className="font-display text-[30px] font-semibold sm:text-[34px]">
             <T k="docs.howToPlay" />
           </h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -79,7 +79,7 @@ export default function DocsPage() {
         </Panel>
 
         <div>
-          <h2 className="font-display text-[40px] font-semibold">
+          <h2 className="font-display text-[30px] font-semibold sm:text-[34px]">
             <T k="docs.faq" />
           </h2>
           <div className="mt-6 space-y-4">
