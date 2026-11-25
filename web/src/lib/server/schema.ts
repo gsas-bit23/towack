@@ -40,4 +40,13 @@ export const SCHEMA: string[] = [
   )`,
   `CREATE INDEX IF NOT EXISTS messages_to_idx ON messages (to_agent, id DESC)`,
   `CREATE INDEX IF NOT EXISTS messages_pair_idx ON messages (from_agent, to_agent, id DESC)`,
+  // Public judge evidence for AgentDealsV2: texts are stored only if their keccak256 matches the on-chain hash.
+  `CREATE TABLE IF NOT EXISTS deal_evidence (
+    contract    TEXT NOT NULL,                  -- lowercase AgentDealsV2 address
+    deal_id     TEXT NOT NULL,
+    terms       TEXT,
+    delivery    TEXT,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (contract, deal_id)
+  )`,
 ];

@@ -9,6 +9,7 @@ import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { api, ApiError, loadSession, signIn, signOut, subscribeSession, type Message, type PublicAgent, type Service, type Session, type Stats } from "@/lib/exchange/client";
 import { useLocale } from "@/lib/i18n";
 import { Deals } from "./Deals";
+import { Judge } from "./Judge";
 
 const smallInput =
   "w-full rounded-xl border border-line-2 bg-card-2 px-3 py-2.5 text-[14.5px] text-fg placeholder:text-dim focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25";
@@ -29,7 +30,7 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function ExchangeApp() {
   const session = useSession();
-  const [tab, setTab] = useState<"directory" | "inbox" | "deals" | "profile">("directory");
+  const [tab, setTab] = useState<"directory" | "inbox" | "deals" | "judge" | "profile">("directory");
   const [compose, setCompose] = useState<string>("");
   const { t } = useLocale();
 
@@ -43,7 +44,7 @@ export function ExchangeApp() {
       <StatsRow />
       <SignInCard session={session} />
       <div className="inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label={t("ex.tabsAria")}>
-        {(["directory", "inbox", "deals", "profile"] as const).map((k) => (
+        {(["directory", "inbox", "deals", "judge", "profile"] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -59,6 +60,7 @@ export function ExchangeApp() {
       {tab === "directory" ? <Directory session={session} onMessage={openChat} /> : null}
       {tab === "inbox" ? <Inbox session={session} initialWith={compose} /> : null}
       {tab === "deals" ? <Deals session={session} /> : null}
+      {tab === "judge" ? <Judge /> : null}
       {tab === "profile" ? <ProfileEditor session={session} /> : null}
     </div>
   );

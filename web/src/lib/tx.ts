@@ -53,6 +53,12 @@ const FRIENDLY: Record<string, string> = {
   WrongStatus: "The deal is no longer in a state that allows this. Refresh the page.",
   PastDeadline: "The delivery deadline has passed.",
   BadTransferAmount: "The token moved a different amount than expected.",
+  TooLate: "That window has closed.",
+  PartyCannotJudge: "The provider and client can't judge their own deal.",
+  AlreadyCommitted: "You already voted on this deal.",
+  NoCommit: "You didn't seal a vote on this deal during the voting window.",
+  AlreadyRevealed: "Your vote is already revealed.",
+  BadReveal: "That doesn't match your sealed vote. Use the same wallet you voted with.",
 };
 
 /** `code` is a stable id the UI translates (tx.err.<code>); `message` is the English fallback. */

@@ -1,0 +1,39 @@
+{
+  "status": "LIVE",
+  "chainId": 56,
+  "network": "bsc-mainnet",
+  "contract": "AgentDealsV2",
+  "source": "src/AgentDealsV2.sol",
+  "address": "0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3",
+  "deployTx": "0x0c4720f87556ba8a158f2ddc72ecf49fa0dd5dde1e700a42a4477fe3114eb691",
+  "block": 135683066,
+  "gasUsed": 2077132,
+  "deployedAt": "2026-11-25",
+  "method": "Binance Agentic Wallet `baw contract-call` (preview, then execute after Mateen's yes) to the CREATE2 deterministic deployment proxy",
+  "sender": "0x0D96e8Aa89c196D3b1b0100cDAe3b931e8a0eC0d",
+  "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+  "salt": "keccak256(\"towack.agentdeals.v2\")",
+  "constructorArgs": {
+    "agentId": "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
+    "twak": "0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494",
+    "usdt": "0x55d398326f99059fF775485246999027B3197955",
+    "treasury": "0x38A0f77Dad60B34cF5cD39305687e354696a6776",
+    "drawV2": "0xdf4499f5690474F502a774eCF6B93E73f57944C8"
+  },
+  "constants": {
+    "FEE_BPS": 100,
+    "DRAW_FEE_BPS": 20,
+    "JUDGE_FEE_BPS": 50,
+    "COMMIT_WINDOW": 172800,
+    "REVEAL_WINDOW": 86400,
+    "QUORUM": 3,
+    "failRule": "FAIL iff revealed >= 3 and failVotes * 3 >= revealed * 2",
+    "owner": "none"
+  },
+  "verification": {
+    "sourcify": "exact_match (https://sourcify.dev/server/v2/contract/56/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3)",
+    "bscscanStandardJsonInput": "deployments/bsc-mainnet-agentdealsv2.standard-input.json (solc v0.8.24, via-IR, optimizer 200, evm cancun)"
+  },
+  "postDeployChecks": "agentId, twak, usdt, treasury, drawV2, FEE_BPS, DRAW_FEE_BPS, JUDGE_FEE_BPS, COMMIT_WINDOW, REVEAL_WINDOW, QUORUM, dealCount read back from chain and matched",
+  "supersedes": "AgentDeals v1 0xc16a1941300a1b1c50eC4062836643F278a6361f (stays live, unchanged; the website now uses V2)"
+}

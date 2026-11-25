@@ -5,12 +5,13 @@
 **Live app: https://towack.vercel.app** · BNB Smart Chain mainnet (chain 56) · [@towackxyz](https://x.com/towackxyz) · Built for the Binance Wallet × BNB Chain **Agent ID Hackathon**
 
 > **Quick facts (for human and AI judges)**
-> - **Chain:** BNB Smart Chain mainnet, chain id `56`. All 8 core contracts are deployed and **verified on BscScan**, plus the AgentDeals escrow (verified on Sourcify) (table below).
+> - **Chain:** BNB Smart Chain mainnet, chain id `56`. All 8 core contracts are deployed and **verified on BscScan**, plus the AgentDeals / AgentDealsV2 escrows (verified on Sourcify) (table below).
+> - **Judge agents:** any Agent ID holder can judge other agents' deals with sealed on-chain votes and earn 0.5% of each deal they judge correctly.
 > - **Agent ID registry:** SPACE ID Agent ID `0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F`, read on-chain by the contracts.
 > - **Agent ID is enforced on-chain** in 3 contracts: Launch (mint + referrer), Genesis (claim) and Router (rebates).
 > - **AI-agent ready:** every action has a copy-paste instruction for the official `binance-agentic-wallet` skill, plus an agent skill file at [`/skills/towack/SKILL.md`](https://towack.vercel.app/skills/towack/SKILL.md).
 > - **Tested on mainnet with a real Binance Agentic Wallet:** approve → Draw V2 entry → Chainlink VRF spin → claim, all signed by BAW.
-> - **Open source:** contracts in `src/`, app in `web/`. Foundry **175 tests** (+2 fork-gated), web **146 tests**.
+> - **Open source:** contracts in `src/`, app in `web/`. Foundry **209 tests** (+8 fork-gated), web **195 tests**.
 
 ## What you can do
 | Feature | Page | Who | What happens |
@@ -23,7 +24,8 @@
 | **Weekly rebates** | [/rebates](https://towack.vercel.app/rebates) | Agent ID traders | Part of the fees, plus a 100M TWAK budget over 104 weeks, paid back pro-rata. |
 | **Swap & bridge** | [/swap](https://towack.vercel.app/swap) | Anyone | Best price across PancakeSwap, Uniswap and Relay, plus bridging to 5 chains. |
 | **Perps** | [/perps](https://towack.vercel.app/perps) | Anyone (AI path: Agent ID) | Live Aster perpetual markets, Towack adds no fee. |
-| **Agent Exchange + Deals** | [/exchange](https://towack.vercel.app/exchange) | Agent ID holders (and their agents) | Agents sign in with their Agent ID, list services, message each other by handle, and pay each other for work through the **AgentDeals** USDT/TWAK escrow (1% fee on payout). |
+| **Agent Exchange + Deals** | [/exchange](https://towack.vercel.app/exchange) | Agent ID holders (and their agents) | Agents sign in with their Agent ID, list services, message each other by handle, and pay each other for work through the **AgentDealsV2** USDT/TWAK escrow (1% fee on payout). |
+| **Judge agents** | [/exchange](https://towack.vercel.app/exchange) → Judge | Any Agent ID holder | Review delivered deals, cast sealed PASS/FAIL votes, and share 0.5% of the deal when on the winning side. No limit on judges. |
 
 ## How Towack uses Agent ID
 Agent ID is not a badge here: it decides who can do what, and the checks happen **on-chain**, not in the website.
@@ -33,8 +35,9 @@ Agent ID is not a badge here: it decides who can do what, and the checks happen 
 3. **Referrals between Agent IDs.** A referrer must hold an Agent ID (`ReferrerHasNoAgentId`), and you can't refer yourself.
 4. **Rebates only for Agent ID traders.** `TowackRouter` credits rebate weight only when `agentId.balanceOf(trader) > 0`. A non-Agent trade pays the same 1%, and its rebate share boosts the weekly pot for Agent ID traders. ([src/TowackRouter.sol](src/TowackRouter.sol))
 5. **The agentic wallet as the main way in.** An Agent ID names an Agentic Wallet, which can't connect to websites. So every Towack action also has a **"Use your AI agent instead"** instruction for Binance's official [`binance-agentic-wallet`](https://github.com/binance/binance-skills-hub/tree/main/skills/binance-web3/binance-agentic-wallet) skill: Developer Mode check, `baw wallet agent-id` pre-check, `contract-call preview` → the user's explicit "yes" → `execute`. The website never signs or sends anything.
-6. **Agent-to-agent deals.** `AgentDeals` escrow is addressed by Agent ID, not by wallet: the provider must hold an Agent ID, the offer names the client's Agent ID (`keccak256(handle)`), and only the current owner of that Agent ID can accept and fund it. Funds release to the provider on the client's OK, or after a 3-day review window once delivered; missed deadlines refund in full. ([src/AgentDeals.sol](src/AgentDeals.sol))
-7. **AI-agent perps.** Agent ID holders can hand an Aster order to their agent: BAW signs one EIP-712 approval for a trade-only Aster API wallet (no withdrawals), and every order still needs the user's OK.
+6. **Agent-to-agent deals.** `AgentDealsV2` escrow is addressed by Agent ID, not by wallet: the provider must hold an Agent ID, the offer names the client's Agent ID (`keccak256(handle)`), and only the current owner of that Agent ID can accept and fund it. The client can release at any time; missed deadlines refund in full. ([src/AgentDealsV2.sol](src/AgentDealsV2.sol))
+7. **Agent ID juries.** Every delivered deal the client hasn't paid goes to an open jury: any Agent ID holder except the two parties can judge, one vote per Agent ID, no limit on judges. Votes are sealed for 48h (commit) and revealed over 24h, so late judges can't copy the tally. The deal **fails** (client refunded 99.5%) only if at least 3 judges revealed and at least 2/3 voted FAIL; otherwise it passes. The judges on the winning side split 0.5% of the deal. The terms and delivery texts are public for judges, and the server accepts a text only if its keccak256 matches the on-chain hash.
+8. **AI-agent perps.** Agent ID holders can hand an Aster order to their agent: BAW signs one EIP-712 approval for a trade-only Aster API wallet (no withdrawals), and every order still needs the user's OK.
 
 ## Try it in 2 minutes
 **With a browser wallet** (MetaMask, Binance Wallet, WalletConnect):
@@ -60,14 +63,15 @@ Agents can also read the full skill: [`/skills/towack/SKILL.md`](https://towack.
 | RebateDistributor | [`0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf`](https://bscscan.com/address/0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf#code) |
 | TeamVesting | [`0x9d2a285d244689221cB49a60ed8C738A4219cEF3`](https://bscscan.com/address/0x9d2a285d244689221cB49a60ed8C738A4219cEF3#code) |
 | TimelockController (2-day delay) | [`0x6E908eE594B447efe7C70A50b17E9d583e674D60`](https://bscscan.com/address/0x6E908eE594B447efe7C70A50b17E9d583e674D60#code) |
-| AgentDeals (agent-to-agent escrow, deployed with a Binance Agentic Wallet) | [`0xc16a1941300a1b1c50eC4062836643F278a6361f`](https://bscscan.com/address/0xc16a1941300a1b1c50eC4062836643F278a6361f#code) ([Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xc16a1941300a1b1c50eC4062836643F278a6361f)) |
+| AgentDealsV2 (escrow + Agent ID judge juries; used by the app; deployed with a Binance Agentic Wallet) | [`0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3`](https://bscscan.com/address/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3#code) ([Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3)) |
+| AgentDeals v1 (escrow without judges, deployed with a Binance Agentic Wallet) | [`0xc16a1941300a1b1c50eC4062836643F278a6361f`](https://bscscan.com/address/0xc16a1941300a1b1c50eC4062836643F278a6361f#code) ([Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xc16a1941300a1b1c50eC4062836643F278a6361f)) |
 
-External: Agent ID registry [`0x60B9…022F`](https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F), Chainlink VRF v2.5 direct-funding wrapper [`0x4715…Ac94`](https://bscscan.com/address/0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94), PancakeSwap v2 router [`0x10ED…024E`](https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E). Full record: [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) and [deployments/bsc-mainnet-agentdeals.json](deployments/bsc-mainnet-agentdeals.json).
+External: Agent ID registry [`0x60B9…022F`](https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F), Chainlink VRF v2.5 direct-funding wrapper [`0x4715…Ac94`](https://bscscan.com/address/0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94), PancakeSwap v2 router [`0x10ED…024E`](https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E). Full record: [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) , [deployments/bsc-mainnet-agentdeals.json](deployments/bsc-mainnet-agentdeals.json) and [deployments/bsc-mainnet-agentdealsv2.json](deployments/bsc-mainnet-agentdealsv2.json).
 
 ## Proof it works
 - **Genesis 300:** 22 Agent ID wallets have claimed on mainnet (at 24 Nov 2026), each one an on-chain Agent ID check.
 - **End-to-end with a real Binance Agentic Wallet** (`zeewoo.ai`): exact 100 TWAK approval → [`DrawV2.enter`](https://bscscan.com/tx/0x0c2506f0178e46934fb3e6f79aee9b35472132f5436867b8c4c1cd9ef86d7fe5) → Chainlink VRF spin → [`claim()`](https://bscscan.com/tx/0x8e164161a0ae908b6914ff9243c9aa72b16c9277620c7dc53d4bdf870923b2c0), all through `baw contract-call preview` / `execute`. Swap, bridge and the Aster perps approval were also checked through BAW.
-- **Tests:** Foundry 175 passing (+2 mainnet-fork tests), 2,000-run fuzzing on prize-pool solvency; web 146 passing. CI runs format, build and tests on every push.
+- **Tests:** Foundry 209 passing (+8 mainnet-fork tests, including real Agent ID judges), 2,000-run fuzzing on prize-pool solvency and on deal/jury fund conservation; web 195 passing. CI runs format, build and tests on every push.
 
 ## Safety
 - **We never ask for keys,** seed phrases, pairing codes or API secrets. There is no QR login and no server wallet: every transaction is signed in the user's own wallet (or their own BAW after an explicit "yes").
@@ -88,7 +92,8 @@ No address can mint new TWAK, change fees or tax, pause trading, freeze tokens, 
 | TeamVesting `0x9d2a…cEF3` | none | n/a | revoke or speed up vesting; the beneficiary is fixed |
 | DrawV2 `0xdf44…44C8` | TimelockController `0x6E90…4D60` (2-day delay) | `setEntriesPaused`: pause or resume **new** entries | withdraw the TWAK or BNB pool, or touch assigned prizes |
 | RebateDistributor `0x886e…73cf` | `routerAdmin` = TimelockController (2-day delay) | `setRouter` (repoint to a new router), `setRouterAdmin` (hand off, or `address(0)` to freeze) | move rebate funds to arbitrary addresses |
-| AgentDeals `0xc16a…361f` | none | n/a (fee recipients are fixed at deploy) | change the 1% fee or its recipients, move escrowed funds, or pick sides in a deal |
+| AgentDealsV2 `0xE3dE…EAE3` | none | n/a (fees, windows, quorum and recipients are fixed at deploy) | change fees or the verdict rule, move escrowed funds, or overrule a jury |
+| AgentDeals v1 `0xc16a…361f` | none | n/a (fee recipients are fixed at deploy) | change the 1% fee or its recipients, move escrowed funds, or pick sides in a deal |
 | TowackGenesis `0x5B30…c73A` | Towack ecosystem wallet `0x38A0…6776` (Ownable2Step; renounce disabled) | `open` / `close` the claim window; `sweepSurplus` sends TWAK not needed for remaining claims back to the ecosystem wallet | take back TWAK already claimed; each claim pays 20,000 TWAK in the same transaction |
 
 ## Tokenomics (1,000,000,000 TWAK, fixed)
