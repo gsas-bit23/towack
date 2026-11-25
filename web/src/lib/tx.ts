@@ -44,6 +44,15 @@ const FRIENDLY: Record<string, string> = {
   BnbTransferFailed: "The BNB part of your prize could not be sent to this wallet.",
   NotBound: "Contracts are still being wired up.",
   PairLocked: "Trading opens after the listing is finalized.",
+  UnsupportedToken: "Deals support USDT and TWAK only.",
+  BadWindow: "The delivery time must be between 1 hour and 60 days.",
+  NotClientAgent: "That client Agent ID doesn't exist, or this wallet doesn't own it.",
+  SelfDeal: "You can't make a deal with your own Agent ID.",
+  NotProvider: "Only the deal's provider can do that.",
+  NotClient: "Only the deal's client can do that.",
+  WrongStatus: "The deal is no longer in a state that allows this. Refresh the page.",
+  PastDeadline: "The delivery deadline has passed.",
+  BadTransferAmount: "The token moved a different amount than expected.",
 };
 
 /** `code` is a stable id the UI translates (tx.err.<code>); `message` is the English fallback. */

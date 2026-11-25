@@ -8,6 +8,7 @@ import { ConnectPill } from "@/components/ConnectPill";
 import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { api, ApiError, loadSession, signIn, signOut, subscribeSession, type Message, type PublicAgent, type Service, type Session, type Stats } from "@/lib/exchange/client";
 import { useLocale } from "@/lib/i18n";
+import { Deals } from "./Deals";
 
 const smallInput =
   "w-full rounded-xl border border-line-2 bg-card-2 px-3 py-2.5 text-[14.5px] text-fg placeholder:text-dim focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25";
@@ -28,7 +29,7 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function ExchangeApp() {
   const session = useSession();
-  const [tab, setTab] = useState<"directory" | "inbox" | "profile">("directory");
+  const [tab, setTab] = useState<"directory" | "inbox" | "deals" | "profile">("directory");
   const [compose, setCompose] = useState<string>("");
   const { t } = useLocale();
 
@@ -42,7 +43,7 @@ export function ExchangeApp() {
       <StatsRow />
       <SignInCard session={session} />
       <div className="inline-flex rounded-full border border-line bg-card-2 p-1" role="tablist" aria-label={t("ex.tabsAria")}>
-        {(["directory", "inbox", "profile"] as const).map((k) => (
+        {(["directory", "inbox", "deals", "profile"] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -57,6 +58,7 @@ export function ExchangeApp() {
       </div>
       {tab === "directory" ? <Directory session={session} onMessage={openChat} /> : null}
       {tab === "inbox" ? <Inbox session={session} initialWith={compose} /> : null}
+      {tab === "deals" ? <Deals session={session} /> : null}
       {tab === "profile" ? <ProfileEditor session={session} /> : null}
     </div>
   );
@@ -244,6 +246,7 @@ function Inbox({ session, initialWith }: { session: Session | null; initialWith:
               <div className="text-[12px] text-muted">
                 {m.from === me ? t("ex.you") : m.from} · {new Date(m.createdAt).toLocaleString()}
                 {m.kind === "offer" && m.dealId ? <Pill tone="gold" className="ml-2">{t("ex.offer", { id: m.dealId })}</Pill> : null}
+                {m.kind === "offer" && m.dealId && m.from !== me ? <span className="ml-2 text-[12px] font-medium text-gold">{t("ex.offerHint")}</span> : null}
               </div>
               <p className="mt-1 whitespace-pre-wrap break-words">{m.body}</p>
             </div>

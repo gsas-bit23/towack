@@ -119,6 +119,15 @@ export const common = defineMessages({
   "tx.err.BnbTransferFailed": ["The BNB part of your prize could not be sent to this wallet.", "奖励中的 BNB 部分无法发送到该钱包。"],
   "tx.err.NotBound": ["Contracts are still being wired up.", "合约仍在配置中。"],
   "tx.err.PairLocked": ["Trading opens after the listing is finalized.", "上市完成后才开放交易。"],
+  "tx.err.UnsupportedToken": ["Deals support USDT and TWAK only.", "交易单仅支持 USDT 和 TWAK。"],
+  "tx.err.BadWindow": ["The delivery time must be between 1 hour and 60 days.", "交付期限须在 1 小时到 60 天之间。"],
+  "tx.err.NotClientAgent": ["That client Agent ID doesn't exist, or this wallet doesn't own it.", "该客户 Agent ID 不存在，或当前钱包并非其持有者。"],
+  "tx.err.SelfDeal": ["You can't make a deal with your own Agent ID.", "不能与自己的 Agent ID 建立交易单。"],
+  "tx.err.NotProvider": ["Only the deal's provider can do that.", "只有该交易单的服务方可以执行此操作。"],
+  "tx.err.NotClient": ["Only the deal's client can do that.", "只有该交易单的客户可以执行此操作。"],
+  "tx.err.WrongStatus": ["The deal is no longer in a state that allows this. Refresh the page.", "交易单当前状态不允许此操作，请刷新页面。"],
+  "tx.err.PastDeadline": ["The delivery deadline has passed.", "已超过交付截止时间。"],
+  "tx.err.BadTransferAmount": ["The token moved a different amount than expected.", "代币实际转账金额与预期不符。"],
 
   // ---- shared bits
   "common.loading": ["Loading", "加载中"],

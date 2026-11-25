@@ -7,3 +7,4 @@ export { teamVestingAbi } from "./TeamVesting";
 export { drawV2Abi } from "./DrawV2";
 export { agentIdAbi } from "./IAgentId";
 export { pancakeRouterAbi } from "./IPancakeRouter02";
+export { agentDealsAbi } from "./AgentDeals";
