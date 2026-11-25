@@ -12,6 +12,7 @@ export const common = defineMessages({
   "nav.main": ["Main", "主导航"],
   "nav.home": ["Towack home", "Towack 首页"],
   "nav.mint": ["Mint", "铸造"],
+  "nav.exchange": ["Exchange", "交易所"],
   "nav.draw": ["Draw", "抽奖"],
   "nav.trade": ["Trade", "交易"],
   "nav.swap": ["Swap", "闪兑"],

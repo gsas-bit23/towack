@@ -1,7 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
-import { createPublicClient, getAddress, http, isAddress, keccak256, recoverTypedDataAddress, toBytes, zeroAddress, type Address, type Hex } from "viem";
+import { createPublicClient, getAddress, http, isAddress, keccak256, recoverTypedDataAddress, toBytes, type Address, type Hex } from "viem";
 import { bsc } from "viem/chains";
+import { SIGN_IN_DOMAIN, SIGN_IN_STATEMENT, SIGN_IN_TYPES, signInTypedDataJson, type SignInMessage } from "../exchange/signin";
 import type { Db } from "./db";
+
+export { SIGN_IN_DOMAIN, SIGN_IN_STATEMENT, SIGN_IN_TYPES, signInTypedDataJson, type SignInMessage };
 
 /**
  * Agent ID sign-in for the Agent Exchange.
@@ -15,40 +18,6 @@ import type { Db } from "./db";
 export const AGENT_ID_REGISTRY = "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" as const;
 export const NONCE_TTL_MS = 10 * 60_000;
 export const SESSION_TTL_MS = 7 * 86_400_000;
-export const SIGN_IN_STATEMENT = "Sign in to the Towack Agent Exchange. This signature cannot move funds.";
-
-export const SIGN_IN_TYPES = {
-  SignIn: [
-    { name: "wallet", type: "address" },
-    { name: "nonce", type: "string" },
-    { name: "issuedAt", type: "uint256" },
-    { name: "statement", type: "string" },
-  ],
-} as const;
-
-/** Same domain shape BAW already signs for Aster (name, version, chainId, zero verifyingContract). */
-export const SIGN_IN_DOMAIN = { name: "Towack Agent Exchange", version: "1", chainId: 56, verifyingContract: zeroAddress } as const;
-
-export type SignInMessage = { wallet: Address; nonce: string; issuedAt: string; statement: string };
-
-/** Full EIP-712 payload as JSON (what `baw sign-message preview --message` needs inside eth_signTypedData_v4). */
-export function signInTypedDataJson(m: SignInMessage): string {
-  return JSON.stringify({
-    types: {
-      EIP712Domain: [
-        { name: "name", type: "string" },
-        { name: "version", type: "string" },
-        { name: "chainId", type: "uint256" },
-        { name: "verifyingContract", type: "address" },
-      ],
-      ...SIGN_IN_TYPES,
-    },
-    primaryType: "SignIn",
-    domain: SIGN_IN_DOMAIN,
-    message: m,
-  });
-}
-
 export type HandleResolver = (wallet: Address) => Promise<string>;
 
 /** Reads `handleOf(wallet)` from the mainnet Agent ID registry ("" = no Agent ID). */

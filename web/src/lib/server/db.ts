@@ -28,9 +28,21 @@ export async function ensureSchema(db: Db): Promise<void> {
   for (const stmt of SCHEMA) await db.query(stmt);
 }
 
+let devMem: Promise<Db> | undefined;
+
+/** `next dev` without DATABASE_URL only: an in-memory Postgres (PGlite), wiped on restart. Never in production. */
+async function devMemoryDb(): Promise<Db> {
+  devMem ??= import("@electric-sql/pglite").then(({ PGlite }) => {
+    const pg = new PGlite();
+    console.warn("[exchange] DATABASE_URL not set: using an in-memory dev database (data is lost on restart)");
+    return { query: async (text: string, params: unknown[] = []) => (await pg.query(text, params)).rows as never };
+  });
+  return devMem;
+}
+
 /** Production database with the schema guaranteed. */
 export async function getDb(): Promise<Db> {
-  const db = neonDb();
+  const db = !process.env.DATABASE_URL && process.env.NODE_ENV === "development" ? await devMemoryDb() : neonDb();
   schemaReady ??= ensureSchema(db).catch((e) => {
     schemaReady = undefined;
     throw e;
