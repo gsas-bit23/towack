@@ -19,7 +19,7 @@ export function ConnectPill({ label: labelProp, compact = false, block = false }
   const label = labelProp ?? t("wallet.connect");
   const cls = `${BASE} ${compact ? COMPACT : block ? BLOCK : FULL}`;
   const normal = compact
-    ? `${cls} border-line-2 bg-transparent text-fg hover:border-[#4A525E] hover:bg-card`
+    ? `${cls} border-line-2 bg-transparent text-fg hover:border-[#34406A] hover:bg-card`
     : `${cls} border-transparent bg-gold text-on-gold hover:bg-gold-2`;
   const connectedCls = `${cls} border-line-2 bg-card text-fg hover:bg-card-2`;
   const text = compact ? (

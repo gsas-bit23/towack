@@ -291,7 +291,7 @@ function FeeSplit() {
       <div className="mt-4 flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
         <div className="bg-gold" style={{ flex: 50 }} />
         <div className="bg-up" style={{ flex: 30 }} />
-        <div className="bg-[#4A525E]" style={{ flex: 20 }} />
+        <div className="bg-[#34406A]" style={{ flex: 20 }} />
       </div>
       <ul className="mt-4 space-y-2 font-medium">
         <li>

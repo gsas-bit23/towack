@@ -1,21 +1,22 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-// Atlas primitives. Gold is the single primary action per view; everything else is line / soft.
+// Signal primitives. The lime "signal" (token: gold) is the single primary action per view; everything else is
+// line / soft.
 
 export type Tone = "gold" | "line" | "soft" | "danger";
 const TONES: Record<Tone, string> = {
-  gold: "bg-gold text-on-gold hover:bg-gold-2 hover:shadow-[0_8px_24px_-10px_rgba(240,185,11,.65)]",
-  line: "border-line-2 bg-transparent text-fg hover:border-[#4A525E] hover:bg-card",
-  soft: "bg-card-2 text-fg hover:bg-[#262C34]",
+  gold: "bg-gold text-on-gold shadow-[0_0_0_1px_rgba(198,244,50,.35),0_10px_30px_-12px_rgba(198,244,50,.55)] hover:bg-gold-2 hover:shadow-[0_0_0_1px_rgba(219,255,110,.6),0_12px_36px_-10px_rgba(198,244,50,.75)]",
+  line: "border-[#34406a] bg-[rgba(255,255,255,0.02)] text-fg hover:border-gold/60 hover:bg-gold/[.06]",
+  soft: "bg-card-2 text-fg hover:bg-[#1c2338]",
   danger: "border-down/40 bg-down/10 text-down hover:bg-down/15",
 };
 
 const BTN =
-  "press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border border-transparent font-semibold disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+  "press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[9px] border border-transparent font-semibold tracking-[-0.005em] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
 const SIZES = {
-  lg: "h-[52px] rounded-xl px-6 text-[15.5px]",
+  lg: "h-[52px] rounded-[11px] px-6 text-[15.5px]",
   md: "h-11 px-5 text-[14.5px]",
   sm: "h-9 px-4 text-[13.5px]",
 };
@@ -73,14 +74,14 @@ export function Panel({
     flat: "bg-surface border-line",
   }[tone];
   return (
-    <div id={id} className={`min-w-0 rounded-2xl border p-5 sm:p-6 ${bg} ${shadow ? "gold-hairline" : ""} ${className}`}>
+    <div id={id} className={`min-w-0 rounded-2xl border p-5 sm:p-6 ${bg} ${shadow ? "gold-hairline hud" : ""} ${className}`}>
       {children}
     </div>
   );
 }
 
 export function Kicker({ children, className = "text-muted" }: { children: ReactNode; className?: string }) {
-  return <div className={`inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.12em] ${className}`}>{children}</div>;
+  return <div className={`inline-flex items-center gap-2 font-mono text-[11.5px] font-medium uppercase tracking-[.16em] ${className}`}>{children}</div>;
 }
 
 export type PillTone = "neutral" | "gold" | "up" | "down" | "line";
@@ -94,7 +95,7 @@ export function Pill({ children, tone = "neutral", className = "" }: { children:
     line: "border-line-2 text-muted",
   }[tone];
   return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[11px] font-semibold uppercase tracking-[.08em] ${t} ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-[3px] font-mono text-[10.5px] font-medium uppercase tracking-[.12em] ${t} ${className}`}>
       {children}
     </span>
   );
@@ -102,8 +103,8 @@ export function Pill({ children, tone = "neutral", className = "" }: { children:
 
 export function Stat({ label, value, sub, className = "" }: { label: ReactNode; value: ReactNode; sub?: ReactNode; className?: string }) {
   return (
-    <div className={`min-w-0 rounded-xl bg-card-2 px-4 py-3.5 ${className}`}>
-      <div className="text-[12.5px] font-medium text-muted">{label}</div>
+    <div className={`min-w-0 rounded-xl border border-line bg-card-2/70 px-4 py-3.5 ${className}`}>
+      <div className="font-mono text-[11px] font-medium uppercase tracking-[.12em] text-muted">{label}</div>
       <div className="mt-1 break-words font-mono text-[22px] font-medium leading-tight tracking-tight">{value}</div>
       {sub ? <div className="mt-0.5 text-[12.5px] text-dim">{sub}</div> : null}
     </div>
@@ -136,15 +137,37 @@ export function Check({ ok, children }: { ok: boolean | undefined; children: Rea
   );
 }
 
-/** Atlas page header: eyebrow, large title, lead. `art` renders behind on the right (decorative). */
+/** Decorative node-network motif for page headers (static SVG, aria-hidden). */
+function HeaderMesh() {
+  const nodes = [
+    [40, 60], [130, 24], [210, 92], [300, 40], [380, 110], [250, 170], [150, 150], [340, 196], [60, 190],
+  ] as const;
+  const links = [[0, 1], [1, 2], [2, 3], [3, 4], [2, 5], [5, 6], [6, 0], [5, 7], [4, 7], [6, 8], [1, 3]] as const;
+  return (
+    <svg viewBox="0 0 420 230" className="pointer-events-none absolute -right-10 top-1/2 hidden h-[230px] w-[420px] -translate-y-1/2 opacity-70 md:block" aria-hidden="true">
+      {links.map(([a, b], i) => (
+        <line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} stroke="#262E46" strokeWidth="1" />
+      ))}
+      {nodes.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i === 2 ? 6 : i === 5 ? 5 : 3} fill={i === 2 ? "#C6F432" : i === 5 ? "#8B7CFF" : "#34406A"} />
+      ))}
+      <circle cx={nodes[2][0]} cy={nodes[2][1]} r="16" fill="none" stroke="#C6F432" strokeOpacity=".35" />
+    </svg>
+  );
+}
+
+/** Signal page header: system label, large title, lead. `art` renders behind on the right (decorative). */
 export function PageHeader({
   kicker,
+  sys,
   title,
   children,
   art,
   center = false,
 }: {
   kicker?: ReactNode;
+  /** Mono system label, e.g. "AGENT://EXCHANGE". */
+  sys?: string;
   title: ReactNode;
   children?: ReactNode;
   art?: ReactNode;
@@ -153,8 +176,14 @@ export function PageHeader({
 }) {
   return (
     <section className={`relative overflow-hidden ${center ? "" : "border-b border-line"}`}>
-      {art}
+      {art ?? (center ? null : <HeaderMesh />)}
       <div className={`relative mx-auto max-w-[1200px] px-4 sm:px-8 ${center ? "pb-2 pt-10 text-center sm:pt-14" : "pb-8 pt-10 sm:pb-10 sm:pt-12"}`}>
+        {sys ? (
+          <div className={`sys-label mb-3 flex items-center gap-2 ${center ? "justify-center" : ""}`}>
+            <span className="h-[7px] w-[7px] rotate-45 bg-gold" aria-hidden="true" />
+            {sys}
+          </div>
+        ) : null}
         {kicker ? (
           <Kicker>
             <span className="live-dot" aria-hidden="true" />
@@ -162,7 +191,7 @@ export function PageHeader({
           </Kicker>
         ) : null}
         <h1
-          className={`break-words font-bold leading-[1.08] tracking-[-0.03em] ${kicker ? "mt-3" : ""} ${center ? "mx-auto max-w-[640px] text-[30px] sm:text-[36px]" : "max-w-[860px] text-[32px] sm:text-[40px] md:text-[44px]"}`}
+          className={`break-words leading-[1.1] ${kicker ? "mt-3" : ""} ${center ? "mx-auto max-w-[680px] text-[26px] sm:text-[32px]" : "max-w-[900px] text-[28px] sm:text-[34px] md:text-[40px]"}`}
         >
           {title}
         </h1>

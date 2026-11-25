@@ -11,33 +11,33 @@ import { ViewChainProvider } from "@/lib/chain";
 import { DEFAULT_CHAIN_ID } from "@/config/chains";
 import { LocaleProvider, useLocale } from "@/lib/i18n";
 
-// RainbowKit in the Atlas palette: dark surfaces, hairline borders, gold accent.
+// RainbowKit in the Signal palette: ink surfaces, hairline borders, lime accent.
 const theme = darkTheme({
-  accentColor: "#F0B90B",
-  accentColorForeground: "#181A20",
+  accentColor: "#C6F432",
+  accentColorForeground: "#070A03",
   borderRadius: "medium",
   fontStack: "system",
   overlayBlur: "small",
 });
-theme.colors.modalBackground = "#161A20";
-theme.colors.modalBorder = "#2E353F";
-theme.colors.modalText = "#EAECEF";
-theme.colors.modalTextSecondary = "#8B94A3";
-theme.colors.modalTextDim = "#6B7380";
-theme.colors.generalBorder = "#232931";
-theme.colors.generalBorderDim = "#1D2229";
-theme.colors.menuItemBackground = "#1D2229";
-theme.colors.actionButtonSecondaryBackground = "#1D2229";
-theme.colors.closeButton = "#B7BDC6";
-theme.colors.closeButtonBackground = "#1D2229";
-theme.colors.connectButtonBackground = "#161A20";
-theme.colors.connectButtonInnerBackground = "#1D2229";
-theme.colors.connectButtonText = "#EAECEF";
-theme.colors.profileForeground = "#161A20";
-theme.colors.modalBackdrop = "rgba(5, 7, 9, 0.72)";
-theme.colors.error = "#F6465D";
-theme.colors.connectionIndicator = "#0ECB81";
-theme.fonts.body = "var(--font-inter), ui-sans-serif, system-ui, sans-serif";
+theme.colors.modalBackground = "#0D101B";
+theme.colors.modalBorder = "#262E46";
+theme.colors.modalText = "#EEF1F8";
+theme.colors.modalTextSecondary = "#7F89A3";
+theme.colors.modalTextDim = "#5B6582";
+theme.colors.generalBorder = "#1A2032";
+theme.colors.generalBorderDim = "#141A2A";
+theme.colors.menuItemBackground = "#141A2A";
+theme.colors.actionButtonSecondaryBackground = "#141A2A";
+theme.colors.closeButton = "#B0B8CC";
+theme.colors.closeButtonBackground = "#141A2A";
+theme.colors.connectButtonBackground = "#0D101B";
+theme.colors.connectButtonInnerBackground = "#141A2A";
+theme.colors.connectButtonText = "#EEF1F8";
+theme.colors.profileForeground = "#0D101B";
+theme.colors.modalBackdrop = "rgba(3, 4, 10, 0.75)";
+theme.colors.error = "#FF4D6D";
+theme.colors.connectionIndicator = "#2FE3A0";
+theme.fonts.body = "var(--font-geist), ui-sans-serif, system-ui, sans-serif";
 theme.shadows.dialog = "0 24px 60px -20px rgba(0, 0, 0, 0.8)";
 
 export function Providers({ children }: { children: ReactNode }) {

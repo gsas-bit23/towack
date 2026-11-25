@@ -12,7 +12,7 @@ const BNB = PRIZES.filter((p) => p.kind === "bnb");
 const BONUS = PRIZES.filter((p) => p.kind === "bonus");
 const NONE = PRIZES[10];
 const BONUS_H = [40, 50, 60, 70, 80, 88];
-const BONUS_COLOR = ["bg-[#3A414B]", "bg-[#3A414B]", "bg-[#4A3C10]", "bg-[#4A3C10]", "bg-gold/80", "bg-gold"];
+const BONUS_COLOR = ["bg-[#2A3352]", "bg-[#2A3352]", "bg-[#34420F]", "bg-[#34420F]", "bg-gold/80", "bg-gold"];
 
 export function BnbTierStubs() {
   const { t: tr } = useLocale();
@@ -49,9 +49,9 @@ export function DeckBar() {
   const { t } = useLocale();
   const segs = [
     { w: 500, c: "bg-gold" },
-    { w: 600, c: "bg-[#B08A10]" },
-    { w: 800, c: "bg-[#6B5414]" },
-    { w: 1600, c: "bg-[#4A3C10]" },
+    { w: 600, c: "bg-[#8FB81F]" },
+    { w: 800, c: "bg-[#5E7A16]" },
+    { w: 1600, c: "bg-[#34420F]" },
     { w: 1020, c: "bg-up/70" },
     { w: 480, c: "bg-line-2" },
   ];

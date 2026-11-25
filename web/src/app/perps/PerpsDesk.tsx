@@ -235,7 +235,7 @@ export function PerpsDesk() {
 
       {/* Phone / tablet: ticket opens as a bottom sheet. */}
       <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-line bg-[rgba(11,14,17,.94)] px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
-        <button type="button" className="press h-11 rounded-[10px] bg-up text-[14.5px] font-semibold text-[#0B0E11]" onClick={() => openSheet("BUY")}>
+        <button type="button" className="press h-11 rounded-[10px] bg-up text-[14.5px] font-semibold text-[#05060B]" onClick={() => openSheet("BUY")}>
           {t("perps.buyLong")}
         </button>
         <button type="button" className="press h-11 rounded-[10px] bg-down text-[14.5px] font-semibold text-white" onClick={() => openSheet("SELL")}>

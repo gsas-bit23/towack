@@ -1,22 +1,25 @@
 @import "tailwindcss";
 
-/* Towack Atlas: dark product system. Raw tokens live on :root so plain CSS and inline SVG can use them too. */
+/* Towack "Signal": an agent-network / mission-control system. Ink-black with a blue-violet cast, an electric lime
+   "signal" accent and violet "ion" glows. Raw tokens live on :root so plain CSS and inline SVG can use them too.
+   (The accent keeps the historical token name `gold` so every existing `bg-gold` / `text-gold` picks it up.) */
 :root {
-  --bg: #0b0e11;
-  --surface: #12161b;
-  --card: #161a20;
-  --card-2: #1d2229;
-  --line: #232931;
-  --line-2: #2e353f;
-  --text: #eaecef;
-  --sub: #b7bdc6;
-  --muted: #8b94a3;
-  --dim: #6b7380;
-  --gold: #f0b90b;
-  --gold-2: #fcd535;
-  --on-gold: #181a20;
-  --up: #0ecb81;
-  --down: #f6465d;
+  --bg: #05060b;
+  --surface: #0a0c15;
+  --card: rgba(13, 16, 27, 0.78);
+  --card-2: #141a2a;
+  --line: #1a2032;
+  --line-2: #262e46;
+  --text: #eef1f8;
+  --sub: #b0b8cc;
+  --muted: #7f89a3;
+  --dim: #5b6582;
+  --gold: #c6f432;
+  --gold-2: #dbff6e;
+  --on-gold: #070a03;
+  --ion: #8b7cff;
+  --up: #2fe3a0;
+  --down: #ff4d6d;
   --r-lg: 16px;
   --r: 12px;
   --r-sm: 8px;
@@ -24,28 +27,29 @@
 }
 
 @theme inline {
-  --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-display: var(--font-unbounded), var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-body: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
 @theme {
-  --color-bg: #0b0e11;
-  --color-surface: #12161b;
-  --color-card: #161a20;
-  --color-card-2: #1d2229;
-  --color-line: #232931;
-  --color-line-2: #2e353f;
-  --color-fg: #eaecef;
-  --color-sub: #b7bdc6;
-  --color-muted: #8b94a3;
-  --color-dim: #6b7380;
-  --color-gold: #f0b90b;
-  --color-gold-2: #fcd535;
-  --color-on-gold: #181a20;
-  --color-up: #0ecb81;
-  --color-down: #f6465d;
+  --color-bg: #05060b;
+  --color-surface: #0a0c15;
+  --color-card: rgba(13, 16, 27, 0.78);
+  --color-card-2: #141a2a;
+  --color-line: #1a2032;
+  --color-line-2: #262e46;
+  --color-fg: #eef1f8;
+  --color-sub: #b0b8cc;
+  --color-muted: #7f89a3;
+  --color-dim: #5b6582;
+  --color-gold: #c6f432;
+  --color-gold-2: #dbff6e;
+  --color-on-gold: #070a03;
+  --color-ion: #8b7cff;
+  --color-up: #2fe3a0;
+  --color-down: #ff4d6d;
 }
 
 html {
@@ -57,18 +61,94 @@ body {
   overflow-x: clip;
 }
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(1100px 620px at 12% -8%, rgba(139, 124, 255, 0.16), transparent 62%),
+    radial-gradient(900px 560px at 100% 18%, rgba(198, 244, 50, 0.06), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
+/* Site-wide blueprint grid, fading out toward the bottom of the viewport. Decorative, never intercepts input. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(120, 140, 200, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 140, 200, 0.055) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 85%);
+}
 ::selection {
-  background: rgba(240, 185, 11, 0.28);
+  background: rgba(198, 244, 50, 0.3);
+  color: #fff;
 }
 .font-display {
   letter-spacing: -0.02em;
+}
+/* Headlines use the wide display face; body copy stays on Geist. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+h1 {
+  font-weight: 600;
+}
+h2 {
+  font-weight: 500;
+}
+
+/* Cards: translucent glass over the grid, with a faint top highlight. */
+.bg-card {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0) 38%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* HUD corner brackets for featured panels (decorative). */
+.hud {
+  position: relative;
+}
+.hud::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  pointer-events: none;
+  --c: rgba(198, 244, 50, 0.75);
+  --l: 14px;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--l) 1.5px,
+    linear-gradient(var(--c), var(--c)) top left / 1.5px var(--l),
+    linear-gradient(var(--c), var(--c)) top right / var(--l) 1.5px,
+    linear-gradient(var(--c), var(--c)) top right / 1.5px var(--l),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--l) 1.5px,
+    linear-gradient(var(--c), var(--c)) bottom left / 1.5px var(--l),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--l) 1.5px,
+    linear-gradient(var(--c), var(--c)) bottom right / 1.5px var(--l);
+  background-repeat: no-repeat;
+}
+
+/* Mono "system label" eyebrow, e.g. AGENT://EXCHANGE */
+.sys-label {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Signal text: lime → violet gradient for key words in headlines. */
+.signal-text {
+  background: linear-gradient(92deg, var(--gold) 0%, #9bf0ff 48%, var(--ion) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .font-mono,
 .m {
@@ -96,7 +176,7 @@ body {
 }
 .lift:hover {
   transform: translateY(-2px);
-  border-color: #3a414b;
+  border-color: #34406a;
   box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
 }
 .nav-pill {
@@ -134,7 +214,7 @@ body {
   height: 6px;
   border-radius: 999px;
   background: var(--up);
-  box-shadow: 0 0 0 4px rgba(14, 203, 129, 0.15);
+  box-shadow: 0 0 0 4px rgba(47, 227, 160, 0.15), 0 0 12px rgba(47, 227, 160, 0.6);
 }
 
 /* Wheel + result glows (opacity/transform only) */
@@ -168,7 +248,7 @@ body {
   }
 }
 .wheel-glow {
-  background: radial-gradient(circle, rgba(240, 185, 11, 0.14) 0%, rgba(240, 185, 11, 0.04) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(198, 244, 50, 0.14) 0%, rgba(198, 244, 50, 0.04) 45%, transparent 70%);
   animation: glow-pulse 4s ease-in-out infinite;
 }
 .win-flash {
@@ -191,7 +271,7 @@ body {
   }
 }
 .hero-glow {
-  background: radial-gradient(closest-side, rgba(240, 185, 11, 0.16), rgba(240, 185, 11, 0.05) 55%, transparent);
+  background: radial-gradient(closest-side, rgba(198, 244, 50, 0.16), rgba(198, 244, 50, 0.05) 55%, transparent);
   animation: hero-breathe 9s ease-in-out infinite;
   will-change: transform, opacity;
 }
@@ -256,5 +336,5 @@ input[type="number"] {
 html[lang="zh-CN"] body,
 html[lang="zh-CN"] .font-display,
 html[lang="zh-CN"] .font-sans {
-  font-family: var(--font-inter), "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-geist), "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
 }

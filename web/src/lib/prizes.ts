@@ -16,16 +16,16 @@ export type Prize = {
   ink: string; // text colour on the slice
 };
 
-const SLATE = "#2B3139"; // Atlas slate
-const STEEL = "#3A414B"; // Atlas steel
-const GOLD = "#F0B90B"; // Atlas gold
-const CARD2 = "#1D2229"; // Atlas card-2
-const CARD = "#161A20"; // Atlas card
-const TEXT = "#EAECEF";
-const ON_GOLD = "#181A20";
-const MUTED = "#8B94A3";
-const GOLD_DIM = "#4A3C10"; // muted gold slab for mid tiers
-const GOLD_INK = "#FCD535";
+const SLATE = "#1E2540"; // Signal slate
+const STEEL = "#2A3352"; // Signal steel
+const GOLD = "#C6F432"; // Signal gold
+const CARD2 = "#141A2A"; // Signal card-2
+const CARD = "#0D101B"; // Signal card
+const TEXT = "#EEF1F8";
+const ON_GOLD = "#070A03";
+const MUTED = "#7F89A3";
+const GOLD_DIM = "#34420F"; // muted gold slab for mid tiers
+const GOLD_INK = "#DBFF6E";
 
 export const PRIZES: readonly Prize[] = [
   { id: 0, label: "Full refund", wheel: "FULL", kind: "bnb", slots: 500, amount: "0.095 BNB back", jackpot: true, fill: GOLD, ink: ON_GOLD },
