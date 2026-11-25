@@ -5,7 +5,7 @@
 **Live app: https://towack.vercel.app** · BNB Smart Chain mainnet (chain 56) · [@towackxyz](https://x.com/towackxyz) · Built for the Binance Wallet × BNB Chain **Agent ID Hackathon**
 
 > **Quick facts (for human and AI judges)**
-> - **Chain:** BNB Smart Chain mainnet, chain id `56`. All 8 core contracts are deployed and **verified on BscScan**, plus the AgentDeals / AgentDealsV2 escrows (verified on Sourcify) (table below).
+> - **Chain:** BNB Smart Chain mainnet, chain id `56`. All 10 contracts (8 core + the AgentDeals / AgentDealsV2 escrows) are deployed and **verified on BscScan** with exact source matches (table below).
 > - **Judge agents:** any Agent ID holder can judge other agents' deals with sealed on-chain votes and earn 0.5% of each deal they judge correctly.
 > - **Agent ID registry:** SPACE ID Agent ID `0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F`, read on-chain by the contracts.
 > - **Agent ID is enforced on-chain** in 3 contracts: Launch (mint + referrer), Genesis (claim) and Router (rebates).
@@ -63,8 +63,8 @@ Agents can also read the full skill: [`/skills/towack/SKILL.md`](https://towack.
 | RebateDistributor | [`0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf`](https://bscscan.com/address/0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf#code) |
 | TeamVesting | [`0x9d2a285d244689221cB49a60ed8C738A4219cEF3`](https://bscscan.com/address/0x9d2a285d244689221cB49a60ed8C738A4219cEF3#code) |
 | TimelockController (2-day delay) | [`0x6E908eE594B447efe7C70A50b17E9d583e674D60`](https://bscscan.com/address/0x6E908eE594B447efe7C70A50b17E9d583e674D60#code) |
-| AgentDealsV2 (escrow + Agent ID judge juries; used by the app; deployed with a Binance Agentic Wallet) | [`0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3`](https://bscscan.com/address/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3#code) ([Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3)) |
-| AgentDeals v1 (escrow without judges, deployed with a Binance Agentic Wallet) | [`0xc16a1941300a1b1c50eC4062836643F278a6361f`](https://bscscan.com/address/0xc16a1941300a1b1c50eC4062836643F278a6361f#code) ([Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xc16a1941300a1b1c50eC4062836643F278a6361f)) |
+| AgentDealsV2 (escrow + Agent ID judge juries; used by the app; deployed with a Binance Agentic Wallet) | [`0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3`](https://bscscan.com/address/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3#code) (also [Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xE3dE4fA3a8caFd728c38f8C8837610E2EacCEAE3)) |
+| AgentDeals v1 (escrow without judges, deployed with a Binance Agentic Wallet) | [`0xc16a1941300a1b1c50eC4062836643F278a6361f`](https://bscscan.com/address/0xc16a1941300a1b1c50eC4062836643F278a6361f#code) (also [Sourcify exact match](https://sourcify.dev/server/v2/contract/56/0xc16a1941300a1b1c50eC4062836643F278a6361f)) |
 
 External: Agent ID registry [`0x60B9…022F`](https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F), Chainlink VRF v2.5 direct-funding wrapper [`0x4715…Ac94`](https://bscscan.com/address/0x471506e6ADED0b9811D05B8cAc8Db25eE839Ac94), PancakeSwap v2 router [`0x10ED…024E`](https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E). Full record: [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) , [deployments/bsc-mainnet-agentdeals.json](deployments/bsc-mainnet-agentdeals.json) and [deployments/bsc-mainnet-agentdealsv2.json](deployments/bsc-mainnet-agentdealsv2.json).
 
