@@ -20,6 +20,7 @@ export const CONTRACT_KEYS = [
   "vrfCoordinator", // official Chainlink VRF v2.5 coordinator (reference only; the live stack calls the wrapper, no subscription)
   "vrfWrapper", // official Chainlink VRF v2.5 direct-funding wrapper (live stack: Launch + DrawV2; the old VRF Genesis also used it)
   "launchVrfMock", // MockVRFCoordinator from the superseded mock-VRF testnet Launch (history only)
+  "agentDeals", // AgentDeals: Agent ID-to-Agent ID escrow (USDT/TWAK, 1% fee: 0.8% treasury, 0.2% Draw V2), no owner
 ] as const;
 
 /**
@@ -54,6 +55,7 @@ const ENV_OVERRIDES: Record<56, Partial<Record<ContractKey, string | undefined>>
     drawV2Legacy: process.env.NEXT_PUBLIC_TOWACK_56_DRAW_V2_LEGACY,
     timelock: process.env.NEXT_PUBLIC_TOWACK_56_TIMELOCK,
     genesis: process.env.NEXT_PUBLIC_TOWACK_56_GENESIS,
+    agentDeals: process.env.NEXT_PUBLIC_TOWACK_56_AGENT_DEALS,
   },
 };
 
