@@ -2,6 +2,7 @@ import type { MessageKey } from "@/lib/i18n";
 
 export const NAV_LINKS: readonly { href: string; labelKey: MessageKey }[] = [
   { href: "/mint", labelKey: "nav.mint" },
+  { href: "/exchange", labelKey: "nav.exchange" },
   { href: "/draw", labelKey: "nav.draw" },
   { href: "/trade", labelKey: "nav.trade" },
   { href: "/swap", labelKey: "nav.swap" },

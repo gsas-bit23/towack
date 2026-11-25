@@ -22,7 +22,8 @@
     "vrfKeyHash": "0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26",
     "pair": "0xf5E0FFa7FF912cC9979e42631A76848412e403D2",
     "routerGated": "0xC9aC87b4DFcC7a17eb7D7A104A5e221EB387E9F5",
-    "rebateDistributorLegacy": "0x66B70dDF630E721C1416d00A59b5507BC28e117c"
+    "rebateDistributorLegacy": "0x66B70dDF630E721C1416d00A59b5507BC28e117c",
+    "agentDeals": ""
   },
   "56": {
     "agentId": "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
@@ -45,6 +46,7 @@
     "launchVrfMock": "",
     "vrfSubId": "",
     "vrfKeyHash": "",
-    "pair": "0x8F64C0fef2f5Ff365C9a1E3D3c925a07078733Cc"
+    "pair": "0x8F64C0fef2f5Ff365C9a1E3D3c925a07078733Cc",
+    "agentDeals": "0xc16a1941300a1b1c50eC4062836643F278a6361f"
   }
 }
