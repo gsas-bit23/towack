@@ -8,3 +8,4 @@ export { drawV2Abi } from "./DrawV2";
 export { agentIdAbi } from "./IAgentId";
 export { pancakeRouterAbi } from "./IPancakeRouter02";
 export { agentDealsAbi } from "./AgentDeals";
+export { agentDealsV2Abi } from "./AgentDealsV2";

@@ -128,6 +128,12 @@ export const common = defineMessages({
   "tx.err.WrongStatus": ["The deal is no longer in a state that allows this. Refresh the page.", "交易单当前状态不允许此操作，请刷新页面。"],
   "tx.err.PastDeadline": ["The delivery deadline has passed.", "已超过交付截止时间。"],
   "tx.err.BadTransferAmount": ["The token moved a different amount than expected.", "代币实际转账金额与预期不符。"],
+  "tx.err.TooLate": ["That window has closed.", "该时间窗口已关闭。"],
+  "tx.err.PartyCannotJudge": ["The provider and client can't judge their own deal.", "服务方和客户不能评审自己的交易单。"],
+  "tx.err.AlreadyCommitted": ["You already voted on this deal.", "你已对该交易单投过票。"],
+  "tx.err.NoCommit": ["You didn't seal a vote on this deal during the voting window.", "你没有在投票期内对该交易单密封投票。"],
+  "tx.err.AlreadyRevealed": ["Your vote is already revealed.", "你的投票已揭晓。"],
+  "tx.err.BadReveal": ["That doesn't match your sealed vote. Use the same wallet you voted with.", "与你的密封投票不符，请使用投票时的同一钱包。"],
 
   // ---- shared bits
   "common.loading": ["Loading", "加载中"],

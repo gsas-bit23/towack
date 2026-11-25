@@ -22,6 +22,7 @@ const targets = [
   ["IAgentId.sol", "IAgentId", "agentIdAbi"],
   ["IPancakeV2.sol", "IPancakeRouter02", "pancakeRouterAbi"],
   ["AgentDeals.sol", "AgentDeals", "agentDealsAbi"],
+  ["AgentDealsV2.sol", "AgentDealsV2", "agentDealsV2Abi"],
 ];
 
 mkdirSync(abiDir, { recursive: true });

@@ -5,7 +5,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { zeroAddress, type Address } from "viem";
 import { useConfig, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { readContract } from "wagmi/actions";
-import { agentDealsAbi, agentIdAbi, towackTokenAbi } from "@/abi";
+import { agentDealsV2Abi, agentIdAbi, towackTokenAbi } from "@/abi";
 import { AgentPathToggle } from "@/components/AgentPath";
 import { AddressLink, NeedsWallet, TxNotice } from "@/components/status";
 import { Button, Panel, Pill, type PillTone } from "@/components/ui";
@@ -13,19 +13,24 @@ import {
   agentIdOfHandle,
   availableActions,
   bareHandle,
-  feeSplit,
+  COMMIT_WINDOW,
+  JURY_TIME,
+  juryPhase,
   MAX_WINDOW,
   MIN_WINDOW,
   parseTokenAmount,
-  REVIEW_WINDOW,
+  payoutSplit,
   roleOf,
   scanIds,
   textHash,
   toDeal,
+  toJury,
   WINDOW_PRESETS,
   type Deal,
   type DealAction,
   type DealTuple,
+  type Jury,
+  type JuryTuple,
   type Role,
 } from "@/lib/deals";
 import { api, type Message, type Session } from "@/lib/exchange/client";
@@ -36,10 +41,10 @@ import type { MessageKey } from "@/lib/i18n/translate";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
 
-const input =
+export const input =
   "w-full rounded-xl border border-line-2 bg-card-2 px-3 py-2.5 text-[14.5px] text-fg placeholder:text-dim focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25";
 
-const STATUS_TONE: Record<Deal["status"], PillTone> = {
+export const STATUS_TONE: Record<Deal["status"], PillTone> = {
   none: "line",
   open: "gold",
   funded: "up",
@@ -49,22 +54,29 @@ const STATUS_TONE: Record<Deal["status"], PillTone> = {
   cancelled: "line",
 };
 
-/** Deals tab: AgentDeals escrow between two Agent IDs. Every action is a normal wallet transaction the user confirms. */
+export type EvidenceRow = { dealId: string; terms: string | null; delivery: string | null };
+
+/** Publish a deal's terms / delivery text for judges (stored only if it matches the on-chain hash). */
+export async function publishEvidence(dealId: bigint, body: { terms?: string; delivery?: string }) {
+  return api<EvidenceRow>("/evidence", { method: "POST", auth: true, body: JSON.stringify({ dealId: String(dealId), ...body }) });
+}
+
+/** Deals tab: AgentDealsV2 escrow between two Agent IDs, judged by open Agent ID juries. */
 export function Deals({ session }: { session: Session | null }) {
   const { t } = useLocale();
   const { addresses } = useTowack();
-  if (!addresses.agentDeals) return <p className="text-sub">{t("deal.notDeployed")}</p>;
+  if (!addresses.agentDealsV2) return <p className="rounded-2xl border border-dashed border-line px-5 py-6 text-center text-sub">{t("deal.notDeployed")}</p>;
   return (
     <div className="space-y-4">
       <Panel tone="flat" className="!py-4 text-[14px] text-sub">
         <p>{t("deal.how")}</p>
         <p className="mt-2 font-medium text-fg">{t("deal.risk")}</p>
         <p className="mt-2 text-[13px]">
-          {t("deal.contract")} <AddressLink address={addresses.agentDeals} />
+          {t("deal.contract")} <AddressLink address={addresses.agentDealsV2} />
         </p>
       </Panel>
       <NeedsWallet>
-        <DealsLive session={session} deals={addresses.agentDeals} />
+        <DealsLive session={session} deals={addresses.agentDealsV2} />
       </NeedsWallet>
       <AgentPathToggle flow="deals" />
     </div>
@@ -74,7 +86,7 @@ export function Deals({ session }: { session: Session | null }) {
 function DealsLive({ session, deals }: { session: Session | null; deals: Address }) {
   const { t } = useLocale();
   const { chainId, account, addresses } = useTowack();
-  const c = { address: deals, abi: agentDealsAbi, chainId } as const;
+  const c = { address: deals, abi: agentDealsV2Abi, chainId } as const;
 
   const { data: base, refetch: refetchBase } = useReadContracts({
     contracts: [
@@ -109,6 +121,11 @@ function DealsLive({ session, deals }: { session: Session | null; deals: Address
     return out;
   }, [rows, ids, account, myAgentId]);
 
+  const { data: juries } = useReadContracts({
+    contracts: mine.map((m) => ({ ...c, functionName: "juries" as const, args: [m.deal.id] as const })),
+    query: { enabled: mine.length > 0, refetchInterval: 20_000 },
+  });
+
   // Counterpart handles: provider/client wallets → handleOf (address → handle only; the page never shows a handle's wallet).
   const openClientIds = mine.filter((m) => m.deal.status === "open" && m.role === "provider").map((m) => m.deal.clientAgentId);
   const { data: owners } = useReadContracts({
@@ -125,8 +142,8 @@ function DealsLive({ session, deals }: { session: Session | null; deals: Address
   const handleOf = (w?: Address) => {
     if (!w) return undefined;
     const i = wallets.indexOf(w);
-    const h = i >= 0 ? (handles?.[i]?.result as string | undefined) : undefined;
-    return h ? `${h}.ai` : undefined;
+    const hh = i >= 0 ? (handles?.[i]?.result as string | undefined) : undefined;
+    return hh ? `${hh}.ai` : undefined;
   };
 
   // Offer messages (terms text) from the Exchange inbox, to check against the on-chain termsHash.
@@ -139,9 +156,20 @@ function DealsLive({ session, deals }: { session: Session | null; deals: Address
   const offerText = new Map<string, string>();
   msgs?.forEach((m) => m.kind === "offer" && m.dealId && !offerText.has(m.dealId) && offerText.set(m.dealId, m.body));
 
+  // Public judge evidence for my deals.
+  const idsParam = mine.map((m) => String(m.deal.id)).join(",");
+  const { data: evidence, refetch: refetchEvidence } = useQuery({
+    queryKey: ["ex-evidence", idsParam],
+    enabled: idsParam.length > 0,
+    queryFn: () => api<EvidenceRow[]>(`/evidence?ids=${idsParam}`),
+    refetchInterval: 60_000,
+  });
+  const evidenceOf = new Map((evidence ?? []).map((e) => [e.dealId, e]));
+
   const refresh = () => {
     void refetchBase();
     void refetchRows();
+    void refetchEvidence();
   };
 
   return (
@@ -151,19 +179,25 @@ function DealsLive({ session, deals }: { session: Session | null; deals: Address
       <h3 className="pt-2 font-semibold">{t("deal.mine")}</h3>
       {dealCount !== undefined && mine.length === 0 ? <p className="rounded-2xl border border-dashed border-line px-5 py-6 text-center text-sub">{t("deal.none")}</p> : null}
       <div className="grid gap-4 lg:grid-cols-2">
-        {mine.map(({ deal, role }) => (
-          <DealCard
-            key={String(deal.id)}
-            deal={deal}
-            role={role}
-            deals={deals}
-            isTwak={Boolean(twak && deal.token.toLowerCase() === twak.toLowerCase())}
-            counterpart={role === "provider" ? handleOf(deal.client !== zeroAddress ? deal.client : ownerOfClient.get(deal.clientAgentId)) : handleOf(deal.provider)}
-            terms={offerText.get(String(deal.id))}
-            session={session}
-            onDone={refresh}
-          />
-        ))}
+        {mine.map(({ deal, role }, i) => {
+          const key = String(deal.id);
+          const terms = offerText.get(key) ?? evidenceOf.get(key)?.terms ?? undefined;
+          return (
+            <DealCard
+              key={key}
+              deal={deal}
+              role={role}
+              jury={toJury(juries?.[i]?.result as JuryTuple | undefined)}
+              deals={deals}
+              isTwak={Boolean(twak && deal.token.toLowerCase() === twak.toLowerCase())}
+              counterpart={role === "provider" ? handleOf(deal.client !== zeroAddress ? deal.client : ownerOfClient.get(deal.clientAgentId)) : handleOf(deal.provider)}
+              terms={terms}
+              evidence={evidenceOf.get(key)}
+              session={session}
+              onDone={refresh}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -212,7 +246,7 @@ function CreateOffer({
   const clientOk = Boolean(clientOwner) && !clientMissing && !self && clientOwner?.toLowerCase() !== account?.toLowerCase();
   const amountWei = parseTokenAmount(amount);
   const tokenAddr = token === "TWAK" ? twak : usdt;
-  const split = amountWei ? feeSplit(token === "TWAK", amountWei) : undefined;
+  const split = amountWei ? payoutSplit(token === "TWAK", amountWei, 1) : undefined;
   const canSubmit = Boolean(clientOk && amountWei && tokenAddr && terms.trim() && window_ >= MIN_WINDOW && window_ <= MAX_WINDOW && !tx.busy);
 
   async function submit(e: FormEvent) {
@@ -222,16 +256,16 @@ function CreateOffer({
     const termsText = terms.trim();
     const termsHash = textHash(termsText);
     const ok = await tx.run(t("deal.txCreate"), () =>
-      writeContractAsync({ address: deals, abi: agentDealsAbi, functionName: "createOffer", args: [tokenAddr, amountWei, clientId, BigInt(window_), termsHash], chainId }),
+      writeContractAsync({ address: deals, abi: agentDealsV2Abi, functionName: "createOffer", args: [tokenAddr, amountWei, clientId, BigInt(window_), termsHash], chainId }),
     );
     if (!ok) return;
     onDone();
-    // Find the new deal id (newest deal by this wallet with these terms), then tell the client in the Exchange inbox.
+    // Find the new deal id (newest deal by this wallet with these terms), then publish + message the terms.
     let dealId: bigint | undefined;
     try {
-      const n = await readContract(config, { address: deals, abi: agentDealsAbi, functionName: "dealCount", chainId });
+      const n = await readContract(config, { address: deals, abi: agentDealsV2Abi, functionName: "dealCount", chainId });
       for (let i = n; i >= 1n && i > n - 20n; i--) {
-        const d = (await readContract(config, { address: deals, abi: agentDealsAbi, functionName: "deals", args: [i], chainId })) as unknown as DealTuple;
+        const d = (await readContract(config, { address: deals, abi: agentDealsV2Abi, functionName: "deals", args: [i], chainId })) as unknown as DealTuple;
         if (d[0].toLowerCase() === account?.toLowerCase() && d[5] === termsHash) {
           dealId = i;
           break;
@@ -242,11 +276,13 @@ function CreateOffer({
     }
     if (dealId !== undefined && session) {
       try {
+        await publishEvidence(dealId, { terms: termsText });
         await api("/messages", { method: "POST", auth: true, body: JSON.stringify({ to: `${clientBare}.ai`, body: termsText, kind: "offer", dealId: String(dealId) }) });
         setNote({ tone: "up", text: t("deal.sentOffer", { id: String(dealId), handle: `${clientBare}.ai` }) });
       } catch (err) {
         setNote({ tone: "down", text: t("deal.sendFailed", { id: String(dealId), err: err instanceof Error ? err.message : String(err) }) });
       }
+      onDone();
     } else if (dealId !== undefined) {
       setNote({ tone: "down", text: t("deal.tellClient", { id: String(dealId) }) });
     }
@@ -295,7 +331,7 @@ function CreateOffer({
         </div>
         {split ? (
           <p className="text-[12.5px] text-muted">
-            {t("deal.splitPreview", { you: fmt18(split.toProvider), fee: fmt18(split.fee), token })}
+            {t("deal.splitPreview", { you: fmt18(split.toProvider), fee: fmt18(split.fee), judges: fmt18(split.toJudges), token })}
           </p>
         ) : null}
         <label className="block text-[13px] font-medium text-muted">
@@ -326,19 +362,23 @@ function CreateOffer({
 function DealCard({
   deal,
   role,
+  jury,
   deals,
   isTwak,
   counterpart,
   terms,
+  evidence,
   session,
   onDone,
 }: {
   deal: Deal;
   role: Role;
+  jury: Jury;
   deals: Address;
   isTwak: boolean;
   counterpart?: string;
   terms?: string;
+  evidence?: EvidenceRow;
   session: Session | null;
   onDone: () => void;
 }) {
@@ -349,10 +389,12 @@ function DealCard({
   const tx = useTx();
   const [confirm, setConfirm] = useState<DealAction>();
   const [delivery, setDelivery] = useState("");
+  const [pubErr, setPubErr] = useState<string>();
   const sym = isTwak ? "TWAK" : "USDT";
-  const split = feeSplit(isTwak, deal.amount);
+  const split = payoutSplit(isTwak, deal.amount, 1);
   const actions = now > 0 ? availableActions(deal, role, now) : [];
-  const c = { address: deals, abi: agentDealsAbi, chainId } as const;
+  const phase = now > 0 ? juryPhase(deal, now) : "none";
+  const c = { address: deals, abi: agentDealsV2Abi, chainId } as const;
 
   // Client side of an open offer: balance + allowance for the exact approve → accept.
   const needFunds = role === "client" && deal.status === "open";
@@ -368,6 +410,18 @@ function DealCard({
   const short = needFunds && balance !== undefined && balance < deal.amount;
 
   const termsOk = terms !== undefined ? textHash(terms) === deal.termsHash : undefined;
+  const needsTermsPublished = Boolean(session && terms && termsOk && !evidence?.terms && deal.status !== "cancelled");
+
+  async function publishTerms() {
+    if (!terms) return;
+    setPubErr(undefined);
+    try {
+      await publishEvidence(deal.id, { terms });
+      onDone();
+    } catch (e) {
+      setPubErr(e instanceof Error ? e.message : String(e));
+    }
+  }
 
   async function act(a: DealAction) {
     setConfirm(undefined);
@@ -386,8 +440,11 @@ function DealCard({
       case "deliver": {
         const text = delivery.trim();
         ok = await tx.run(t("deal.act.deliver"), () => writeContractAsync({ ...c, functionName: "deliver", args: [id, textHash(text)] }));
-        if (ok && session && counterpart) {
-          await api("/messages", { method: "POST", auth: true, body: JSON.stringify({ to: counterpart, body: t("deal.deliveredMsg", { id: String(id), note: text }) }) }).catch(() => undefined);
+        if (ok && session) {
+          await publishEvidence(id, { delivery: text }).catch((e) => setPubErr(e instanceof Error ? e.message : String(e)));
+          if (counterpart) {
+            await api("/messages", { method: "POST", auth: true, body: JSON.stringify({ to: counterpart, body: t("deal.deliveredMsg", { id: String(id), note: text }) }) }).catch(() => undefined);
+          }
         }
         if (ok) setDelivery("");
         break;
@@ -398,8 +455,8 @@ function DealCard({
       case "release":
         ok = await tx.run(t("deal.act.release"), () => writeContractAsync({ ...c, functionName: "release", args: [id] }));
         break;
-      case "claim":
-        ok = await tx.run(t("deal.act.claim"), () => writeContractAsync({ ...c, functionName: "claimPayment", args: [id] }));
+      case "finalize":
+        ok = await tx.run(t("deal.act.finalize"), () => writeContractAsync({ ...c, functionName: "finalize", args: [id] }));
         break;
       case "refundByProvider":
         ok = await tx.run(t("deal.act.refundByProvider"), () => writeContractAsync({ ...c, functionName: "refundByProvider", args: [id] }));
@@ -419,9 +476,7 @@ function DealCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="font-display text-[18px] font-semibold">{t("deal.title", { id: String(deal.id) })}</div>
-          <div className="text-[13px] text-muted">
-            {t(role === "provider" ? "deal.youProvide" : "deal.youPay", { handle: counterpart ?? t("deal.unknownAgent") })}
-          </div>
+          <div className="text-[13px] text-muted">{t(role === "provider" ? "deal.youProvide" : "deal.youPay", { handle: counterpart ?? t("deal.unknownAgent") })}</div>
         </div>
         <Pill tone={STATUS_TONE[deal.status]}>{t(`deal.status.${deal.status}` as MessageKey)}</Pill>
       </div>
@@ -429,7 +484,7 @@ function DealCard({
         {fmt18(deal.amount)} <span className="text-[15px] text-muted">{sym}</span>
       </div>
       <p className="text-[12.5px] text-muted">
-        {t(isTwak ? "deal.feeTwak" : "deal.feeUsdt", { you: fmt18(split.toProvider), fee: fmt18(split.fee), token: sym })}
+        {t(isTwak ? "deal.feeTwak" : "deal.feeUsdt", { you: fmt18(split.toProvider), fee: fmt18(split.fee), judges: fmt18(split.toJudges), token: sym })}
       </p>
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[13px]">
         <dt className="text-muted">{t("deal.windowLabel")}</dt>
@@ -444,15 +499,12 @@ function DealCard({
           <>
             <dt className="text-muted">{t("deal.deliveredAt")}</dt>
             <dd>{fmtDate(deal.deliveredAt)}</dd>
-            {deal.status === "delivered" ? (
-              <>
-                <dt className="text-muted">{t("deal.autoPay")}</dt>
-                <dd>{fmtDate(deal.deliveredAt + REVIEW_WINDOW)}</dd>
-              </>
-            ) : null}
           </>
         ) : null}
       </dl>
+
+      {deal.status === "delivered" || jury.verdict !== "none" ? <JuryBox deal={deal} jury={jury} phase={phase} /> : null}
+
       {terms !== undefined ? (
         <div className="rounded-xl bg-card-2 px-3 py-2 text-[13px]">
           <div className={`font-semibold ${termsOk ? "text-up" : "text-down"}`}>{termsOk ? t("deal.termsMatch") : t("deal.termsMismatch")}</div>
@@ -461,9 +513,19 @@ function DealCard({
       ) : deal.status === "open" && role === "client" ? (
         <p className="rounded-xl bg-gold/5 px-3 py-2 text-[13px]">{t("deal.termsUnknown")}</p>
       ) : null}
+      {needsTermsPublished ? (
+        <Button tone="soft" size="sm" onClick={publishTerms}>
+          {t("deal.publishTerms")}
+        </Button>
+      ) : null}
+      {deal.status === "delivered" && !evidence?.delivery ? <p className="text-[12.5px] text-down">{t("deal.noDeliveryEvidence")}</p> : null}
+      {pubErr ? <p className="text-[12.5px] text-down">{pubErr}</p> : null}
 
       {actions.includes("deliver") ? (
-        <textarea className={`${input} min-h-[64px]`} maxLength={1500} placeholder={t("deal.deliveryPh")} value={delivery} onChange={(e) => setDelivery(e.target.value)} />
+        <>
+          <textarea className={`${input} min-h-[64px]`} maxLength={4000} placeholder={t("deal.deliveryPh")} value={delivery} onChange={(e) => setDelivery(e.target.value)} />
+          {!session ? <p className="text-[12.5px] text-down">{t("deal.signInToDeliver")}</p> : null}
+        </>
       ) : null}
       {short ? <p className="text-[13px] text-down">{t("deal.short", { token: sym })}</p> : null}
 
@@ -477,9 +539,9 @@ function DealCard({
             ) : (
               <Button
                 key={a}
-                tone={a === "accept" || a === "release" || a === "claim" || a === "deliver" ? "gold" : "line"}
+                tone={a === "accept" || a === "release" || a === "finalize" || a === "deliver" ? "gold" : "line"}
                 size="sm"
-                disabled={tx.busy || (a === "deliver" && !delivery.trim()) || (a === "accept" && (short || balance === undefined))}
+                disabled={tx.busy || (a === "deliver" && (!delivery.trim() || !session)) || (a === "accept" && (short || balance === undefined))}
                 onClick={() => (needsConfirm(a) ? setConfirm(a) : act(a))}
               >
                 {a === "accept" && allowance < deal.amount ? t("deal.act.approveAccept", { token: sym }) : t(`deal.act.${a}` as MessageKey)}
@@ -496,5 +558,28 @@ function DealCard({
       {confirm ? <p className="text-[12.5px] font-medium text-fg">{t(`deal.warn.${confirm}` as MessageKey)}</p> : null}
       <TxNotice state={tx.state} onClose={tx.reset} />
     </Panel>
+  );
+}
+
+/** Jury status for a delivered (or jury-settled) deal. */
+export function JuryBox({ deal, jury, phase }: { deal: Deal; jury: Jury; phase: ReturnType<typeof juryPhase> }) {
+  const { t } = useLocale();
+  const commitEnd = deal.deliveredAt + COMMIT_WINDOW;
+  const revealEnd = deal.deliveredAt + JURY_TIME;
+  return (
+    <div className="rounded-xl border border-line px-3 py-2 text-[13px]">
+      <div className="font-semibold">
+        {jury.verdict !== "none"
+          ? t(jury.verdict === "pass" ? "jury.verdictPass" : "jury.verdictFail", { pass: jury.passVotes, fail: jury.failVotes })
+          : t(`jury.phase.${phase}` as MessageKey)}
+      </div>
+      {jury.verdict === "none" ? (
+        <div className="mt-1 text-muted">
+          {phase === "commit" ? t("jury.commitUntil", { at: fmtDate(commitEnd), n: jury.commits }) : null}
+          {phase === "reveal" ? t("jury.revealUntil", { at: fmtDate(revealEnd), pass: jury.passVotes, fail: jury.failVotes, n: jury.commits }) : null}
+          {phase === "finalize" ? t("jury.readyToFinalize", { pass: jury.passVotes, fail: jury.failVotes }) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
