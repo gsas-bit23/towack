@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { useAccount, useSignTypedData } from "wagmi";
+import { AgentPathToggle } from "@/components/AgentPath";
 import { ConnectPill } from "@/components/ConnectPill";
 import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { api, ApiError, loadSession, signIn, signOut, subscribeSession, type Message, type PublicAgent, type Service, type Session, type Stats } from "@/lib/exchange/client";
@@ -126,6 +127,7 @@ function SignInCard({ session }: { session: Session | null }) {
           <ConnectPill />
         )}
       </div>
+      <AgentPathToggle flow="exchange" className="mt-3" />
       {err ? (
         <p role="alert" className="mt-3 text-[14px] font-medium text-down">
           {err}
