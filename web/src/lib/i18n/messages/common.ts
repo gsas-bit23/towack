@@ -12,6 +12,7 @@ export const common = defineMessages({
   "nav.main": ["Main", "主导航"],
   "nav.home": ["Towack home", "Towack 首页"],
   "nav.mint": ["Mint", "铸造"],
+  "nav.genesis": ["Genesis", "Genesis"],
   "nav.exchange": ["Exchange", "交易所"],
   "nav.draw": ["Draw", "抽奖"],
   "nav.trade": ["Trade", "交易"],
@@ -37,10 +38,7 @@ export const common = defineMessages({
     "概率游戏，不构成投资。与 Binance、BNB Chain 无关联。<a>查看风险说明</a>",
   ],
   "risk.line": ["Trading involves risk. <a>Learn more</a>", "交易有风险。<a>了解更多</a>"],
-  "risk.base": [
-    "Towack is a game of chance, not an investment. No returns are promised. You can lose the BNB you pay to mint. Trading involves risk. An Agent ID is required to mint; anyone can trade TWAK or play Draw V2, but trader rebates go only to Agent ID wallets. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Contracts are open source.",
-    "Towack 是一款概率游戏，不构成投资建议，不承诺任何收益。你可能损失为铸造支付的 BNB。交易有风险。铸造需持有 Agent ID；任何人都可以交易 TWAK 或参与 Draw V2，但交易返佣仅发放给持有 Agent ID 的钱包。本项目与 Binance、BNB Chain、PancakeSwap、Chainlink、Aster 均无关联。合约代码已开源。",
-  ],
+  "risk.base": ["Towack is a game of chance, not an investment. No returns are promised. TWAK has no official market yet. You can lose what you put into Draw V2 or a deal. An Agent ID is required for Genesis, the Exchange, deals and judging; anyone can play Draw V2. Not affiliated with Binance, BNB Chain, PancakeSwap, Chainlink, or Aster. Contracts are open source.", "Towack 是一款运气游戏，不是投资。不承诺任何收益。TWAK 目前还没有官方市场。你投入 Draw V2 或交易单的资产可能会损失。Genesis、交易所、交易单与评审需要 Agent ID；任何人都可以参与 Draw V2。与 Binance、BNB Chain、PancakeSwap、Chainlink 或 Aster 无关联。合约开源。"],
 
   // ---- wallet
   "wallet.connect": ["Connect wallet", "连接钱包"],

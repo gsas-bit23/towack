@@ -1,6 +1,6 @@
 "use client";
 
-// Live parts of the Atlas home: hero stats + featured Launch card + activity, all from contract reads.
+// Live parts of the Signal home: hero stats + Genesis / Draw V2 card, all from contract reads (and the Exchange API).
 // Nothing here is placeholder data: when a value cannot be read it shows "—".
 
 import { useQuery } from "@tanstack/react-query";
@@ -11,16 +11,11 @@ import { agentDealsV2Abi, drawV2Abi } from "@/abi";
 import { AgentMesh } from "@/components/AgentMesh";
 import { api, type Stats } from "@/lib/exchange/client";
 import { AnimatedNumber, ProgressFill, Skeleton, Stagger, StaggerItem, StageIn } from "@/components/motion";
+import { useGenesisState } from "@/lib/genesis";
+import { GENESIS_CAP } from "@/lib/genesisPrizes";
 import { ButtonLink, Pill } from "@/components/ui";
 import { useTowack } from "@/lib/chain";
-import { LAUNCH_PHASES, useLaunchState, useRecentSpins } from "@/lib/draw";
-import { shortAddr } from "@/lib/format";
-import { DECK_SIZE, PRIZES } from "@/lib/prizes";
-import { useNow } from "@/lib/useNow";
-import { useLocale, type MessageKey, type TFn } from "@/lib/i18n";
-import { prizeAmount, prizeLabel } from "@/lib/prizeText";
-
-const BNB_TIERS = PRIZES.filter((p) => p.kind === "bnb");
+import { useLocale, type MessageKey } from "@/lib/i18n";
 
 function useDrawV2Pool() {
   const { chainId, addresses } = useTowack();
@@ -59,29 +54,29 @@ function useAgentEconomy() {
 const DEAL_STEPS = ["offer", "escrow", "deliver", "jury", "settle"] as const;
 
 export function HomeHero() {
-  const { meta } = useTowack();
+  const { meta, addresses } = useTowack();
   const { t } = useLocale();
-  const s = useLaunchState();
+  const g = useGenesisState();
   const eco = useAgentEconomy();
-  const minted = s.mintCount === undefined ? undefined : Number(s.mintCount);
-  const cap = Number(s.cap);
-  const loading = Boolean(s.launch) && minted === undefined;
+  const minted = g.mintCount === undefined ? undefined : Number(g.mintCount);
+  const cap = GENESIS_CAP;
+  const loading = Boolean(addresses.genesis) && minted === undefined;
 
   const stats: { key: string; label: string; value: ReactNode; sub: string; accent?: boolean }[] = [
     { key: "agents", label: t("hero.stat.agents"), value: eco.agents === undefined ? "—" : <AnimatedNumber value={eco.agents} />, sub: t("hero.stat.agentsSub") },
     { key: "deals", label: t("hero.stat.deals"), value: eco.deals === undefined ? "—" : <AnimatedNumber value={eco.deals} />, sub: t("hero.stat.dealsSub") },
     {
-      key: "minted",
-      label: t("home.stat.minted"),
+      key: "genesis",
+      label: t("hero.stat.genesis"),
       value: loading ? (
-        <Skeleton className="h-7 w-24" label={t("home.stat.loadingMinted")} />
+        <Skeleton className="h-7 w-24" label={t("common.loading")} />
       ) : (
         <>
           <AnimatedNumber value={minted} />
           <span className="text-[14px] text-muted md:text-[15px]"> / {cap.toLocaleString("en-US")}</span>
         </>
       ),
-      sub: t("home.stat.mintedSub"),
+      sub: t("hero.stat.genesisSub"),
     },
     { key: "judge", label: t("hero.stat.judge"), value: "0.5%", sub: t("hero.stat.judgeSub"), accent: true },
   ];
@@ -105,7 +100,7 @@ export function HomeHero() {
                 {t("hero.ctaExchange")} <span aria-hidden="true">→</span>
               </ButtonLink>
               <ButtonLink href="/mint" tone="line" size="lg" className="max-sm:flex-1">
-                {t("hero.ctaMint")}
+                {t("hero.ctaGenesis")}
               </ButtonLink>
             </div>
             <ol className="hud mt-8 max-w-[560px] rounded-2xl border border-line bg-card px-4 py-3.5 font-mono text-[12.5px] sm:px-5" aria-label={t("hero.console.aria")}>
@@ -141,139 +136,68 @@ export function HomeHero() {
   );
 }
 
-export function FeaturedLaunch() {
-  const s = useLaunchState();
+/** Genesis 300 (free claim) + Draw V2 pool wheel: the live ways to get and use TWAK after the paid mint closed. */
+export function HomeGenesis() {
   const { t } = useLocale();
+  const { addresses } = useTowack();
+  const g = useGenesisState();
   const pool = useDrawV2Pool();
-  const spins = useRecentSpins(!s.legacy);
-  const now = useNow(10_000);
-  const minted = s.mintCount === undefined ? undefined : Number(s.mintCount);
-  const cap = Number(s.cap);
-  const pct = minted === undefined ? 0 : (minted / cap) * 100;
-  const loading = Boolean(s.launch) && minted === undefined;
-  const phase = s.phase === undefined ? undefined : LAUNCH_PHASES[s.phase];
+  const claimed = g.mintCount === undefined ? undefined : Number(g.mintCount);
+  const pct = claimed === undefined ? 0 : (claimed / GENESIS_CAP) * 100;
+  const loading = Boolean(addresses.genesis) && claimed === undefined;
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-      <article className="gold-hairline lift flex min-w-0 flex-col gap-5 rounded-2xl border border-line bg-card p-5 sm:p-7">
+      <article className="gold-hairline hud lift flex min-w-0 flex-col gap-5 rounded-2xl border border-line bg-card p-5 sm:p-7">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-[12px] font-semibold uppercase tracking-[.12em] text-gold">{t("home.feat.kicker")}</span>
-            <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] sm:text-[26px]">{t("home.feat.title")}</h3>
+            <span className="sys-label text-gold">{t("home.gen.kicker")}</span>
+            <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] sm:text-[26px]">{t("home.gen.title")}</h3>
           </div>
-          {phase ? <Pill tone={phase === "Minting" ? "up" : "neutral"}>{t(`home.phase.${phase}` as MessageKey)}</Pill> : !s.launch ? <Pill tone="line">{t("home.feat.unavailable")}</Pill> : null}
+          {g.isOpen === undefined ? null : <Pill tone={g.isOpen ? "up" : "line"}>{t(g.isOpen ? "home.gen.open" : "home.gen.closed")}</Pill>}
         </div>
-
+        <p className="text-[15px] leading-relaxed text-sub">{t("home.gen.body")}</p>
         <div className="grid grid-cols-1 overflow-hidden rounded-xl bg-card-2 sm:grid-cols-3 sm:gap-3 sm:bg-transparent">
           {[
-            [t("home.feat.price"), "0.1 BNB"],
-            [t("home.feat.drop"), "80,000 TWAK"],
-            [t("home.feat.bonus"), "1,020"],
+            [t("home.gen.price"), t("home.gen.priceV")],
+            [t("home.gen.drop"), "20,000 TWAK"],
+            [t("home.gen.budget"), "6M TWAK"],
           ].map(([k, v], i) => (
-            <div
-              key={k}
-              className={`flex items-center justify-between px-4 py-3 sm:block sm:rounded-xl sm:bg-card-2 sm:px-4 sm:py-4 ${i ? "border-t border-line sm:border-t-0" : ""}`}
-            >
+            <div key={k} className={`flex items-center justify-between px-4 py-3 sm:block sm:rounded-xl sm:bg-card-2 sm:px-4 sm:py-4 ${i ? "border-t border-line sm:border-t-0" : ""}`}>
               <small className="text-[12.5px] text-muted">{k}</small>
-              <b className="block whitespace-nowrap font-mono text-[18px] font-medium tracking-tight sm:mt-1 sm:text-[21px]">
-                {v.endsWith("TWAK") ? (
-                  <>
-                    {v.replace(" TWAK", "")} <span className="text-gold">TWAK</span>
-                  </>
-                ) : (
-                  v
-                )}
-              </b>
+              <b className="block whitespace-nowrap font-mono text-[18px] font-medium tracking-tight sm:mt-1 sm:text-[21px]">{v}</b>
             </div>
           ))}
         </div>
-
         <div className="flex flex-col gap-2">
           <div className="flex justify-between gap-3 text-[13px] text-muted">
-            <span>{t("home.feat.minted")}</span>
+            <span>{t("home.gen.claimed")}</span>
             <span className="font-mono">
               {loading ? (
                 <Skeleton className="inline-block h-4 w-20 align-middle" label={t("common.loading")} />
               ) : (
                 <>
-                  <b className="font-medium text-fg">{minted === undefined ? "—" : minted.toLocaleString("en-US")}</b> / {cap.toLocaleString("en-US")}
+                  <b className="font-medium text-fg">{claimed === undefined ? "—" : claimed.toLocaleString("en-US")}</b> / {GENESIS_CAP}
                 </>
               )}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-card-2" role="progressbar" aria-valuemin={0} aria-valuemax={cap} aria-valuenow={minted ?? 0} aria-label={t("home.feat.minted")}>
+          <div className="h-2 overflow-hidden rounded-full bg-card-2" role="progressbar" aria-valuemin={0} aria-valuemax={GENESIS_CAP} aria-valuenow={claimed ?? 0} aria-label={t("home.gen.claimed")}>
             <ProgressFill pct={pct} className="rounded-full bg-gold" />
           </div>
-          <div className="flex flex-wrap justify-between gap-2 text-[13px] text-muted">
-            <span className="font-mono">{minted === undefined ? "—" : t("home.feat.remaining", { n: (cap - minted).toLocaleString("en-US") })}</span>
-            <span>{t("home.feat.oneOutcome")}</span>
-          </div>
         </div>
-
-        <div>
-          <div className="mb-2 text-[13px] text-muted">{t("home.feat.tiers", { n: DECK_SIZE.toLocaleString("en-US") })}</div>
-          <div className="flex flex-wrap gap-2">
-            {BNB_TIERS.map((t, i) => (
-              <span
-                key={t.id}
-                className={`rounded-full border px-3 py-1.5 font-mono text-[13px] ${i === 0 ? "border-gold/45 bg-gold/[.06] text-gold" : "border-line-2 text-sub"}`}
-              >
-                {t.amount.replace(" BNB back", "")}
-              </span>
-            ))}
-            <span className="rounded-full border border-line-2 px-3 py-1.5 font-mono text-[13px] text-sub">5× = 80k + 320k TWAK</span>
-          </div>
-        </div>
-
         <div className="mt-auto flex flex-wrap items-center gap-3">
-          <ButtonLink href="/mint">{t("home.feat.mint")}</ButtonLink>
-          <ButtonLink href="/mint" tone="soft">
-            {t("home.feat.genesis")}
-          </ButtonLink>
-          <span className="text-[13px] text-dim">{t("home.feat.reserveNote")}</span>
+          <ButtonLink href="/mint">{t("home.gen.cta")}</ButtonLink>
+          <span className="text-[13px] text-dim">{t("home.gen.note")}</span>
         </div>
       </article>
 
-      <article className="flex min-w-0 flex-col rounded-2xl border border-line bg-card">
-        <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-5 sm:px-[22px]">
-          <h3 className="text-[16px] font-semibold">{t("home.activity")}</h3>
-          <Pill tone={spins.length ? "up" : "line"}>{spins.length ? t("home.activityLive") : t("home.activityFeed")}</Pill>
-        </div>
-        {spins.length ? (
-          <Stagger as="ul" className="min-w-0">
-            {spins.slice(0, 6).map((sp) => {
-              const p = PRIZES[sp.prizeId] ?? PRIZES[10];
-              const tone = p.kind === "none" ? "text-muted" : p.jackpot ? "text-gold" : "text-up";
-              return (
-                <StaggerItem as="li" key={sp.key} className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 border-t border-line px-5 py-3 sm:px-[22px]">
-                  <span className={`grid h-9 w-9 place-items-center rounded-[10px] bg-card-2 ${tone}`}>
-                    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
-                      <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                      <circle cx="12" cy="12" r="2" fill="currentColor" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-[14px]">
-                      <b className="font-semibold">{t("home.mintN", { n: sp.mintIndex.toLocaleString("en-US") })}</b> · {prizeLabel(t, p)}
-                    </div>
-                    <div className="truncate font-mono text-[12.5px] text-dim">
-                      {shortAddr(sp.minter)}
-                      {sp.time && now ? ` · ${ago(t, now - sp.time)}` : ""}
-                    </div>
-                  </div>
-                  <div className={`whitespace-nowrap text-right font-mono text-[14px] ${tone}`}>{p.kind === "none" ? "—" : p.kind === "bnb" ? p.amount.replace(" back", "") : prizeAmount(t, p)}</div>
-                </StaggerItem>
-              );
-            })}
-          </Stagger>
-        ) : (
-          <div className="flex flex-1 flex-col justify-center gap-2 border-t border-line px-5 py-8 text-center sm:px-[22px]">
-            <p className="text-[14px] text-sub">{t("home.noSpins")}</p>
-            <p className="text-[13px] text-dim">{t("home.fillsIn")}</p>
-          </div>
-        )}
-        <div className="mt-auto grid grid-cols-2 border-t border-line">
-          <div className="px-5 py-4 sm:px-[22px]">
+      <article className="flex min-w-0 flex-col rounded-2xl border border-line bg-card p-5 sm:p-7">
+        <span className="sys-label text-ion">{t("home.pool.kicker")}</span>
+        <h3 className="mt-2 text-[20px] font-semibold">{t("home.pool.title")}</h3>
+        <p className="mt-2 text-[14px] leading-relaxed text-muted">{t("home.pool.body")}</p>
+        <div className="mt-5 grid grid-cols-2 overflow-hidden rounded-xl border border-line">
+          <div className="px-4 py-4">
             <small className="text-[12.5px] text-muted">{t("home.pool")}</small>
             <b className="mt-1 block font-mono text-[18px] font-medium tracking-tight">
               {pool.loading ? (
@@ -285,22 +209,19 @@ export function FeaturedLaunch() {
               )}
             </b>
           </div>
-          <div className="border-l border-line px-5 py-4 sm:px-[22px]">
+          <div className="border-l border-line px-4 py-4">
             <small className="text-[12.5px] text-muted">{t("home.poolSpins")}</small>
             <b className="mt-1 block font-mono text-[18px] font-medium tracking-tight">
               {pool.loading ? <Skeleton className="h-6 w-16" label={t("home.loadingSpins")} /> : pool.live ? <AnimatedNumber value={pool.spins} /> : <span className="text-dim">—</span>}
             </b>
           </div>
         </div>
+        <div className="mt-auto pt-5">
+          <ButtonLink href="/lottery" tone="line">
+            {t("home.pool.cta")}
+          </ButtonLink>
+        </div>
       </article>
     </div>
   );
-}
-
-function ago(t: TFn, s: number) {
-  const v = Math.max(0, s);
-  if (v < 60) return t("home.agoS", { n: v });
-  if (v < 3600) return t("home.agoM", { n: Math.floor(v / 60) });
-  if (v < 86400) return t("home.agoH", { n: Math.floor(v / 3600) });
-  return t("home.agoD", { n: Math.floor(v / 86400) });
 }

@@ -41,7 +41,9 @@ describe("translate / t()", () => {
   it("keeps the critical Genesis copy faithful", () => {
     expect(translate("en", "genesis.cost")).toBe("Completely free — only network gas (~$0.002), instant 20,000 TWAK");
     expect(translate("zh", "genesis.cost")).toBe("完全免费 — 仅需链上 Gas 费（约 $0.002），立得 20,000 TWAK");
-    expect(translate("zh", "home.path.launchBody")).toContain("Chainlink VRF");
+    // The home "launch" path is Genesis now (the paid mint closed): free, 20,000 TWAK, never a BNB price.
+    expect(translate("zh", "home.path.launchBody")).toContain("20,000 TWAK");
+    expect(translate("en", "home.path.launchBody")).not.toMatch(/0\.1 BNB/);
   });
 
   it("maps locales to html lang", () => {

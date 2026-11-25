@@ -85,7 +85,7 @@ export const trade = defineMessages({
   "swap.slipHigh": ["High slippage: you may get a much worse price, and bots can take the difference.", "滑点过高：成交价可能明显变差，差价可能被机器人套利。"],
   "swap.slipExtreme": ["Slippage above 15% is blocked here. Lower it to continue.", "此处不允许超过 15% 的滑点，请调低后继续。"],
   "swap.deadlineRange": ["Deadline must be 1–60 minutes.", "截止时间必须为 1–60 分钟。"],
-  "swap.twakPair": ["Trading TWAK? Use the <a>Towack desk</a> to earn Agent ID rebates.", "交易 TWAK？请使用 <a>Towack 交易台</a>，可获得 Agent ID 返佣。"],
+  "swap.twakPair": ["TWAK has no official market yet: a PancakeSwap V3 pool is planned. Quotes for TWAK come from unofficial pools, if any. <a>Why?</a>", "TWAK 目前还没有官方市场：计划开设 PancakeSwap V3 池。TWAK 报价（如有）来自非官方池。<a>原因？</a>"],
   "swap.connectWhy": ["Connect a wallet to swap or bridge.", "连接钱包即可兑换或跨链。"],
   "swap.notEnough": ["Not enough {sym} in this wallet.", "该钱包 {sym} 余额不足。"],
   "swap.lowGas": ["This leaves almost no {sym} for gas. Try a slightly smaller amount.", "这样几乎不会留下 {sym} 支付 Gas，请稍微减少数量。"],

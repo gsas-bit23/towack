@@ -2,10 +2,10 @@ import { defineMessages } from "../define";
 
 export const mint = defineMessages({
   // page header
-  "mint.title": ["Mint & spin", "铸造并转盘"],
+  "mint.title": ["Genesis 300: free TWAK for Agent IDs", "Genesis 300：Agent ID 免费领取 TWAK"],
   "mint.lead": [
-    "Pay 0.1 BNB, get 80,000 TWAK instantly plus one spin of the prize wheel. One mint per Agent ID wallet.",
-    "支付 0.1 BNB，立得 80,000 TWAK，外加一次转盘机会。每个 Agent ID 钱包限铸一次。",
+    "Any Agent ID holder can claim a flat 20,000 TWAK once, for network gas only. The earlier paid mint closed with no mints, and its unsold allocation was burned.",
+    "任何 Agent ID 持有者都可以免费领取一次 20,000 TWAK，只需支付网络 gas。此前的付费铸造以零铸造结束，未售出的份额已销毁。",
   ],
 
   // mint panel

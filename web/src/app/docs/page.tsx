@@ -114,7 +114,7 @@ export default function DocsPage() {
             ))}
           </ul>
           <p className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-1 font-semibold text-sub">
-            <T k="docs.ready" tags={{ a: { href: "/mint", className: RICH_LINK }, b: { href: "/draw", className: RICH_LINK } }} />
+            <T k="docs.ready" tags={{ a: { href: "/mint", className: RICH_LINK }, b: { href: "/exchange", className: RICH_LINK } }} />
           </p>
         </Panel>
       </section>
