@@ -62,8 +62,8 @@ body {
 }
 body {
   background:
-    radial-gradient(1100px 620px at 12% -8%, rgba(139, 124, 255, 0.16), transparent 62%),
-    radial-gradient(900px 560px at 100% 18%, rgba(198, 244, 50, 0.06), transparent 60%),
+    radial-gradient(1100px 620px at 12% -8%, rgba(139, 124, 255, 0.15), transparent 62%),
+    radial-gradient(900px 560px at 100% 18%, rgba(47, 227, 160, 0.07), transparent 60%),
     var(--bg);
   background-attachment: fixed;
   color: var(--text);
@@ -72,7 +72,8 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
-/* Site-wide blueprint grid, fading out toward the bottom of the viewport. Decorative, never intercepts input. */
+/* Site-wide "pond": two sets of faint concentric ripples (Towack ~ quack), fading out down the viewport.
+   Decorative, fixed, never intercepts input. */
 body::before {
   content: "";
   position: fixed;
@@ -80,10 +81,27 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(120, 140, 200, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 140, 200, 0.055) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 85%);
+    repeating-radial-gradient(ellipse 160% 100% at 90% 4%, transparent 0 52px, rgba(47, 227, 160, 0.075) 52px 53.5px),
+    repeating-radial-gradient(ellipse 160% 100% at 4% 100%, transparent 0 66px, rgba(139, 124, 255, 0.06) 66px 67.5px);
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 25%, transparent 88%);
+}
+/* Duckweed specks floating on the pond (very faint). */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(ellipse 3px 1.8px at 12% 22%, #3e6b2e 98%, transparent),
+    radial-gradient(ellipse 4px 2.2px at 31% 9%, #2b4a2e 98%, transparent),
+    radial-gradient(ellipse 3px 1.8px at 58% 17%, #3e6b2e 98%, transparent),
+    radial-gradient(ellipse 4px 2.2px at 77% 31%, #2b4a2e 98%, transparent),
+    radial-gradient(ellipse 3px 1.8px at 92% 64%, #3e6b2e 98%, transparent),
+    radial-gradient(ellipse 4px 2.2px at 6% 58%, #2b4a2e 98%, transparent),
+    radial-gradient(ellipse 3px 1.8px at 45% 74%, #3e6b2e 98%, transparent),
+    radial-gradient(ellipse 4px 2.2px at 68% 88%, #2b4a2e 98%, transparent);
 }
 ::selection {
   background: rgba(198, 244, 50, 0.3);
@@ -105,33 +123,38 @@ h2 {
   font-weight: 500;
 }
 
-/* Cards: translucent glass over the grid, with a faint top highlight. */
+/* Cards: "lily-pad" blocks floating on the pond. Softer corners, a glassy top highlight, and a faint ripple glow
+   in the top-right corner. */
 .bg-card {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0) 38%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background-image:
+    radial-gradient(240px 160px at 100% 0%, rgba(47, 227, 160, 0.07), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 40%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 40px -28px rgba(0, 0, 0, 0.8);
+}
+.rounded-2xl.bg-card,
+.rounded-2xl.bg-card-2,
+.rounded-2xl.bg-surface {
+  border-radius: 22px;
 }
 
-/* HUD corner brackets for featured panels (decorative). */
+/* Featured blocks: a little water line (wave) along the top edge, like a lily pad on the surface. Decorative. */
 .hud {
   position: relative;
 }
 .hud::after {
   content: "";
   position: absolute;
-  inset: -4px;
+  top: -5px;
+  left: 22px;
+  width: min(180px, 50%);
+  height: 10px;
   pointer-events: none;
-  --c: rgba(198, 244, 50, 0.75);
-  --l: 14px;
-  background:
-    linear-gradient(var(--c), var(--c)) top left / var(--l) 1.5px,
-    linear-gradient(var(--c), var(--c)) top left / 1.5px var(--l),
-    linear-gradient(var(--c), var(--c)) top right / var(--l) 1.5px,
-    linear-gradient(var(--c), var(--c)) top right / 1.5px var(--l),
-    linear-gradient(var(--c), var(--c)) bottom left / var(--l) 1.5px,
-    linear-gradient(var(--c), var(--c)) bottom left / 1.5px var(--l),
-    linear-gradient(var(--c), var(--c)) bottom right / var(--l) 1.5px,
-    linear-gradient(var(--c), var(--c)) bottom right / 1.5px var(--l);
-  background-repeat: no-repeat;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10' viewBox='0 0 24 10'%3E%3Cpath d='M0 5 Q6 0 12 5 T24 5' fill='none' stroke='%23C6F432' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")
+    repeat-x left center / 24px 10px;
+  -webkit-mask-image: linear-gradient(90deg, #000 60%, transparent);
+  mask-image: linear-gradient(90deg, #000 60%, transparent);
 }
 
 /* Mono "system label" eyebrow, e.g. AGENT://EXCHANGE */

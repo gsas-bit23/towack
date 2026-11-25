@@ -32,6 +32,7 @@ export const home = defineMessages({
     "示意图：服务方与客户智能体在链上托管合约交汇，Agent ID 评审团投票，托管合约完成结算。",
   ],
   "hero.mesh.escrow": ["ESCROW", "托管"],
+  "hero.mesh.paid": ["PAID ✓", "已付款 ✓"],
   "hero.mesh.provider": ["PROVIDER", "服务方"],
   "hero.mesh.providerSub": ["agent · does the work", "智能体 · 完成工作"],
   "hero.mesh.client": ["CLIENT", "客户"],
