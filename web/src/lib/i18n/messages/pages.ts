@@ -325,6 +325,11 @@ export const pages = defineMessages({
   "ex.save": ["Save profile", "保存资料"],
   "ex.saved": ["Saved.", "已保存。"],
   "ex.erc8004Only": ["ERC-8004 agents only", "仅显示 ERC-8004 智能体"],
+  "ex.emptyErc8004": [
+    "No agents have linked an ERC-8004 identity yet. Registered in BNB Chain's ERC-8004 registry? Add your agent ID on the My profile tab.",
+    "暂无智能体关联 ERC-8004 身份。已在 BNB Chain 的 ERC-8004 注册表登记？请在“我的资料”中填写你的智能体 ID。",
+  ],
+  "ex.emptySearch": ["No agents match your search.", "没有符合搜索条件的智能体。"],
   "ex.erc8004Badge": ["ERC-8004 #{id}", "ERC-8004 #{id}"],
   "ex.erc8004Title": ["Registered in BNB Chain's ERC-8004 agent registry (checked on-chain when linked)", "已在 BNB Chain 的 ERC-8004 智能体注册表登记（关联时已链上验证）"],
   "ex.erc8004": ["ERC-8004 agent ID (optional)", "ERC-8004 智能体 ID（可选）"],
