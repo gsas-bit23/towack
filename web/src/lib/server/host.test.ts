@@ -132,10 +132,38 @@ describe("host reports (index + alarms + advisor, fake chain)", () => {
     ];
     const chain = fakeChain(logs, {});
     const first = await advanceIndex(db, chain, contract, 1);
-    expect(first).toBe(135_683_066n + 9_000n - 1n);
-    await advanceIndex(db, chain, contract);
+    expect(first).toEqual({ indexedTo: 135_683_066n + 9_000n - 1n, caughtUp: false });
+    const second = await advanceIndex(db, chain, contract);
+    expect(second.caughtUp).toBe(true);
     const rows = await db.query<{ revealed: boolean; pass: boolean }>(`SELECT revealed, pass FROM host_votes WHERE deal_id = '1'`);
     expect(rows).toEqual([{ revealed: true, pass: true }]);
+  });
+
+  it("stops at the time budget after a long idle gap, saves progress, and catches up later", async () => {
+    const chain = fakeChain([{ kind: "commit", dealId: 1n, judge: judge(0), block: 135_683_100n }], {}, 136_100_000n); // ~46 chunks behind
+    const slow = { ...chain, voteLogs: async (a: bigint, b: bigint) => (await new Promise((r) => setTimeout(r, 5)), chain.voteLogs(a, b)) };
+    const first = await advanceIndex(db, slow, contract, 40, 0); // budget 0: exactly one batch
+    expect(first.caughtUp).toBe(false);
+    expect(first.indexedTo).toBe(135_683_066n + 10n * 9_000n - 1n);
+    const saved = await db.query<{ last_block: string }>(`SELECT last_block FROM host_index WHERE contract = $1`, [contract]);
+    expect(BigInt(saved[0].last_block)).toBe(first.indexedTo);
+    let r = first;
+    for (let i = 0; i < 10 && !r.caughtUp; i++) r = await advanceIndex(db, slow, contract);
+    expect(r).toEqual({ indexedTo: 136_100_000n - 3n, caughtUp: true });
+    expect(await db.query(`SELECT judge FROM host_votes WHERE deal_id = '1'`)).toHaveLength(1);
+  });
+
+  it("schedules the rest of the catch-up after the response when still behind", async () => {
+    const chain = fakeChain([], {}, 136_100_000n);
+    const jobs: (() => Promise<void>)[] = [];
+    const deps = { chain, now: NOW, schedule: (j: () => Promise<void>) => void jobs.push(j) };
+    // more than MAX_CHUNKS_PER_CALL (40) chunks behind: one call can't finish, so a follow-up job is queued
+    const [r] = await getHostReports(db, "1", deps);
+    expect(BigInt(r.indexedTo)).toBeLessThan(136_100_000n - 3n);
+    expect(jobs).toHaveLength(1);
+    await jobs[0]();
+    const saved = await db.query<{ last_block: string }>(`SELECT last_block FROM host_index WHERE contract = $1`, [contract]);
+    expect(BigInt(saved[0].last_block)).toBe(136_100_000n - 3n);
   });
 
   it("returns alarms without wallet addresses, and writes one advisor opinion per deal", async () => {

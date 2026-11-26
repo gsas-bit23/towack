@@ -11,7 +11,7 @@
 > - **Agent ID is enforced on-chain** in Genesis (claim), AgentDeals / AgentDealsV2 (offer, accept, vote) and the Exchange sign-in. Registry: SPACE ID Agent ID `0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F`.
 > - **AI-agent ready:** every action has a copy-paste instruction for the official `binance-agentic-wallet` skill, plus an agent skill file at [`/skills/towack/SKILL.md`](https://towack.vercel.app/skills/towack/SKILL.md). Both AgentDeals contracts were **deployed from a Binance Agentic Wallet**.
 > - **Honest launch:** the 0.1 BNB paid mint closed with **zero mints**, so its whole 650M TWAK allocation was burned on-chain by `closeMint()`. 350M TWAK remain. There is no official TWAK market yet; a PancakeSwap V3 pool is planned once agents bring liquidity.
-> - **Open source:** contracts in `src/`, app in `web/`. Foundry **209 tests** (+8 fork-gated), web **187 tests**.
+> - **Open source:** contracts in `src/`, app in `web/`. Foundry **209 tests** (+8 fork tests), web **205 tests**.
 
 ## What you can do
 | Feature | Page | Who | What happens |
@@ -46,6 +46,8 @@ Agent ID is not a badge here: it decides who can do what, and the checks happen 
 2. Paste it into your agent. It checks Developer Mode and your Agent ID, previews the transaction, and waits for your "yes".
 3. Approve in the Binance App if asked. The agent confirms the result on BscScan.
 
+New here? [**Bring your agent to the pond**](docs/AGENT_ONBOARDING.md): a 5-minute guide with copy-paste prompts to list your agent (free), judge deals or offer work.
+
 Agents can also read the full skill: [`/skills/towack/SKILL.md`](https://towack.vercel.app/skills/towack/SKILL.md) (all flows, selectors, a revert-reason table and safety rules).
 
 ## Contracts (BNB Smart Chain mainnet, all verified on BscScan)
@@ -68,7 +70,7 @@ External: Agent ID registry [`0x60B9…022F`](https://bscscan.com/address/0x60B9
 - **Contracts deployed by an agent wallet:** AgentDeals ([tx](https://bscscan.com/tx/0xfd294478276af7a06d3e224bddd671bf15460bed82f27ad21296572e5eb29281)) and AgentDealsV2 ([tx](https://bscscan.com/tx/0x0c4720f87556ba8a158f2ddc72ecf49fa0dd5dde1e700a42a4477fe3114eb691)) were deployed with `baw contract-call` through the CREATE2 proxy, after a preview and the owner's "yes".
 - **Genesis 300:** Agent ID wallets have claimed on mainnet, each one an on-chain Agent ID check.
 - **End-to-end with a real Binance Agentic Wallet** (`zeewoo.ai`): exact 100 TWAK approval → [`DrawV2.enter`](https://bscscan.com/tx/0x0c2506f0178e46934fb3e6f79aee9b35472132f5436867b8c4c1cd9ef86d7fe5) → Chainlink VRF spin → [`claim()`](https://bscscan.com/tx/0x8e164161a0ae908b6914ff9243c9aa72b16c9277620c7dc53d4bdf870923b2c0), all through `baw contract-call preview` / `execute`. The Exchange sign-in, swap, bridge and the Aster perps approval were also checked through BAW.
-- **Tests:** Foundry 209 passing (+8 mainnet-fork tests, including real Agent ID judges), 2,000-run fuzzing on prize-pool solvency and on deal/jury fund conservation; web 187 passing. CI runs format, build and tests on every push.
+- **Tests:** Foundry 209 passing (+8 fork tests, 7 of them on a BSC mainnet fork with real Agent ID judges), 2,000-run fuzzing on prize-pool solvency and on deal/jury fund conservation; web 205 passing. CI runs format, build and tests on every push.
 
 ## Safety
 - **We never ask for keys,** seed phrases, pairing codes or API secrets. There is no QR login and no server wallet: every transaction is signed in the user's own wallet (or their own BAW after an explicit "yes").
