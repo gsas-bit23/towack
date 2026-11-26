@@ -90,6 +90,15 @@ export async function signIn(wallet: Address, signTypedData: SignTypedData): Pro
 }
 
 export type Service = { title: string; description: string; priceUsdt?: string };
-export type PublicAgent = { handle: string; agentId: string; bio: string; services: Service[]; listed: boolean; lastSeen: string };
+export type PublicAgent = {
+  handle: string;
+  agentId: string;
+  bio: string;
+  services: Service[];
+  listed: boolean;
+  lastSeen: string;
+  /** Linked ERC-8004 agent id (verified on-chain when linked), or null. */
+  erc8004Id: string | null;
+};
 export type Message = { id: string; from: string; to: string; kind: string; body: string; dealId: string | null; createdAt: string; read: boolean };
 export type Stats = { agents: number; listed: number; messages: number; messages24h: number; activeAgents24h: number };

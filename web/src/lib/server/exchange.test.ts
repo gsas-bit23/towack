@@ -108,6 +108,60 @@ describe("profiles, directory and messages", () => {
     await expect(updateProfile(db, a.row, { services: [{ title: "ok", priceUsdt: "-1" }] })).rejects.toBeInstanceOf(ExchangeError);
   });
 
+  it("links an ERC-8004 agent only when the wallet owns it or is its agent wallet", async () => {
+    const a = await agent(db, "alpha");
+    const b = await agent(db, "beta");
+    const stranger = "0x00000000000000000000000000000000000000aa" as Address;
+    const registry = new Map<string, { owner: Address | null; agentWallet: Address | null }>([
+      ["7", { owner: a.row.wallet as Address, agentWallet: null }],
+      ["8", { owner: stranger, agentWallet: b.row.wallet as Address }],
+      ["9", { owner: stranger, agentWallet: null }],
+    ]);
+    let reads = 0;
+    const erc8004 = async (id: bigint) => (reads++, registry.get(id.toString()) ?? { owner: null, agentWallet: null });
+
+    // owner links (also accepts "#7"), and the badge is public; no wallet leaks
+    const p = await updateProfile(db, a.row, { erc8004Id: "#7", listed: true }, { erc8004 });
+    expect(p.erc8004Id).toBe("7");
+    expect((await getAgent(db, "alpha.ai"))?.erc8004Id).toBe("7");
+    expect(JSON.stringify(await listAgents(db))).not.toMatch(/0x[0-9a-fA-F]{40}/);
+
+    // agent-wallet holder links too
+    expect((await updateProfile(db, b.row, { erc8004Id: 8, listed: true }, { erc8004 })).erc8004Id).toBe("8");
+
+    // filter keeps linked agents only
+    const c = await agent(db, "gamma");
+    await updateProfile(db, c.row, { listed: true });
+    expect((await listAgents(db, { erc8004: true })).map((x) => x.handle).sort()).toEqual(["alpha.ai", "beta.ai"]);
+    expect((await listAgents(db)).length).toBe(3);
+
+    // refused: someone else's agent, a missing agent, a taken agent, junk
+    await expect(updateProfile(db, c.row, { erc8004Id: "9" }, { erc8004 })).rejects.toMatchObject({ status: 403 });
+    await expect(updateProfile(db, c.row, { erc8004Id: "123" }, { erc8004 })).rejects.toMatchObject({ status: 404 });
+    registry.set("10", { owner: c.row.wallet as Address, agentWallet: null });
+    registry.set("7", { owner: c.row.wallet as Address, agentWallet: null }); // even if ownership moved, one link per id
+    await expect(updateProfile(db, c.row, { erc8004Id: "7" }, { erc8004 })).rejects.toMatchObject({ status: 409 });
+    for (const bad of ["abc", "0", "-1", "1".repeat(31), { id: 1 }]) {
+      await expect(updateProfile(db, c.row, { erc8004Id: bad }, { erc8004 })).rejects.toBeInstanceOf(ExchangeError);
+    }
+    expect((await updateProfile(db, c.row, { erc8004Id: "10" }, { erc8004 })).erc8004Id).toBe("10");
+
+    // other edits keep the link without re-reading the chain; null unlinks
+    const before = reads;
+    const me = (await authenticate(db, `Bearer ${a.token}`))!;
+    expect((await updateProfile(db, me, { bio: "still linked" }, { erc8004 })).erc8004Id).toBe("7");
+    expect(reads).toBe(before);
+    expect((await updateProfile(db, me, { erc8004Id: null })).erc8004Id).toBeNull();
+
+    // registry unreachable -> 503, nothing stored
+    const down = async () => {
+      throw new Error("rpc down");
+    };
+    const unlinked = (await authenticate(db, `Bearer ${a.token}`))!;
+    await expect(updateProfile(db, unlinked, { erc8004Id: "7" }, { erc8004: down })).rejects.toMatchObject({ status: 503 });
+    expect((await getAgent(db, "alpha.ai"))?.erc8004Id).toBeNull();
+  });
+
   it("agents message each other by handle; unlisted agents can only reply", async () => {
     const a = await agent(db, "alpha");
     const b = await agent(db, "beta");

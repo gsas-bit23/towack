@@ -1,5 +1,6 @@
 import type { AgentRow } from "./auth";
 import type { Db } from "./db";
+import type { Erc8004Reader } from "./erc8004";
 
 /**
  * Agent Exchange: opt-in agent profiles, a searchable directory of SERVICES (never wallets), and agent-to-agent
@@ -17,7 +18,16 @@ export class ExchangeError extends Error {
 }
 
 export type Service = { title: string; description: string; priceUsdt?: string };
-export type PublicAgent = { handle: string; agentId: string; bio: string; services: Service[]; listed: boolean; lastSeen: string };
+export type PublicAgent = {
+  handle: string;
+  agentId: string;
+  bio: string;
+  services: Service[];
+  listed: boolean;
+  lastSeen: string;
+  /** Linked ERC-8004 agent id (BNB Chain's agent registry), verified on-chain when linked; null if none. */
+  erc8004Id: string | null;
+};
 
 export const LIMITS = {
   bio: 500,
@@ -31,7 +41,7 @@ export const LIMITS = {
 
 const PRICE_RE = /^\d{1,6}(\.\d{1,6})?$/;
 
-function toPublic(r: { handle: string; agent_id: string; bio: string; services: unknown; listed: boolean; last_seen?: unknown }): PublicAgent {
+function toPublic(r: { handle: string; agent_id: string; bio: string; services: unknown; listed: boolean; last_seen?: unknown; erc8004_id?: string | null }): PublicAgent {
   return {
     handle: `${r.handle}.ai`,
     agentId: r.agent_id,
@@ -39,7 +49,37 @@ function toPublic(r: { handle: string; agent_id: string; bio: string; services: 
     services: Array.isArray(r.services) ? (r.services as Service[]) : [],
     listed: r.listed,
     lastSeen: r.last_seen ? new Date(r.last_seen as string).toISOString() : "",
+    erc8004Id: r.erc8004_id ?? null,
   };
+}
+
+const PUBLIC_COLS = "agent_id, handle, bio, services, listed, last_seen, erc8004_id";
+
+/**
+ * Validate an ERC-8004 link request: `null`/"" unlinks; otherwise the id must exist on-chain and either be owned by
+ * the signed-in wallet or name it as the agent wallet, and not already be linked to another Towack agent.
+ */
+async function resolveErc8004(db: Db, agent: AgentRow, v: unknown, read: Erc8004Reader | undefined): Promise<string | null> {
+  if (v === null || v === "") return null;
+  const s = typeof v === "number" ? String(v) : typeof v === "string" ? v.trim().replace(/^#/, "") : "";
+  if (!/^\d{1,30}$/.test(s) || /^0+$/.test(s)) throw new ExchangeError("erc8004Id must be your ERC-8004 agent id (a number), or null to unlink");
+  const id = BigInt(s).toString();
+  if (id === agent.erc8004_id) return id;
+  if (!read) throw new ExchangeError("ERC-8004 linking is unavailable right now", 503);
+  let a;
+  try {
+    a = await read(BigInt(id));
+  } catch {
+    throw new ExchangeError("couldn't read the ERC-8004 registry, try again", 503);
+  }
+  if (!a.owner) throw new ExchangeError(`ERC-8004 agent #${id} doesn't exist on BNB Chain`, 404);
+  const me = agent.wallet.toLowerCase();
+  if (a.owner.toLowerCase() !== me && a.agentWallet?.toLowerCase() !== me) {
+    throw new ExchangeError(`ERC-8004 agent #${id} isn't owned by your wallet and doesn't name it as its agent wallet`, 403);
+  }
+  const taken = await db.query(`SELECT 1 FROM agents WHERE erc8004_id = $1 AND agent_id <> $2 LIMIT 1`, [id, agent.agent_id]);
+  if (taken.length) throw new ExchangeError(`ERC-8004 agent #${id} is already linked to another Towack agent`, 409);
+  return id;
 }
 
 export function bareHandle(h: string): string {
@@ -77,35 +117,42 @@ export async function getMe(agent: AgentRow): Promise<PublicAgent> {
   return toPublic({ ...agent, last_seen: new Date().toISOString() });
 }
 
-export async function updateProfile(db: Db, agent: AgentRow, input: Record<string, unknown>): Promise<PublicAgent> {
+export async function updateProfile(
+  db: Db,
+  agent: AgentRow,
+  input: Record<string, unknown>,
+  deps: { erc8004?: Erc8004Reader } = {},
+): Promise<PublicAgent> {
   const bio = input.bio === undefined ? agent.bio : cleanText(input.bio, LIMITS.bio, "bio");
   const services = input.services === undefined ? (agent.services as Service[]) : validateServices(input.services);
   const listed = input.listed === undefined ? agent.listed : input.listed === true;
+  const erc8004 = input.erc8004Id === undefined ? (agent.erc8004_id ?? null) : await resolveErc8004(db, agent, input.erc8004Id, deps.erc8004);
   const rows = await db.query<AgentRow & { last_seen: string }>(
-    `UPDATE agents SET bio = $2, services = $3::jsonb, listed = $4, updated_at = now()
-      WHERE agent_id = $1 RETURNING agent_id, handle, wallet, bio, services, listed, last_seen`,
-    [agent.agent_id, bio, JSON.stringify(services), listed],
+    `UPDATE agents SET bio = $2, services = $3::jsonb, listed = $4, erc8004_id = $5, updated_at = now()
+      WHERE agent_id = $1 RETURNING agent_id, handle, wallet, bio, services, listed, last_seen, erc8004_id`,
+    [agent.agent_id, bio, JSON.stringify(services), listed, erc8004],
   );
   return toPublic(rows[0]);
 }
 
-/** Public directory: only agents that opted in (`listed`). Searches handle, bio and service text. */
-export async function listAgents(db: Db, opts: { q?: string; limit?: number } = {}): Promise<PublicAgent[]> {
+/** Public directory: only agents that opted in (`listed`). Searches handle, bio and service text; `erc8004` keeps linked agents only. */
+export async function listAgents(db: Db, opts: { q?: string; limit?: number; erc8004?: boolean } = {}): Promise<PublicAgent[]> {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
   const q = (opts.q ?? "").trim().slice(0, 80);
   const rows = await db.query<Parameters<typeof toPublic>[0]>(
-    `SELECT agent_id, handle, bio, services, listed, last_seen FROM agents
+    `SELECT ${PUBLIC_COLS} FROM agents
       WHERE listed = TRUE
         AND ($1 = '' OR handle ILIKE '%' || $1 || '%' OR bio ILIKE '%' || $1 || '%' OR services::text ILIKE '%' || $1 || '%')
+        AND ($3::boolean IS NOT TRUE OR erc8004_id IS NOT NULL)
       ORDER BY last_seen DESC LIMIT $2`,
-    [q, limit],
+    [q, limit, opts.erc8004 === true],
   );
   return rows.map(toPublic);
 }
 
 export async function getAgent(db: Db, handle: string): Promise<PublicAgent | null> {
   const rows = await db.query<Parameters<typeof toPublic>[0]>(
-    `SELECT agent_id, handle, bio, services, listed, last_seen FROM agents WHERE handle = $1 AND listed = TRUE`,
+    `SELECT ${PUBLIC_COLS} FROM agents WHERE handle = $1 AND listed = TRUE`,
     [bareHandle(handle)],
   );
   return rows[0] ? toPublic(rows[0]) : null;
