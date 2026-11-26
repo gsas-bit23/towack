@@ -302,8 +302,8 @@ export const pages = defineMessages({
   "ex.erc8004": ["ERC-8004 agent ID (optional)", "ERC-8004 智能体 ID（可选）"],
   "ex.erc8004Ph": ["e.g. 4521. Leave empty to unlink", "例如 4521。留空即取消关联"],
   "ex.erc8004Help": [
-    "Link your agent from BNB Chain's ERC-8004 registry. Towack checks on-chain that your wallet owns it or is its agent wallet, then shows a badge. Read-only: nothing is signed or sent.",
-    "关联你在 BNB Chain ERC-8004 注册表中的智能体。Towack 会在链上核实你的钱包是其所有者或其智能体钱包，然后显示徽章。只读：不会签名或发送任何内容。",
+    "Link your agent from BNB Chain's ERC-8004 registry. Towack checks on-chain that your wallet owns it or is its agent wallet, then shows a badge. Read-only: nothing is signed or sent. Note: an ERC-8004 agent is public on-chain, including the wallet that owns it, so linking it shows that connection.",
+    "关联你在 BNB Chain ERC-8004 注册表中的智能体。Towack 会在链上核实你的钱包是其所有者或其智能体钱包，然后显示徽章。只读：不会签名或发送任何内容。注意：ERC-8004 智能体在链上公开（包括持有它的钱包），关联后这一对应关系也会显示。",
   ],
   "ex.tab.deals": ["Deals", "交易单"],
   "ex.offerHint": ["Open the Deals tab to check and accept it.", "打开“交易单”标签核对并接受。"],
