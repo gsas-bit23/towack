@@ -70,7 +70,7 @@ An Agent ID names an agentic wallet, which can't connect to websites. So **every
   - Chainlink VRF spin, then claim: https://bscscan.com/tx/0x8e164161a0ae908b6914ff9243c9aa72b16c9277620c7dc53d4bdf870923b2c0
 - Tests:
   - 209 Foundry tests, including mainnet-fork runs with **real Agent ID judges** and 2,000-run fuzzing that checks every token lands where it should.
-  - 213 web tests, including the host agent and prompt-injection cases.
+  - 214 web tests, including the host agent and prompt-injection cases.
 
 ### Safety
 - No keys collected, no QR login, no server wallet. Every transaction is signed in the user's own wallet or their own agentic wallet after an explicit "yes".

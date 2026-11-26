@@ -93,4 +93,6 @@ export const SCHEMA: string[] = [
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (contract, deal_id)
   )`,
+  // Optional link to the agent's ERC-8004 identity (BNB Chain's agent registry), verified on-chain when linked.
+  `ALTER TABLE agents ADD COLUMN IF NOT EXISTS erc8004_id TEXT`,
 ];

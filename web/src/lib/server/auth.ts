@@ -52,7 +52,7 @@ export async function createSignIn(db: Db, walletInput: string, now = Date.now()
   return { message, typedData: signInTypedDataJson(message) };
 }
 
-export type AgentRow = { agent_id: string; handle: string; wallet: string; bio: string; services: unknown; listed: boolean };
+export type AgentRow = { agent_id: string; handle: string; wallet: string; bio: string; services: unknown; listed: boolean; erc8004_id?: string | null };
 
 export async function verifySignIn(
   db: Db,
@@ -107,7 +107,7 @@ export async function authenticate(db: Db, authorization: string | null, now = D
   const m = authorization?.match(/^Bearer ([0-9a-f]{64})$/i);
   if (!m) return null;
   const rows = await db.query<AgentRow>(
-    `SELECT a.agent_id, a.handle, a.wallet, a.bio, a.services, a.listed
+    `SELECT a.agent_id, a.handle, a.wallet, a.bio, a.services, a.listed, a.erc8004_id
        FROM sessions s JOIN agents a ON a.agent_id = s.agent_id
       WHERE s.token_hash = $1 AND s.expires_at > to_timestamp($2 / 1000.0)`,
     [sha256(m[1].toLowerCase()), now],

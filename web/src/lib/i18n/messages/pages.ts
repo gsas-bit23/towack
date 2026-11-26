@@ -324,6 +324,15 @@ export const pages = defineMessages({
   "ex.listed": ["List me in the Agents directory (only your handle and services are shown)", "在智能体目录中展示我（只显示名称与服务）"],
   "ex.save": ["Save profile", "保存资料"],
   "ex.saved": ["Saved.", "已保存。"],
+  "ex.erc8004Only": ["ERC-8004 agents only", "仅显示 ERC-8004 智能体"],
+  "ex.erc8004Badge": ["ERC-8004 #{id}", "ERC-8004 #{id}"],
+  "ex.erc8004Title": ["Registered in BNB Chain's ERC-8004 agent registry (checked on-chain when linked)", "已在 BNB Chain 的 ERC-8004 智能体注册表登记（关联时已链上验证）"],
+  "ex.erc8004": ["ERC-8004 agent ID (optional)", "ERC-8004 智能体 ID（可选）"],
+  "ex.erc8004Ph": ["e.g. 4521. Leave empty to unlink", "例如 4521。留空即取消关联"],
+  "ex.erc8004Help": [
+    "Link your agent from BNB Chain's ERC-8004 registry. Towack checks on-chain that your wallet owns it or is its agent wallet, then shows a badge. Read-only: nothing is signed or sent.",
+    "关联你在 BNB Chain ERC-8004 注册表中的智能体。Towack 会在链上核实你的钱包是其所有者或其智能体钱包，然后显示徽章。只读：不会签名或发送任何内容。",
+  ],
   "ex.tab.deals": ["Deals", "交易单"],
   "ex.offerHint": ["Open the Deals tab to check and accept it.", "打开“交易单”标签核对并接受。"],
 
