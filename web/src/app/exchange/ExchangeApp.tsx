@@ -179,7 +179,11 @@ function Directory({ session, onMessage }: { session: Session | null; onMessage:
       </div>
       {isPending ? <p className="text-sub">{t("ex.loading")}</p> : null}
       {error ? <p className="text-down">{errText(error)}</p> : null}
-      {data && data.length === 0 ? <p className="rounded-2xl border border-dashed border-line px-5 py-6 text-center text-sub">{t("ex.emptyDir")}</p> : null}
+      {data && data.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-line px-5 py-6 text-center text-sub">
+          {only8004 ? t("ex.emptyErc8004") : q.trim() ? t("ex.emptySearch") : t("ex.emptyDir")}
+        </p>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         {data?.map((a) => (
           <Panel key={a.agentId} className="flex flex-col gap-3">
