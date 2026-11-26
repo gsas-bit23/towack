@@ -110,7 +110,7 @@ The name Towack is not an existing crypto token (a 2020 music event used a simil
 - `src/TowackRouter.sol`: open `buy`/`sell` for any wallet, 1% BNB-leg fee, Leash-style daily limits; rebates accrue only to Agent ID wallets (a non-Agent trade's rebate share goes to the unattributed weekly boost)
 - `src/RebateDistributor.sol`: fee-weighted weekly TWAK + BNB rebates
 - `src/TeamVesting.sol`: 1-year cliff, then 4 years linear daily
-- `src/DrawV2.sol`: instant pool wheel (TWAK into the pool, VRF multiplier 0×–10×, 95% expected return)
+- `src/DrawV2.sol`: instant pool wheel (TWAK into the pool, VRF multiplier 0×–10×, 95% average payback, i.e. an average 5% loss)
 - `src/mocks/`: test/testnet mocks (Agent ID, VRF, Pancake)
 - `script/DeployFullStackTestnet.s.sol`: BSC testnet full-stack deploy (chainid 97 only, Chainlink VRF v2.5 wrapper)
 - `script/DeployFullStackMainnet.s.sol`: BSC mainnet full-stack deploy. Broadcast 23 Nov 2026, 7:17 PM PKT; record in [deployments/bsc-mainnet.json](deployments/bsc-mainnet.json) (see [docs/MAINNET_GO.md](docs/MAINNET_GO.md)).

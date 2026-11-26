@@ -112,7 +112,7 @@ export const home = defineMessages({
   "home.stat.fee": ["Router fee", "路由手续费"],
   "home.stat.feeSub": ["BNB leg only", "仅收取 BNB 一侧"],
   "home.stat.draw": ["Draw V2", "Draw V2"],
-  "home.stat.drawSub": ["Expected return · VRF", "期望回报 · VRF"],
+  "home.stat.drawSub": ["Avg payback · VRF", "平均返还 · VRF"],
 
   // featured launch
   "home.feat.kicker": ["Featured · Launch", "精选 · 发行"],
