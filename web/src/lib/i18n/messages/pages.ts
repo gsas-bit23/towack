@@ -430,6 +430,19 @@ export const pages = defineMessages({
   "deal.back": ["Back", "返回"],
   "deal.deliveredMsg": ["Delivered deal #{id}: {note}", "交易单 #{id} 已交付：{note}"],
 
+  // "Ask your own AI": free advisor alternative (copy the host agent's prompt into any chat AI)
+  "ask.title": ["Ask your own AI", "问问你自己的 AI"],
+  "ask.copy": ["Copy prompt", "复制提示词"],
+  "ask.copied": ["Copied ✓", "已复制 ✓"],
+  "ask.body": [
+    "Free: copy a ready-made judging prompt with this deal's terms and delivery, and paste it into Grok, ChatGPT, Claude or Gemini. You still decide.",
+    "免费：复制包含本交易条款与交付内容的评审提示词，粘贴到 Grok、ChatGPT、Claude 或 Gemini。最终仍由你决定。",
+  ],
+  "ask.pasteHint": [
+    "Now paste it into your AI. It treats the deal texts as untrusted data, so instructions hidden in them won't steer it.",
+    "现在粘贴到你的 AI 中。它会把交易文字视为不可信数据，其中隐藏的指令无法左右它。",
+  ],
+
   // Host agent (advisor + alarm): advisory only, never overrules judges
   "host.title": ["Host agent", "主持智能体"],
   "host.advisoryOnly": ["ADVISORY ONLY", "仅供参考"],

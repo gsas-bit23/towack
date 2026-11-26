@@ -17,6 +17,7 @@ import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
 import { JuryBox, type EvidenceRow } from "./Deals";
 import { HostPanel, useHostReports, type HostReport } from "./Host";
+import { AskYourAi } from "./AskYourAi";
 
 const VOTE_KEY = "towack.judge.votes.v1"; // local backup of {contract:dealId → pass}; the salt is re-derived by signing
 
@@ -284,6 +285,9 @@ function CaseCard({
         <EvidenceBlock label={t("jury.terms")} text={evidence?.terms} ok={termsOk} />
         <EvidenceBlock label={t("jury.delivery")} text={evidence?.delivery} ok={deliveryOk} />
       </div>
+      {evidence?.terms && evidence?.delivery && termsOk && deliveryOk ? (
+        <AskYourAi input={{ dealId: String(deal.id), token: sym, amount: fmt18(deal.amount), terms: evidence.terms, delivery: evidence.delivery }} />
+      ) : null}
 
       {err ? <p className="text-[13px] text-down">{err}</p> : null}
       {phase === "commit" && !committed ? (
