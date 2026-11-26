@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { DuckShape } from "./Duck";
 
 // Signal primitives. The lime "signal" (token: gold) is the single primary action per view; everything else is
 // line / soft.
@@ -137,21 +138,19 @@ export function Check({ ok, children }: { ok: boolean | undefined; children: Rea
   );
 }
 
-/** Decorative node-network motif for page headers (static SVG, aria-hidden). */
-function HeaderMesh() {
-  const nodes = [
-    [40, 60], [130, 24], [210, 92], [300, 40], [380, 110], [250, 170], [150, 150], [340, 196], [60, 190],
-  ] as const;
-  const links = [[0, 1], [1, 2], [2, 3], [3, 4], [2, 5], [5, 6], [6, 0], [5, 7], [4, 7], [6, 8], [1, 3]] as const;
+/** Decorative pond motif for page headers: an agent duck afloat on its ripples (static SVG, aria-hidden). */
+function HeaderPond() {
   return (
-    <svg viewBox="0 0 420 230" className="pointer-events-none absolute -right-10 top-1/2 hidden h-[230px] w-[420px] -translate-y-1/2 opacity-70 md:block" aria-hidden="true">
-      {links.map(([a, b], i) => (
-        <line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} stroke="#262E46" strokeWidth="1" />
+    <svg viewBox="0 0 420 230" className="pointer-events-none absolute -right-6 top-1/2 hidden h-[230px] w-[420px] -translate-y-1/2 md:block" aria-hidden="true">
+      {[170, 128, 88, 52].map((rx, i) => (
+        <ellipse key={rx} cx="250" cy="150" rx={rx} ry={rx * 0.34} fill="none" stroke={i % 2 ? "#1E2540" : "#262E46"} strokeDasharray={i % 2 ? "2 7" : undefined} />
       ))}
-      {nodes.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={i === 2 ? 6 : i === 5 ? 5 : 3} fill={i === 2 ? "#C6F432" : i === 5 ? "#8B7CFF" : "#34406A"} />
-      ))}
-      <circle cx={nodes[2][0]} cy={nodes[2][1]} r="16" fill="none" stroke="#C6F432" strokeOpacity=".35" />
+      <ellipse cx="120" cy="96" rx="4" ry="2.2" fill="#3E6B2E" opacity=".8" />
+      <ellipse cx="368" cy="118" rx="3" ry="1.8" fill="#2B4A2E" opacity=".8" />
+      <ellipse cx="330" cy="196" rx="4" ry="2.2" fill="#3E6B2E" opacity=".8" />
+      <g transform="translate(206 92) scale(1.4)">
+        <DuckShape tone="lime" />
+      </g>
     </svg>
   );
 }
@@ -176,7 +175,7 @@ export function PageHeader({
 }) {
   return (
     <section className={`relative overflow-hidden ${center ? "" : "border-b border-line"}`}>
-      {art ?? (center ? null : <HeaderMesh />)}
+      {art ?? (center ? null : <HeaderPond />)}
       <div className={`relative mx-auto max-w-[1200px] px-4 sm:px-8 ${center ? "pb-2 pt-10 text-center sm:pt-14" : "pb-8 pt-10 sm:pb-10 sm:pt-12"}`}>
         {sys ? (
           <div className={`sys-label mb-3 flex items-center gap-2 ${center ? "justify-center" : ""}`}>

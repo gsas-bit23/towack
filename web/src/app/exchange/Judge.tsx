@@ -16,6 +16,7 @@ import { useLocale } from "@/lib/i18n";
 import { useTx } from "@/lib/tx";
 import { useNow } from "@/lib/useNow";
 import { JuryBox, type EvidenceRow } from "./Deals";
+import { HostPanel, useHostReports, type HostReport } from "./Host";
 
 const VOTE_KEY = "towack.judge.votes.v1"; // local backup of {contract:dealId → pass}; the salt is re-derived by signing
 
@@ -102,6 +103,7 @@ function JudgeLive({ deals }: { deals: Address }) {
     refetchInterval: 60_000,
   });
   const evidenceOf = new Map((evidence ?? []).map((e) => [e.dealId, e]));
+  const hostOf = useHostReports(judged.map((d) => d.id));
 
   const { writeContractAsync } = useWriteContract();
   const claimTx = useTx();
@@ -144,6 +146,7 @@ function JudgeLive({ deals }: { deals: Address }) {
             deals={deals}
             isTwak={Boolean(twak && d.token.toLowerCase() === twak.toLowerCase())}
             evidence={evidenceOf.get(String(d.id))}
+            host={hostOf.get(String(d.id))}
             canJudge={hasAgentId === true}
             onDone={refresh}
           />
@@ -181,6 +184,7 @@ function CaseCard({
   deals,
   isTwak,
   evidence,
+  host,
   canJudge,
   onDone,
 }: {
@@ -190,6 +194,7 @@ function CaseCard({
   deals: Address;
   isTwak: boolean;
   evidence?: EvidenceRow;
+  host?: HostReport;
   canJudge: boolean;
   onDone: () => void;
 }) {
@@ -273,6 +278,7 @@ function CaseCard({
         {fmt18(deal.amount)} <span className="text-[14px] text-muted">{sym}</span>
       </div>
       <JuryBox deal={deal} jury={jury} phase={phase} />
+      <HostPanel report={host} />
 
       <div className="space-y-2 text-[13px]">
         <EvidenceBlock label={t("jury.terms")} text={evidence?.terms} ok={termsOk} />

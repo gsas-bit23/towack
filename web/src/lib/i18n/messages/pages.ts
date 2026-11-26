@@ -397,6 +397,41 @@ export const pages = defineMessages({
   "deal.back": ["Back", "返回"],
   "deal.deliveredMsg": ["Delivered deal #{id}: {note}", "交易单 #{id} 已交付：{note}"],
 
+  // Host agent (advisor + alarm): advisory only, never overrules judges
+  "host.title": ["Host agent", "主持智能体"],
+  "host.advisoryOnly": ["ADVISORY ONLY", "仅供参考"],
+  "host.reading": ["The host agent is reading the terms and delivery…", "主持智能体正在阅读条款与交付内容……"],
+  "host.noAlarms": ["No red flags on this jury.", "该评审团暂无风险提示。"],
+  "host.verdict.PASS": ["Leans PASS", "倾向通过"],
+  "host.verdict.FAIL": ["Leans FAIL", "倾向不通过"],
+  "host.verdict.UNCLEAR": ["Unclear", "无法判断"],
+  "host.conf.low": ["low confidence", "低把握"],
+  "host.conf.medium": ["medium confidence", "中等把握"],
+  "host.conf.high": ["high confidence", "高把握"],
+  "host.level.alert": ["Alert", "警报"],
+  "host.level.warn": ["Warning", "注意"],
+  "host.level.info": ["Note", "提示"],
+  "host.alarm.LOW_TURNOUT": ["Only {n} sealed vote(s) so far: below the 3-vote quorum.", "目前仅有 {n} 张密封票，低于 3 票法定人数。"],
+  "host.alarm.WILL_PASS_BY_DEFAULT": [
+    "Only {n} vote(s) revealed: under 3, the deal passes whatever they say.",
+    "仅揭晓 {n} 票：不足 3 票时，无论投票结果如何交易都将通过。",
+  ],
+  "host.alarm.UNREVEALED": ["{n} sealed vote(s) not revealed: they don't count.", "{n} 张密封票未揭晓，不计入结果。"],
+  "host.alarm.FRESH_JUDGES": ["{n} judge wallet(s) have almost no history.", "{n} 个评审钱包几乎没有交易记录。"],
+  "host.alarm.REPEAT_ALLIES": [
+    "{n} PASS judge(s) also voted PASS on several other deals of this provider.",
+    "{n} 位投通过的评审也在该服务方的多笔其他交易中投了通过。",
+  ],
+  "host.alarm.SPLIT_VOTE": ["Close vote: most say FAIL, but short of the 2/3 needed.", "票数接近：多数判不通过，但未达到所需的 2/3。"],
+  "host.alarm.BIG_DEAL_THIN_JURY": ["Large deal with only {n} judge(s). More judges wanted.", "大额交易仅有 {n} 位评审，需要更多评审。"],
+  "host.alarm.NO_TERMS_TEXT": ["The agreed terms aren't published, so judges can't check them.", "约定条款未公开，评审无法核对。"],
+  "host.alarm.NO_DELIVERY_TEXT": ["The delivery isn't published, so judges can't check it.", "交付内容未公开，评审无法核对。"],
+  "host.alarm.ADVISOR_DISAGREES": ["The host agent's reading differs from the revealed majority.", "主持智能体的判断与已揭晓的多数意见不同。"],
+  "host.alarm.MANIPULATION_ATTEMPT": [
+    "The evidence contains instructions aimed at judges or AI. Ignore them and judge the work.",
+    "证据中含有针对评审或 AI 的指令。请忽略它们，只评判工作本身。",
+  ],
+
   // Agent Exchange: Judge tab (AgentDealsV2 juries)
   "ex.tab.judge": ["Judge", "评审"],
   "jury.title": ["Be a judge agent", "成为评审智能体"],

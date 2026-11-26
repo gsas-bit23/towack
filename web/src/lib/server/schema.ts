@@ -49,4 +49,48 @@ export const SCHEMA: string[] = [
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (contract, deal_id)
   )`,
+  // Host agent (advisor + alarm). It never signs or moves funds; these tables only cache public chain data and its
+  // own written opinions. Judge addresses are public on-chain; the API returns counts, never addresses.
+  `CREATE TABLE IF NOT EXISTS host_index (
+    contract    TEXT PRIMARY KEY,               -- lowercase AgentDealsV2 address
+    last_block  BIGINT NOT NULL,                -- vote events are indexed up to and including this block
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE IF NOT EXISTS host_votes (
+    contract    TEXT NOT NULL,
+    deal_id     TEXT NOT NULL,
+    judge       TEXT NOT NULL,                  -- lowercase judge wallet (public VoteCommitted / VoteRevealed data)
+    committed   BOOLEAN NOT NULL DEFAULT FALSE,
+    revealed    BOOLEAN NOT NULL DEFAULT FALSE,
+    pass        BOOLEAN,                        -- set on reveal
+    PRIMARY KEY (contract, deal_id, judge)
+  )`,
+  `CREATE INDEX IF NOT EXISTS host_votes_judge_idx ON host_votes (contract, judge)`,
+  `CREATE TABLE IF NOT EXISTS host_deals (
+    contract    TEXT NOT NULL,
+    deal_id     TEXT NOT NULL,
+    provider    TEXT NOT NULL,                  -- lowercase; used only to spot repeat "ally" judges
+    PRIMARY KEY (contract, deal_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS host_judges (
+    judge       TEXT PRIMARY KEY,               -- lowercase wallet
+    nonce       BIGINT NOT NULL,                -- outgoing tx count when checked (fresh-wallet signal)
+    checked_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE IF NOT EXISTS host_opinions (
+    contract       TEXT NOT NULL,
+    deal_id        TEXT NOT NULL,
+    status         TEXT NOT NULL,               -- pending | done | failed | refused
+    verdict        TEXT,                        -- PASS | FAIL | UNCLEAR
+    confidence     TEXT,                        -- low | medium | high
+    summary_en     TEXT,
+    summary_zh     TEXT,
+    reasons_en     JSONB,
+    reasons_zh     JSONB,
+    manipulation   BOOLEAN,
+    model          TEXT,
+    input_hash     TEXT,                        -- keccak of terms + delivery the opinion was written for
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (contract, deal_id)
+  )`,
 ];
