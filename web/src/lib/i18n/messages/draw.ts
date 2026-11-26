@@ -85,10 +85,10 @@ export const draw = defineMessages({
   "lot.pays": ["Pays", "赔付"],
   "lot.slots": ["{n} slots", "{n} 个名额"],
   "lot.upToPot": [" · up to +{p}% BNB pot", " · 最高 +{p}% BNB 奖金池"],
-  "lot.ev": ["Expected return: {p}%", "期望回报：{p}%"],
+  "lot.ev": ["Average payback: {p}% (players lose on average)", "平均返还：{p}%（玩家平均亏损）"],
   "lot.evBody": [
-    "On average a spin pays back 95 of every 100 TWAK; the 5% edge stays in the pool. {less}% of spins pay less than the entry, {even}% pay it back, {more}% pay more.",
-    "平均而言，每投入 100 TWAK 回报 95 TWAK，5% 的差额留在奖池中。{less}% 的转盘回报低于投入，{even}% 返还本金，{more}% 高于投入。",
+    "On average a spin pays back 95 of every 100 TWAK, an average loss of 5%; that edge stays in the pool. {less}% of spins pay less than the entry, {even}% pay it back, {more}% pay more.",
+    "平均而言，每投入 100 TWAK 返还 95 TWAK，即平均亏损 5%，差额留在奖池中。{less}% 的转盘返还低于投入，{even}% 返还本金，{more}% 高于投入。",
   ],
   "lot.how": ["How the pool wheel works", "奖池转盘规则"],
   "lot.how1": [
@@ -123,7 +123,7 @@ export const draw = defineMessages({
   "lot.upToMax": ["up to +{n} at max entry", "单次上限时最高 +{n}"],
   "lot.entry": ["Entry", "参与数量"],
   "lot.entrySub": ["TWAK min – max", "TWAK 最低 – 最高"],
-  "lot.evStat": ["Expected return", "期望回报"],
+  "lot.evStat": ["Average payback", "平均返还"],
   "lot.spinsSoFar": ["{n} spins so far", "累计 {n} 次转盘"],
   "lot.perSpin": ["per spin, on average", "单次平均"],
   "lot.idle": ["Enter to spin. Each entry lands on its own Chainlink VRF number.", "参与即可转盘。每次参与都对应一个独立的 Chainlink VRF 随机数。"],

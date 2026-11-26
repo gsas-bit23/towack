@@ -7,7 +7,6 @@ import { AgentPathToggle } from "@/components/AgentPath";
 import { ConnectPill } from "@/components/ConnectPill";
 import { Button, Panel, Pill, Stat } from "@/components/ui";
 import { api, ApiError, loadSession, signIn, signOut, subscribeSession, type Message, type PublicAgent, type Service, type Session, type Stats } from "@/lib/exchange/client";
-import { erc8004Url } from "@/lib/exchange/erc8004";
 import { useLocale } from "@/lib/i18n";
 import { Deals } from "./Deals";
 import { Judge } from "./Judge";
@@ -142,20 +141,20 @@ function SignInCard({ session }: { session: Session | null }) {
   );
 }
 
-/** Badge for an agent linked to BNB Chain's ERC-8004 registry; links to the agent token on BscScan. */
+/**
+ * Badge for an agent linked to BNB Chain's ERC-8004 registry. Deliberately NOT a link to an explorer: the token page
+ * shows the owner wallet, and Agent ID must never become a "look up wallets by name" tool (hackathon red line).
+ */
 function Erc8004Badge({ id }: { id: string }) {
   const { t } = useLocale();
   return (
-    <a
-      href={erc8004Url(id)}
-      target="_blank"
-      rel="noopener noreferrer"
+    <span
       title={t("ex.erc8004Title")}
-      className="inline-flex items-center gap-1 rounded-full border border-ion/50 bg-ion/10 px-2.5 py-0.5 font-mono text-[12px] font-semibold text-ion hover:bg-ion/20"
+      className="inline-flex items-center gap-1 rounded-full border border-ion/50 bg-ion/10 px-2.5 py-0.5 font-mono text-[12px] font-semibold text-ion"
     >
       <span aria-hidden>◆</span>
       {t("ex.erc8004Badge", { id })}
-    </a>
+    </span>
   );
 }
 

@@ -233,8 +233,8 @@ export const pages = defineMessages({
   ],
   "docs.q6": ["How is the draw kept fair?", "如何保证抽奖公平？"],
   "docs.a6": [
-    "Every spin uses its own Chainlink VRF random number, so no one (including the Towack team) can pick or predict the result. The paid mint draws from a fixed 5,000-slot deck with exact slot counts; the Draw V2 pool wheel uses a fixed 10,000-slot table with a 95% expected return. Genesis 300 has no draw (flat 20,000 TWAK each). Each spin attaches a small BNB randomness buffer; most of it (every unused wei) is refunded automatically in the same transaction.",
-    "每次转盘都使用独立的 Chainlink VRF 随机数，任何人（包括 Towack 团队）都无法指定或预测结果。付费铸造从名额数固定的 5,000 名额卡组中抽取；Draw V2 奖池转盘使用固定的 10,000 名额赔付表，期望回报 95%。Genesis 300 不涉及抽奖（每份固定 20,000 TWAK）。每次转盘会附带少量 BNB 随机数缓冲费用，其中大部分（所有未使用的部分）会在同一笔交易中自动退还。",
+    "Every spin uses its own Chainlink VRF random number, so no one (including the Towack team) can pick or predict the result. The paid mint draws from a fixed 5,000-slot deck with exact slot counts; the Draw V2 pool wheel uses a fixed 10,000-slot table with a 95% average payback (players lose 5% on average). Genesis 300 has no draw (flat 20,000 TWAK each). Each spin attaches a small BNB randomness buffer; most of it (every unused wei) is refunded automatically in the same transaction.",
+    "每次转盘都使用独立的 Chainlink VRF 随机数，任何人（包括 Towack 团队）都无法指定或预测结果。付费铸造从名额数固定的 5,000 名额卡组中抽取；Draw V2 奖池转盘使用固定的 10,000 名额赔付表，平均返还 95%（玩家平均亏损 5%）。Genesis 300 不涉及抽奖（每份固定 20,000 TWAK）。每次转盘会附带少量 BNB 随机数缓冲费用，其中大部分（所有未使用的部分）会在同一笔交易中自动退还。",
   ],
   "docs.q7": ["Are rebates staking?", "返佣是质押吗？"],
   "docs.a7": [

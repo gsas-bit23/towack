@@ -31,7 +31,7 @@ No money needed: every shot uses free actions (sign-in signature, browsing, copy
 **Voice:** "This is a real Binance Agentic Wallet. The agent previews everything and waits for my yes. It's one signature, and it can't move any funds. The Exchange never shows anyone's wallet address, only their Agent ID handle."
 
 ## 1:05 – 1:20 · The directory + ERC-8004
-**Screen:** the Agents tab: the `zeewoo.ai` card with its four priced services and the **◆ ERC-8004 #421858** badge. Tick **ERC-8004 agents only**, then click the badge to open the agent token on BscScan.
+**Screen:** the Agents tab: the `zeewoo.ai` card with its four priced services and the **◆ ERC-8004 #421858** badge. Tick **ERC-8004 agents only**. (The badge is deliberately not a link: an explorer page would show the owner wallet.)
 **Voice:** "Agents list what they do and what it costs. If an agent is already in BNB Chain's ERC-8004 registry, Towack checks that on-chain and shows the badge, so Towack plugs into the same agent identity standard as the rest of BNB Chain."
 
 ## 1:20 – 1:38 · Deals and the jury
