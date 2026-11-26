@@ -101,24 +101,46 @@ export function onchainHost(rpcUrl = process.env.BSC_LOGS_RPC_URL || "https://bs
   };
 }
 
-/** Catch the shared vote index up toward the chain head (bounded per call; safe to run concurrently). */
-export async function advanceIndex(db: Db, chain: HostChain, contract: string, maxChunks = MAX_CHUNKS_PER_CALL): Promise<bigint> {
+/** Parallel eth_getLogs calls per batch, and the time a request may spend catching up before it answers. */
+export const LOG_PARALLEL = 10;
+export const INDEX_BUDGET_MS = 15_000;
+
+/**
+ * Catch the shared vote index up toward the chain head. Bounded per call by chunks and by time, and saves progress
+ * after every batch, so a long idle gap never holds a request near the function time limit. Safe to run concurrently.
+ */
+export async function advanceIndex(
+  db: Db,
+  chain: HostChain,
+  contract: string,
+  maxChunks = MAX_CHUNKS_PER_CALL,
+  budgetMs = INDEX_BUDGET_MS,
+): Promise<{ indexedTo: bigint; caughtUp: boolean }> {
+  const started = Date.now();
   const rows = await db.query<{ last_block: string }>(`SELECT last_block FROM host_index WHERE contract = $1`, [contract]);
   const last = rows[0] ? BigInt(rows[0].last_block) : DEALS_V2_DEPLOY_BLOCK - 1n;
   if (!rows[0]) await db.query(`INSERT INTO host_index (contract, last_block) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [contract, last.toString()]);
   const head = await chain.latestBlock();
   const target = head - 3n; // stay a few blocks behind the head
-  if (target <= last) return last;
+  if (target <= last) return { indexedTo: last, caughtUp: true };
 
   const ranges: [bigint, bigint][] = [];
   for (let from = last + 1n; from <= target && ranges.length < maxChunks; from += LOG_CHUNK) {
     ranges.push([from, from + LOG_CHUNK - 1n > target ? target : from + LOG_CHUNK - 1n]);
   }
-  const logs: VoteLog[] = [];
-  for (let i = 0; i < ranges.length; i += 5) {
-    const part = await Promise.all(ranges.slice(i, i + 5).map(([a, b]) => chain.voteLogs(a, b)));
-    for (const p of part) logs.push(...p);
+  let done = last;
+  for (let i = 0; i < ranges.length; i += LOG_PARALLEL) {
+    if (i > 0 && Date.now() - started > budgetMs) break;
+    const batch = ranges.slice(i, i + LOG_PARALLEL);
+    const part = await Promise.all(batch.map(([a, b]) => chain.voteLogs(a, b)));
+    await storeVotes(db, contract, part.flat());
+    done = batch[batch.length - 1][1];
+    await db.query(`UPDATE host_index SET last_block = GREATEST(last_block, $2), updated_at = now() WHERE contract = $1`, [contract, done.toString()]);
   }
+  return { indexedTo: done, caughtUp: done >= target };
+}
+
+async function storeVotes(db: Db, contract: string, logs: VoteLog[]): Promise<void> {
   for (const l of logs) {
     const key = [contract, l.dealId.toString(), l.judge.toLowerCase()];
     if (l.kind === "commit") {
@@ -135,9 +157,6 @@ export async function advanceIndex(db: Db, chain: HostChain, contract: string, m
       );
     }
   }
-  const newLast = ranges[ranges.length - 1][1];
-  await db.query(`UPDATE host_index SET last_block = GREATEST(last_block, $2), updated_at = now() WHERE contract = $1`, [contract, newLast.toString()]);
-  return newLast;
 }
 
 export function phaseOf(d: ChainDeal | null, now: number): JuryFacts["phase"] {
@@ -190,7 +209,9 @@ export async function getHostReports(db: Db, idsParam: string | null, deps: Host
   if (ids.length === 0) return [];
   const contract = contractAddr().toLowerCase();
   const now = deps.now ?? Math.floor(Date.now() / 1000);
-  const indexedTo = await advanceIndex(db, deps.chain, contract);
+  const { indexedTo, caughtUp } = await advanceIndex(db, deps.chain, contract);
+  // Still behind after a long idle gap: keep catching up after the response is sent.
+  if (!caughtUp) deps.schedule?.(async () => void (await advanceIndex(db, deps.chain, contract, MAX_CHUNKS_PER_CALL, 40_000)));
   const [chainDeals, usdt] = await Promise.all([deps.chain.deals(ids), deps.chain.usdt()]);
   const idStrs = ids.map(String);
 
