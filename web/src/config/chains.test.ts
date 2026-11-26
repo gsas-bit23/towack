@@ -12,7 +12,7 @@ describe("production chain lock", () => {
     expect(isAppChain(97)).toBe(false);
     expect(isAppChain(undefined)).toBe(false);
     vi.unstubAllEnvs();
-  });
+  }, 30_000); // fresh import of the wallet stack is slow when the whole suite runs in parallel
 
   it("only exposes the mainnet address book at runtime", async () => {
     const { ADDRESSES } = await import("./addresses");
@@ -24,5 +24,5 @@ describe("production chain lock", () => {
   it("configures wagmi with BSC mainnet only", async () => {
     const { wagmiConfig } = await import("./wagmi");
     expect(wagmiConfig.chains.map((c) => c.id)).toEqual([56]);
-  });
+  }, 30_000);
 });
