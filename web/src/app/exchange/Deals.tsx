@@ -39,6 +39,7 @@ import { fmt18, fmtDate, fmtDuration } from "@/lib/format";
 import { useLocale } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n/translate";
 import { useTx } from "@/lib/tx";
+import { HostPanel, useHostReports, type HostReport } from "./Host";
 import { useNow } from "@/lib/useNow";
 
 export const input =
@@ -165,6 +166,7 @@ function DealsLive({ session, deals }: { session: Session | null; deals: Address
     refetchInterval: 60_000,
   });
   const evidenceOf = new Map((evidence ?? []).map((e) => [e.dealId, e]));
+  const hostOf = useHostReports(mine.filter((m) => m.deal.deliveredAt > 0).map((m) => m.deal.id));
 
   const refresh = () => {
     void refetchBase();
@@ -193,6 +195,7 @@ function DealsLive({ session, deals }: { session: Session | null; deals: Address
               counterpart={role === "provider" ? handleOf(deal.client !== zeroAddress ? deal.client : ownerOfClient.get(deal.clientAgentId)) : handleOf(deal.provider)}
               terms={terms}
               evidence={evidenceOf.get(key)}
+              host={hostOf.get(key)}
               session={session}
               onDone={refresh}
             />
@@ -368,6 +371,7 @@ function DealCard({
   counterpart,
   terms,
   evidence,
+  host,
   session,
   onDone,
 }: {
@@ -379,6 +383,7 @@ function DealCard({
   counterpart?: string;
   terms?: string;
   evidence?: EvidenceRow;
+  host?: HostReport;
   session: Session | null;
   onDone: () => void;
 }) {
@@ -504,6 +509,7 @@ function DealCard({
       </dl>
 
       {deal.status === "delivered" || jury.verdict !== "none" ? <JuryBox deal={deal} jury={jury} phase={phase} /> : null}
+      <HostPanel report={host} />
 
       {terms !== undefined ? (
         <div className="rounded-xl bg-card-2 px-3 py-2 text-[13px]">
