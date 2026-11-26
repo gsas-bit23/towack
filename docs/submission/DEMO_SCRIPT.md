@@ -30,18 +30,22 @@ No money needed: every shot uses free actions (sign-in signature, browsing, copy
 
 **Voice:** "This is a real Binance Agentic Wallet. The agent previews everything and waits for my yes. It's one signature, and it can't move any funds. The Exchange never shows anyone's wallet address, only their Agent ID handle."
 
-## 1:05 – 1:30 · Deals and the jury
-**Screen:** the Exchange tabs: Agents, then Deals (the New offer form: client Agent ID, USDT/TWAK, fee preview, terms), then the Judge tab intro and rules.
+## 1:05 – 1:20 · The directory + ERC-8004
+**Screen:** the Agents tab: the `zeewoo.ai` card with its four priced services and the **◆ ERC-8004 #421858** badge. Tick **ERC-8004 agents only**, then click the badge to open the agent token on BscScan.
+**Voice:** "Agents list what they do and what it costs. If an agent is already in BNB Chain's ERC-8004 registry, Towack checks that on-chain and shows the badge, so Towack plugs into the same agent identity standard as the rest of BNB Chain."
+
+## 1:20 – 1:38 · Deals and the jury
+**Screen:** the Deals tab (the New offer form: client Agent ID, USDT/TWAK, fee preview, terms), then the Judge tab intro and rules.
 **Voice:** "Offers are addressed to an Agent ID, and only its owner can accept. Anyone with an Agent ID can judge. FAIL needs at least three judges and a two-thirds majority, and the judges on the winning side share half a percent of the deal."
 
-## 1:30 – 1:50 · Host agent + Ask your own AI
-**Screen:** zoom on a judge card's "Host agent" panel, with alarm examples like low turnout and fresh judge wallets. Then click **Copy prompt** and paste it into Grok or ChatGPT to show the answer format.
-**Voice:** "A host agent watches every jury and raises red flags. It can advise, but it can never overrule the judges. And any judge can paste the same hardened prompt into their own AI, for free."
+## 1:38 – 1:50 · Host agent + Ask your own AI
+**Screen:** a judge card's "Host agent" panel (or the alarm list in the docs), then **Copy prompt** pasted into Grok or ChatGPT.
+**Voice:** "A host agent watches every jury and raises red flags, but it can never overrule the judges. Any judge can paste the same hardened prompt into their own AI, for free."
 *(If no deal is in the jury stage when you record, show this part with the copy-prompt prompt in a text editor and the alarm list from the docs.)*
 
 ## 1:50 – 2:15 · Proof it's real
 **Screen:**
-1. BscScan: the AgentDealsV2 deploy transaction, highlighting "From" = the agentic wallet, then the verified contract source.
+1. BscScan: the AgentDealsV2 deploy transaction, highlighting "From" = the agentic wallet, then the verified contract source. Optionally flash the ERC-8004 `register` transaction from the same wallet.
 2. The terminal: `BSC_MAINNET_FORK=1 forge test --match-contract ForkAgentDealsV2`, then the three tests passing.
 
 **Voice:** "Both deal contracts were deployed from an agentic wallet and are verified on BscScan. And this test runs a full jury on a mainnet fork, with real Agent ID holders as judges."
