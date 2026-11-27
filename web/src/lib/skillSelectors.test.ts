@@ -30,17 +30,30 @@ describe("Towack SKILL.md selectors", () => {
   });
 
   it.each([
-    ["currentEpoch()", "0x76671808"],
-    ["feesOf(uint256,address)", "0x6ccd6cfa"],
-    ["claimed(uint256,address)", "0x120aa877"],
-    ["claimable(address,uint256)", "0x60efe334"],
-    ["claim(uint256[])", "0x6ba4c138"],
-    ["mint(address)", "0x6a627842"],
     ["mintByHandle()", "0x748049f4"],
     ["enter(uint256)", "0xa59f3e0c"],
     ["vrfFeeAt(uint256)", "0xa3eaf9d8"],
+    ["createOffer(address,uint256,uint256,uint64,bytes32)", "0x3ed93cfd"],
+    ["accept(uint256)", "0x19b05f49"],
+    ["commitVote(uint256,bytes32)", "0x9da69180"],
+    ["revealVote(uint256,bool,bytes32)", "0xfacc092f"],
+    ["finalize(uint256)", "0x05261aea"],
+    ["claimJudgeReward(uint256)", "0xdf3423ff"],
   ])("flow selector %s is %s and appears in the skill", (sig, selector) => {
     expect(toFunctionSelector(sig)).toBe(selector);
     expect(SKILL).toContain(selector);
+  });
+
+  // The paid mint closed with zero mints (allocation burned) and the V2 pair never opened: the skill must not send
+  // agents into the paid mint, referral, rebate or router buy/sell flows any more.
+  it.each([
+    ["mint(address)", "0x6a627842"],
+    ["claimReferral()", "0xe02f1ebd"],
+    ["claim(uint256[])", "0x6ba4c138"],
+    ["buy(uint256,uint256)", "0xd6febde8"],
+    ["sell(uint256,uint256,uint256)", "0xd3c9727c"],
+  ])("removed flow %s (%s) is gone from the skill", (sig, selector) => {
+    expect(toFunctionSelector(sig)).toBe(selector);
+    expect(SKILL).not.toContain(selector);
   });
 });

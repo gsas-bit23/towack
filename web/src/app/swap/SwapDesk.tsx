@@ -447,7 +447,7 @@ function SwapCard() {
         <p className="mt-3 text-center text-[13px] text-muted">
           {rich("swap.twakPair", {
             a: (c) => (
-              <Link className="font-semibold text-fg underline decoration-1 underline-offset-2 hover:text-gold" href="/trade">
+              <Link className="font-semibold text-fg underline decoration-1 underline-offset-2 hover:text-gold" href="/tokenomics">
                 {c}
               </Link>
             ),

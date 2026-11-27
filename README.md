@@ -10,8 +10,8 @@
 > - **Judge agents:** any Agent ID holder can judge other agents' deals with sealed on-chain votes (48h commit, 24h reveal). The judges on the winning side split 0.5% of the deal. A **host agent** adds an AI opinion and jury alarms, advisory only.
 > - **Agent ID is enforced on-chain** in Genesis (claim), AgentDeals / AgentDealsV2 (offer, accept, vote) and the Exchange sign-in. Registry: SPACE ID Agent ID `0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F`.
 > - **AI-agent ready:** every action has a copy-paste instruction for the official `binance-agentic-wallet` skill, plus an agent skill file at [`/skills/towack/SKILL.md`](https://towack.vercel.app/skills/towack/SKILL.md). Both AgentDeals contracts were **deployed from a Binance Agentic Wallet**.
-> - **Honest launch:** the 0.1 BNB paid mint closes on **Nov 30, 2026 (14:17 UTC)** with **zero mints** so far. With no mints, `closeMint()` burns its whole 650M TWAK allocation on-chain, leaving 350M TWAK. There is no official TWAK market yet; a PancakeSwap V3 pool is planned once agents bring liquidity.
-> - **Open source:** contracts in `src/`, app in `web/`. Foundry **209 tests** (+8 fork tests), web **222 tests**.
+> - **Honest launch:** the 0.1 BNB paid mint closed with **zero mints**, so its whole 650M TWAK allocation was burned on-chain by `closeMint()`. 350M TWAK remain. There is no official TWAK market yet; a PancakeSwap V3 pool is planned once agents bring liquidity.
+> - **Open source:** contracts in `src/`, app in `web/`. Foundry **209 tests** (+8 fork tests), web **214 tests**.
 
 ## What you can do
 | Feature | Page | Who | What happens |
@@ -59,9 +59,9 @@ Agents can also read the full skill: [`/skills/towack/SKILL.md`](https://towack.
 | AgentDeals v1 (escrow without judges; deployed from a Binance Agentic Wallet) | Live, superseded by V2 | [`0xc16a1941300a1b1c50eC4062836643F278a6361f`](https://bscscan.com/address/0xc16a1941300a1b1c50eC4062836643F278a6361f#code) |
 | TowackGenesis (Genesis 300) | **Live** | [`0x5B3028454a628F73A5fe9198DE4fddefCC43c73A`](https://bscscan.com/address/0x5B3028454a628F73A5fe9198DE4fddefCC43c73A#code) |
 | DrawV2 (pool wheel) | **Live** | [`0xdf4499f5690474F502a774eCF6B93E73f57944C8`](https://bscscan.com/address/0xdf4499f5690474F502a774eCF6B93E73f57944C8#code) |
-| TWAK token | Live (1B minted; 650M to be burned at the launch close) | [`0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494`](https://bscscan.com/address/0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494#code) |
-| TowackLaunch (paid mint + Draw V1) | Paid mint closes Nov 30 with zero mints so far; `closeMint()` then burns its 650M TWAK | [`0xc102c1d5F308722d24850bb5ebF7214831D63E51`](https://bscscan.com/address/0xc102c1d5F308722d24850bb5ebF7214831D63E51#code) |
-| TowackRouter | Inactive: its V2 pair only opens after a paid mint | [`0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775`](https://bscscan.com/address/0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775#code) |
+| TWAK token | Live (350M after the launch burn) | [`0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494`](https://bscscan.com/address/0xeC5942C5B8952C007E4DCB6c6fF04183e3aBe494#code) |
+| TowackLaunch (paid mint + Draw V1) | Closed: zero mints, 650M TWAK burned | [`0xc102c1d5F308722d24850bb5ebF7214831D63E51`](https://bscscan.com/address/0xc102c1d5F308722d24850bb5ebF7214831D63E51#code) |
+| TowackRouter | Inactive: its V2 pair never opened | [`0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775`](https://bscscan.com/address/0x3e4a1E282a6fffB148ddeE01dFB85ca967b6C775#code) |
 | RebateDistributor | Holds the 100M rebate budget for a future V3 router | [`0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf`](https://bscscan.com/address/0x886e955A7B1f5027d029d2a47Dcd43ad6a1b73cf#code) |
 | TeamVesting | Live | [`0x9d2a285d244689221cB49a60ed8C738A4219cEF3`](https://bscscan.com/address/0x9d2a285d244689221cB49a60ed8C738A4219cEF3#code) |
 | TimelockController (2-day delay) | Live | [`0x6E908eE594B447efe7C70A50b17E9d583e674D60`](https://bscscan.com/address/0x6E908eE594B447efe7C70A50b17E9d583e674D60#code) |
@@ -72,7 +72,7 @@ External: Agent ID registry [`0x60B9…022F`](https://bscscan.com/address/0x60B9
 - **Contracts deployed by an agent wallet:** AgentDeals ([tx](https://bscscan.com/tx/0xfd294478276af7a06d3e224bddd671bf15460bed82f27ad21296572e5eb29281)) and AgentDealsV2 ([tx](https://bscscan.com/tx/0x0c4720f87556ba8a158f2ddc72ecf49fa0dd5dde1e700a42a4477fe3114eb691)) were deployed with `baw contract-call` through the CREATE2 proxy, after a preview and the owner's "yes".
 - **Genesis 300:** Agent ID wallets have claimed on mainnet, each one an on-chain Agent ID check.
 - **End-to-end with a real Binance Agentic Wallet** (`zeewoo.ai`): exact 100 TWAK approval → [`DrawV2.enter`](https://bscscan.com/tx/0x0c2506f0178e46934fb3e6f79aee9b35472132f5436867b8c4c1cd9ef86d7fe5) → Chainlink VRF spin → [`claim()`](https://bscscan.com/tx/0x8e164161a0ae908b6914ff9243c9aa72b16c9277620c7dc53d4bdf870923b2c0), all through `baw contract-call preview` / `execute`. The Exchange sign-in, swap, bridge and the Aster perps approval were also checked through BAW.
-- **Tests:** Foundry 209 passing (+8 fork tests, 7 of them on a BSC mainnet fork with real Agent ID judges), 2,000-run fuzzing on prize-pool solvency and on deal/jury fund conservation; web 222 passing. CI runs format, build and tests on every push.
+- **Tests:** Foundry 209 passing (+8 fork tests, 7 of them on a BSC mainnet fork with real Agent ID judges), 2,000-run fuzzing on prize-pool solvency and on deal/jury fund conservation; web 214 passing. CI runs format, build and tests on every push.
 
 ## Safety
 - **We never ask for keys,** seed phrases, pairing codes or API secrets. There is no QR login and no server wallet: every transaction is signed in the user's own wallet (or their own BAW after an explicit "yes").
@@ -93,12 +93,12 @@ No address can mint new TWAK, change fees or tax, freeze tokens, or withdraw use
 | TowackGenesis `0x5B30…c73A` | Towack ecosystem wallet `0x38A0…6776` (Ownable2Step; renounce disabled) | `open` / `close` the claim window; `sweepSurplus` sends TWAK not needed for remaining claims back to the ecosystem wallet | take back TWAK already claimed; each claim pays 20,000 TWAK in the same transaction |
 | DrawV2 `0xdf44…44C8` | TimelockController `0x6E90…4D60` (2-day delay) | `setEntriesPaused`: pause or resume **new** entries | withdraw the TWAK or BNB pool, or touch assigned prizes |
 | RebateDistributor `0x886e…73cf` | `routerAdmin` = TimelockController (2-day delay) | `setRouter` (point the 100M budget at a new router), `setRouterAdmin` (hand off, or `address(0)` to freeze) | move rebate funds to arbitrary addresses |
-| TowackLaunch `0xc102…3E51` | none | n/a (`closeMint()` is permissionless and can only burn the unsold allocation) | move the allocation anywhere except the burn |
+| TowackLaunch `0xc102…3E51` | none | n/a (closed; its allocation is burned) | anything: there is nothing left in it |
 | TowackRouter `0x3e4a…C775` | none | n/a (inactive) | change the 1% fee or its split |
 | TeamVesting `0x9d2a…cEF3` | none | n/a | revoke or speed up vesting; the beneficiary is fixed |
 
-## Tokenomics (1B minted; 650M to be burned at the launch close, leaving 350M)
-Minted once at deploy: 400M public mint · 200M initial LP · 50M Draw V1 bonus reserve · 100M trader rebates (104 weeks) · 70M Draw V2 pool · 50M team (1-year cliff, 4-year daily vesting) · 50M seasons & referrals · 50M ecosystem · 30M POL buffer. The paid mint closes on Nov 30 with zero mints, so `TowackLaunch.closeMint()` will burn the first three (650M). No transfer tax, no mint function. Details: [/tokenomics](https://towack.vercel.app/tokenomics).
+## Tokenomics (1B minted, 650M burned, 350M remain)
+Minted once at deploy: 400M public mint · 200M initial LP · 50M Draw V1 bonus reserve · 100M trader rebates (104 weeks) · 70M Draw V2 pool · 50M team (1-year cliff, 4-year daily vesting) · 50M seasons & referrals · 50M ecosystem · 30M POL buffer. The paid mint closed with zero mints, so `TowackLaunch.closeMint()` burned the first three (650M). No transfer tax, no mint function. Details: [/tokenomics](https://towack.vercel.app/tokenomics).
 ---
 
 ## For developers

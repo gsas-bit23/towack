@@ -6,14 +6,21 @@ const EMPTY = "./src/stubs/empty-module.js";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
-  // Referral landing: /r/<handle>?ref=<address> is served by the static /r page (handle read client-side from the
-  // path), so the shared Nav's usePathname() never blocks prerendering of a dynamic segment.
-  async rewrites() {
+  // The paid mint closed with no mints, so the router, rebates, referrals and Draw V1 pages were removed. Old links
+  // (shared referral links, bookmarks, judges' notes) land on the closest live page instead of a 404.
+  async redirects() {
     return [
-      { source: "/r/:handle", destination: "/r" },
-      // Short MCP endpoint for agents: https://towack.vercel.app/mcp
-      { source: "/mcp", destination: "/api/mcp" },
+      { source: "/trade", destination: "/swap", permanent: false },
+      { source: "/rebates", destination: "/tokenomics", permanent: false },
+      { source: "/referrals", destination: "/exchange", permanent: false },
+      { source: "/r", destination: "/exchange", permanent: false },
+      { source: "/r/:handle", destination: "/exchange", permanent: false },
+      { source: "/draw", destination: "/lottery", permanent: false },
     ];
+  },
+  async rewrites() {
+    // Short MCP endpoint for agents: https://towack.vercel.app/mcp
+    return [{ source: "/mcp", destination: "/api/mcp" }];
   },
   turbopack: {
     root: path.resolve(__dirname),

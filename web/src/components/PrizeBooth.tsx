@@ -135,7 +135,7 @@ export function useWheelMachine(status: WheelStatus, fresh: boolean, prizeId: nu
   return { mode, landed, burst, onLanded };
 }
 
-export function ShareButton({ prizeId, text, path = "/draw" }: { prizeId: number; text?: string; path?: string }) {
+export function ShareButton({ prizeId, text, path = "/lottery" }: { prizeId: number; text?: string; path?: string }) {
   const { t } = useLocale();
   return (
     <Button

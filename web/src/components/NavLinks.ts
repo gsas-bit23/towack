@@ -1,16 +1,14 @@
 import type { MessageKey } from "@/lib/i18n";
 
+// The paid mint closed with no mints (its 650M TWAK was burned), so the router, rebates, referrals and the Draw V1
+// prize deck are gone from the site. Their old URLs redirect (next.config.ts).
 export const NAV_LINKS: readonly { href: string; labelKey: MessageKey }[] = [
-  { href: "/mint", labelKey: "nav.mint" },
   { href: "/exchange", labelKey: "nav.exchange" },
-  { href: "/draw", labelKey: "nav.draw" },
-  { href: "/trade", labelKey: "nav.trade" },
+  { href: "/mint", labelKey: "nav.genesis" },
+  { href: "/lottery", labelKey: "nav.lottery" },
   { href: "/swap", labelKey: "nav.swap" },
   { href: "/perps", labelKey: "nav.perps" },
-  { href: "/rebates", labelKey: "nav.rebates" },
-  { href: "/referrals", labelKey: "nav.referrals" },
   { href: "/tokenomics", labelKey: "nav.tokenomics" },
-  { href: "/lottery", labelKey: "nav.lottery" },
   { href: "/docs", labelKey: "nav.docs" },
 ];
 
