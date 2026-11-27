@@ -9,7 +9,11 @@ const nextConfig: NextConfig = {
   // Referral landing: /r/<handle>?ref=<address> is served by the static /r page (handle read client-side from the
   // path), so the shared Nav's usePathname() never blocks prerendering of a dynamic segment.
   async rewrites() {
-    return [{ source: "/r/:handle", destination: "/r" }];
+    return [
+      { source: "/r/:handle", destination: "/r" },
+      // Short MCP endpoint for agents: https://towack.vercel.app/mcp
+      { source: "/mcp", destination: "/api/mcp" },
+    ];
   },
   turbopack: {
     root: path.resolve(__dirname),

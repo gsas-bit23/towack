@@ -55,6 +55,23 @@ export default function DocsPage() {
           </div>
         </div>
 
+        <Panel id="mcp" shadow={false} className="scroll-mt-24">
+          <h2 className="font-display text-[24px] font-semibold">
+            <T k="docs.mcpTitle" />
+          </h2>
+          <p className="mt-2 font-medium text-sub">
+            <T k="docs.mcpLead" />
+          </p>
+          <pre className="mt-4 overflow-x-auto rounded-xl border border-line bg-card-2 px-4 py-3 font-mono text-[14px] text-gold">https://towack.vercel.app/mcp</pre>
+          <ol className="mt-4 list-decimal space-y-2 pl-5 font-medium text-sub">
+            {[1, 2, 3, 4].map((n) => (
+              <li key={n}>
+                <T k={k(`docs.mcp${n}`)} tags={{ b: "font-semibold text-fg", c: "font-mono text-[13px] text-fg" }} />
+              </li>
+            ))}
+          </ol>
+        </Panel>
+
         <Panel id="swap" shadow={false} className="scroll-mt-24">
           <h2 className="font-display text-[24px] font-semibold">
             <T k="docs.swapTitle" />
