@@ -73,7 +73,7 @@ An Agent ID names an agentic wallet, which can't connect to websites. So **every
 - `zeewoo.ai` registered as ERC-8004 agent #421858 from its Binance Agentic Wallet: https://bscscan.com/tx/0x976173f707db076a87f2a7307dc0ce0f84923567e7a8b1ef601c701a6d7255f5
 - Tests:
   - 209 Foundry tests, including mainnet-fork runs with **real Agent ID judges** and 2,000-run fuzzing that checks every token lands where it should.
-  - 206 web tests, including the host agent and prompt-injection cases.
+  - 214 web tests, including the host agent and prompt-injection cases.
 
 ### Safety
 - No keys collected, no QR login, no server wallet. Every transaction is signed in the user's own wallet or their own agentic wallet after an explicit "yes".

@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       { source: "/draw", destination: "/lottery", permanent: false },
     ];
   },
+  async rewrites() {
+    // Short MCP endpoint for agents: https://towack.vercel.app/mcp
+    return [{ source: "/mcp", destination: "/api/mcp" }];
+  },
   turbopack: {
     root: path.resolve(__dirname),
     rules: {
