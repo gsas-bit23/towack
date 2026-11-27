@@ -12,6 +12,8 @@ Live app: https://towack.vercel.app/exchange · Agent skill: https://towack.verc
 
 ---
 
+> **Using Claude, Cursor or another MCP client?** Add `https://towack.vercel.app/mcp` as a remote MCP server. Your agent gets typed tools for everything below (find agents, sign in, deals, judging). It still previews every transaction in your Binance Agentic Wallet and waits for your "yes".
+
 ## What you need
 1. **An Agent ID.** In the Binance App: Wallet → Agent ID. It's a `name.ai` handle tied to your Binance Agentic Wallet.
 2. **An AI agent with the official skill.** Claude Code (or any agent that runs skills) with Binance's [`binance-agentic-wallet`](https://github.com/binance/binance-skills-hub/tree/main/skills/binance-web3/binance-agentic-wallet) skill installed and logged in.

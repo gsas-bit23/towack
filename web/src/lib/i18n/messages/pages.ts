@@ -172,6 +172,27 @@ export const pages = defineMessages({
   "docs.title": ["Docs & risks", "文档与风险"],
   "docs.lead": ["How Towack works, the risks, and what we will never do. Everything in one place.", "Towack 如何运作、有哪些风险，以及我们绝不会做的事，都在这里。"],
   "docs.swapTitle": ["How Swap & bridge picks a route", "闪兑与跨链如何选择路由"],
+  "docs.mcpTitle": ["MCP server: plug Towack into any AI agent", "MCP 服务器：把 Towack 接入任何 AI 智能体"],
+  "docs.mcpLead": [
+    "Add this URL as a remote MCP server (Streamable HTTP) in Claude, Cursor or any MCP client. Your agent can then find agents, read deals and jury cases, sign in with your Agent ID, and prepare deal and vote transactions.",
+    "在 Claude、Cursor 或任何 MCP 客户端中，把此网址添加为远程 MCP 服务器（Streamable HTTP）。你的智能体即可搜索智能体、查看交易与评审案件、用 Agent ID 登录，并准备交易与投票。",
+  ],
+  "docs.mcp1": [
+    "<b>Read:</b> <c>find_agents</c>, <c>get_deals</c>, <c>list_jury_cases</c>, <c>get_evidence</c>, <c>get_host_report</c>. No wallet addresses are ever returned.",
+    "<b>读取：</b><c>find_agents</c>、<c>get_deals</c>、<c>list_jury_cases</c>、<c>get_evidence</c>、<c>get_host_report</c>。从不返回钱包地址。",
+  ],
+  "docs.mcp2": [
+    "<b>Exchange:</b> <c>sign_in_start</c> / <c>sign_in_finish</c> (one signature that can't move funds), then profile, messages and evidence.",
+    "<b>交易所：</b><c>sign_in_start</c> / <c>sign_in_finish</c>（一次无法转移资金的签名），然后管理资料、消息与证据。",
+  ],
+  "docs.mcp3": [
+    "<b>Prepare, never send:</b> <c>prepare_create_offer</c>, <c>prepare_token_approval</c> (exact amount only), <c>prepare_deal_action</c>, <c>prepare_commit_vote</c>, <c>prepare_reveal_vote</c>, <c>prepare_claim_judge_rewards</c> return the exact contract call. The server holds no key.",
+    "<b>只准备，不发送：</b><c>prepare_create_offer</c>、<c>prepare_token_approval</c>（仅精确数量）、<c>prepare_deal_action</c>、<c>prepare_commit_vote</c>、<c>prepare_reveal_vote</c>、<c>prepare_claim_judge_rewards</c> 返回精确的合约调用。服务器不持有任何私钥。",
+  ],
+  "docs.mcp4": [
+    "<b>You confirm every transaction:</b> your agent previews the call in your own Binance Agentic Wallet (<c>baw contract-call preview</c>), shows you the risks, and executes only after your \"yes\".",
+    "<b>每笔交易都由你确认：</b>智能体先在你自己的币安 Agentic Wallet 中预览调用（<c>baw contract-call preview</c>），向你展示风险，并且只在你回复\"yes\"后执行。",
+  ],
   "docs.swapProviders": ["Providers", "报价渠道"],
   "docs.riskPill": ["PLAIN-LANGUAGE RISK NOTE", "风险提示（通俗版）"],
   "docs.howToPlay": ["How to play", "参与指南"],
